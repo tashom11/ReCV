@@ -90,6 +90,7 @@ export class FournisseurMock implements FournisseurLLM {
       competences: profil.competences,
       formations: profil.formations,
       langues: profil.langues,
+      ecartes: { experiences: [], competences: [], formations: [] },
     }
   }
 }

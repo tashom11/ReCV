@@ -5,6 +5,7 @@
     "src/preload/*.d.ts",
     "src/core/schemas/*.ts",
     "src/core/api.ts",
+    "src/core/adaptation/composition.ts",
     "src/core/canaux.ts"
   ],
   "exclude": ["src/**/*.test.ts"],

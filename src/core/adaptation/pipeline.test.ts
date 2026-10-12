@@ -3,8 +3,8 @@ import { profilCanned } from '../llm/fournisseurMock'
 import { MoteurMock } from '../llm/moteurMock'
 import { REGLES_ANTI_INVENTION } from '../llm/prompts'
 import { cvAdapteSchema, type Offre, type Profil } from '../schemas'
-import { completerPermutation } from './classement'
 import { restreindreAnalyse } from './motsCles'
+import { indicesConserves, normaliserNiveaux } from './pertinence'
 import { adapterCv, prioriserCompetences } from './pipeline'
 import { pointFidele } from './reecriture'
 
@@ -19,19 +19,39 @@ const offre: Offre = {
 function moteurTricheur() {
   return new MoteurMock({
     motsCles: { titreCible: 'Développeur Front-end React', motsCles: ['React', 'TypeScript', 'Kubernetes'] },
-    classement: { ordre: [1, 1, 7, -2] },
+    pertinence: { experiences: [{ indice: 1, pertinence: 1 }] },
     reecriture: { points: ['Pilotage de la migration vers TypeScript', '  ', 'Maîtrise de Kubernetes'] },
     titreAccroche: { titre: 'Développeuse Front-end React', accroche: 'Développeuse front-end orientée qualité.' },
   })
 }
 
-describe('completerPermutation', () => {
-  it('ignore doublons et indices hors bornes, ajoute les manquants', () => {
-    expect(completerPermutation([2, 2, 9, -1, 0.5, 0], 4)).toEqual([2, 0, 1, 3])
+describe('normaliserNiveaux / indicesConserves', () => {
+  it('ignore indices invalides et bornes hors plage, niveau neutre par défaut', () => {
+    expect(
+      normaliserNiveaux(
+        [
+          { indice: 0, pertinence: 0 },
+          { indice: 9, pertinence: 0 },
+          { indice: -1, pertinence: 2 },
+        ],
+        3,
+      ),
+    ).toEqual([0, 1, 1])
+    expect(
+      normaliserNiveaux(
+        [
+          { indice: 1, pertinence: 7 },
+          { indice: 2, pertinence: -3 },
+        ],
+        3,
+      ),
+    ).toEqual([1, 2, 0])
   })
 
-  it('renvoie toujours tous les indices', () => {
-    expect(completerPermutation([], 3)).toEqual([0, 1, 2])
+  it('écarte le niveau 0 mais garde tout si rien ne survit', () => {
+    expect(indicesConserves([0, 2, 1, 0])).toEqual([1, 2])
+    expect(indicesConserves([0, 0])).toEqual([0, 1])
+    expect(indicesConserves([0, 0, 2], new Set([1]))).toEqual([1, 2])
   })
 })
 
@@ -85,7 +105,7 @@ describe('adapterCv', () => {
   it('retombe sur les réalisations du profil si le moteur ne renvoie aucune puce', async () => {
     const moteur = new MoteurMock({
       motsCles: { titreCible: 'Dev', motsCles: [] },
-      classement: { ordre: [0, 1] },
+      pertinence: {},
       reecriture: { points: [] },
       titreAccroche: { titre: 'Dev', accroche: '' },
     })
@@ -104,7 +124,13 @@ describe('adapterCv', () => {
     const profil: Profil = { ...profilCanned, experiences }
     const moteur = new MoteurMock({
       motsCles: { titreCible: 'Dev', motsCles: [] },
-      classement: { ordre: [2, 0, 1] },
+      pertinence: {
+        experiences: [
+          { indice: 0, pertinence: 2 },
+          { indice: 1, pertinence: 1 },
+          { indice: 2, pertinence: 2 },
+        ],
+      },
       reecriture: { points: ['a', 'b', 'c', 'd', 'e', 'f'] },
       titreAccroche: { titre: 'Dev', accroche: '' },
     })
@@ -118,7 +144,7 @@ describe('adapterCv', () => {
     await adapterCv(moteur, profilCanned, offre)
     expect(moteur.requetes.map((requete) => requete.nom)).toEqual([
       'motsCles',
-      'classement',
+      'pertinence',
       'reecriture',
       'reecriture',
       'titreAccroche',
@@ -145,7 +171,7 @@ describe('restreindreAnalyse', () => {
   it("ne transmet pas aux étapes de rédaction les mots-clés de l'offre absents du profil", async () => {
     const moteur = moteurTricheur()
     await adapterCv(moteur, profilCanned, offre)
-    const redaction = moteur.requetes.filter((requete) => requete.nom !== 'motsCles' && requete.nom !== 'classement')
+    const redaction = moteur.requetes.filter((requete) => requete.nom !== 'motsCles' && requete.nom !== 'pertinence')
     for (const requete of redaction) expect(requete.utilisateur).not.toContain('Kubernetes')
   })
 })

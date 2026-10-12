@@ -1,18 +1,10 @@
+import { type ChoixComposition, choixInitial, composerCv } from '@core/adaptation/composition'
 import type { FormatExport } from '@core/api'
 import type { CvAdapte, Offre, Profil } from '@core/schemas'
 import { useMemo, useState } from 'react'
 import { Alerte, Bouton, Carte, Champ, messageErreur, Titre } from '../ui'
 
-interface Choix {
-  titre: boolean
-  accroche: boolean
-  competences: boolean
-  /** Une entrée par expérience : garder la version adaptée (true) ou l'originale (false). */
-  experiences: boolean[]
-}
-
 const lignes = (texte: string) => texte.split('\n')
-const nettoyer = (valeurs: string[]) => valeurs.map((v) => v.trim()).filter(Boolean)
 
 function Colonnes({ avant, apres }: { avant: React.ReactNode; apres: React.ReactNode }) {
   return (
@@ -38,21 +30,7 @@ function Garder({ actif, onChange, etiquette }: { actif: boolean; onChange: (v: 
   )
 }
 
-/** Compose le CV final selon les choix de l'utilisateur ; les faits viennent toujours du profil. */
-export function composerCv(profil: Profil, adapte: CvAdapte, choix: Choix, points: string[][]): CvAdapte {
-  return {
-    ...adapte,
-    titre: choix.titre ? adapte.titre : (profil.titrePoste ?? adapte.titre),
-    accroche: choix.accroche ? adapte.accroche : (profil.accroche ?? adapte.accroche),
-    competences: choix.competences ? adapte.competences : profil.competences,
-    experiences: adapte.experiences.map((experience, i) => ({
-      ...experience,
-      points: choix.experiences[i]
-        ? nettoyer(points[i] ?? experience.points)
-        : (profil.experiences[i]?.realisations ?? experience.points),
-    })),
-  }
-}
+const remplacer = <T,>(liste: T[], indice: number, valeur: T) => liste.map((x, i) => (i === indice ? valeur : x))
 
 export function EcranDiff({
   profil,
@@ -69,12 +47,7 @@ export function EcranDiff({
 }) {
   const [titre, setTitre] = useState(adapte.titre)
   const [accroche, setAccroche] = useState(adapte.accroche)
-  const [choix, setChoix] = useState<Choix>({
-    titre: true,
-    accroche: true,
-    competences: true,
-    experiences: adapte.experiences.map(() => true),
-  })
+  const [choix, setChoix] = useState<ChoixComposition>(() => choixInitial(adapte))
   const [points, setPoints] = useState<string[][]>(adapte.experiences.map((e) => e.points))
   const [valide, setValide] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
@@ -84,6 +57,9 @@ export function EcranDiff({
     () => composerCv(profil, { ...adapte, titre: titre.trim(), accroche: accroche.trim() }, choix, points),
     [profil, adapte, titre, accroche, choix, points],
   )
+
+  const { ecartes } = adapte
+  const nbEcartes = ecartes.experiences.length + ecartes.competences.length + ecartes.formations.length
 
   const exporter = async (format: FormatExport) => {
     setErreur(null)
@@ -95,8 +71,8 @@ export function EcranDiff({
     }
   }
 
-  const basculerExperience = (i: number, v: boolean) =>
-    setChoix((c) => ({ ...c, experiences: c.experiences.map((x, j) => (j === i ? v : x)) }))
+  const majReintegrer = (partiel: Partial<ChoixComposition['reintegrer']>) =>
+    setChoix((c) => ({ ...c, reintegrer: { ...c.reintegrer, ...partiel } }))
 
   return (
     <div className="space-y-5">
@@ -106,8 +82,10 @@ export function EcranDiff({
         Vérifier le CV adapté
       </Titre>
       <Alerte type="info">
-        Seules la formulation et la priorité changent. Postes, entreprises, dates, formations et langues viennent
-        toujours de ton profil.
+        Seules la formulation, la sélection et la priorité changent. Postes, entreprises, dates, formations et langues
+        viennent toujours de ton profil.
+        {nbEcartes > 0 &&
+          ' Les éléments sans rapport avec l’offre ont été écartés du CV : ils sont listés en bas, tu peux les réintégrer.'}
       </Alerte>
 
       <Carte titre="Titre">
@@ -135,10 +113,10 @@ export function EcranDiff({
       </Carte>
 
       {adapte.experiences.map((experience, i) => {
-        const originale = profil.experiences[i]
+        const originale = profil.experiences[experience.indice ?? i]
         return (
           <Carte
-            key={`${experience.poste}-${experience.entreprise}-${experience.periode ?? ''}`}
+            key={`${experience.indice ?? i}-${experience.poste}-${experience.entreprise}`}
             titre={`${experience.poste} — ${experience.entreprise}`}
           >
             <Colonnes
@@ -161,7 +139,7 @@ export function EcranDiff({
             />
             <Garder
               actif={choix.experiences[i] ?? true}
-              onChange={(v) => basculerExperience(i, v)}
+              onChange={(v) => setChoix((c) => ({ ...c, experiences: remplacer(c.experiences, i, v) }))}
               etiquette="Garder les points adaptés"
             />
           </Carte>
@@ -176,9 +154,65 @@ export function EcranDiff({
         <Garder
           actif={choix.competences}
           onChange={(v) => setChoix((c) => ({ ...c, competences: v }))}
-          etiquette="Garder l’ordre adapté (compétences de l’offre en premier)"
+          etiquette="Garder la sélection adaptée (compétences pertinentes, celles de l’offre en premier)"
         />
       </Carte>
+
+      {adapte.formations.length > 0 && (
+        <Carte titre="Formations conservées">
+          <ul className="space-y-1 text-sm text-slate-800">
+            {adapte.formations.map((f) => (
+              <li key={`${f.diplome}-${f.etablissement}`}>
+                {f.diplome} — {f.etablissement}
+                {f.periode ? ` (${f.periode})` : ''}
+              </li>
+            ))}
+          </ul>
+        </Carte>
+      )}
+
+      {nbEcartes > 0 && (
+        <Carte titre="Écarté du CV (sans rapport avec l’offre)">
+          <p className="text-xs text-slate-600">
+            Coche ce que tu veux malgré tout réintégrer : les expériences reprennent alors leurs réalisations d’origine,
+            sans reformulation.
+          </p>
+
+          {ecartes.experiences.map((e, i) => (
+            <Garder
+              key={`${e.indice ?? i}-${e.poste}-${e.entreprise}`}
+              actif={choix.reintegrer.experiences[i] ?? false}
+              onChange={(v) => majReintegrer({ experiences: remplacer(choix.reintegrer.experiences, i, v) })}
+              etiquette={`Expérience : ${e.poste} — ${e.entreprise}${e.periode ? ` (${e.periode})` : ''}`}
+            />
+          ))}
+
+          {ecartes.formations.map((f, i) => (
+            <Garder
+              key={`${f.diplome}-${f.etablissement}`}
+              actif={choix.reintegrer.formations[i] ?? false}
+              onChange={(v) => majReintegrer({ formations: remplacer(choix.reintegrer.formations, i, v) })}
+              etiquette={`Formation : ${f.diplome} — ${f.etablissement}`}
+            />
+          ))}
+
+          {ecartes.competences.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-slate-600">Compétences</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {ecartes.competences.map((c, i) => (
+                  <Garder
+                    key={c}
+                    actif={choix.reintegrer.competences[i] ?? false}
+                    onChange={(v) => majReintegrer({ competences: remplacer(choix.reintegrer.competences, i, v) })}
+                    etiquette={c}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </Carte>
+      )}
 
       {erreur && <Alerte type="erreur">{erreur}</Alerte>}
       {fichier && <Alerte type="succes">CV enregistré : {fichier}</Alerte>}

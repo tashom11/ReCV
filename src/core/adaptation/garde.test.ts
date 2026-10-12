@@ -48,7 +48,7 @@ describe('adapterCv : garde-fou sur titre et accroche', () => {
   const moteurAvec = (titreAccroche: { titre: string; accroche: string }) =>
     new MoteurMock({
       motsCles: { titreCible: 'Développeur React', motsCles: ['React', 'Kubernetes'], competencesRequises: [] },
-      classement: { ordre: [0, 1] },
+      pertinence: {},
       reecriture: { points: ['Migration vers TypeScript'] },
       titreAccroche,
     })
