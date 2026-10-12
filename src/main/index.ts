@@ -1,5 +1,11 @@
 import { join } from 'node:path'
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, safeStorage, shell } from 'electron'
+import { ouvrirBdd } from './bdd/connexion'
+import { choisirEtLireCv } from './cv'
+import { enregistrerHandlers } from './ipc'
+import { rendreHtml } from './offre/rendu'
+import { StockageParametres } from './parametres'
+import { creerService } from './service'
 
 function creerFenetre(): void {
   const fenetre = new BrowserWindow({
@@ -34,6 +40,15 @@ function creerFenetre(): void {
 
 app.whenReady().then(() => {
   app.setAppUserModelId('org.recv.app')
+  const donnees = app.getPath('userData')
+  const bdd = ouvrirBdd(join(donnees, 'recv.db'))
+  const parametres = new StockageParametres(donnees, {
+    disponible: () => safeStorage.isEncryptionAvailable(),
+    chiffrer: (texte) => safeStorage.encryptString(texte),
+    dechiffrer: (buffer) => safeStorage.decryptString(buffer),
+  })
+  enregistrerHandlers(ipcMain, creerService({ bdd, parametres, choisirEtLireCv, rendreHtml }))
+
   creerFenetre()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) creerFenetre()
