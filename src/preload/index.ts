@@ -19,6 +19,7 @@ const api: ApiReCV = {
   lireParametres: () => appeler(CANAUX.lireParametres),
   enregistrerParametres: (parametres) => appeler(CANAUX.enregistrerParametres, parametres),
   definirCleApi: (cle) => appeler(CANAUX.definirCleApi, cle),
+  exporterCv: (cv, format) => appeler(CANAUX.exporterCv, cv, format),
 }
 
 contextBridge.exposeInMainWorld('api', api)

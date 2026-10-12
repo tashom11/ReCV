@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 export { CANAUX, type ResultatIpc } from './canaux'
 
-import { type CvAdapte, type Offre, offreSchema, type Profil, profilSchema } from './schemas'
+import { type CvAdapte, cvAdapteSchema, type Offre, offreSchema, type Profil, profilSchema } from './schemas'
 
 // Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
 
@@ -26,6 +26,8 @@ export interface ProfilEnregistre {
   profil: Profil
 }
 
+export type FormatExport = 'pdf' | 'docx'
+
 export interface CvGenere {
   id: number
   offreId: number
@@ -43,11 +45,15 @@ export interface ApiReCV {
   adapterCv(offre: Offre): Promise<CvGenere>
   lireParametres(): Promise<EtatParametres>
   enregistrerParametres(parametres: Parametres): Promise<EtatParametres>
+  /** Enregistre le CV validé (coordonnées du profil actif) via un sélecteur de fichier. Chemin écrit, ou `null` si annulé. */
+  exporterCv(cv: CvAdapte, format: FormatExport): Promise<string | null>
   /** Chaîne vide : supprime la clé. */
   definirCleApi(cle: string): Promise<EtatParametres>
 }
 
 export const entreesIpc = {
+  cv: cvAdapteSchema,
+  format: z.enum(['pdf', 'docx']),
   profil: profilSchema,
   offre: offreSchema,
   parametres: parametresSchema,

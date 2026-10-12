@@ -24,6 +24,7 @@
     "@mozilla/readability": "^0.6.0",
     "ai": "^7.0.137",
     "better-sqlite3": "^13.0.3",
+    "docx": "^9.10.0",
     "drizzle-orm": "^0.45.4",
     "linkedom": "^0.18.13",
     "mammoth": "^1.13.0",

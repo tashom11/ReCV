@@ -1,6 +1,7 @@
+import type { FormatExport } from '@core/api'
 import type { CvAdapte, Offre, Profil } from '@core/schemas'
 import { useMemo, useState } from 'react'
-import { Alerte, Bouton, Carte, Champ, Titre } from '../ui'
+import { Alerte, Bouton, Carte, Champ, messageErreur, Titre } from '../ui'
 
 interface Choix {
   titre: boolean
@@ -76,11 +77,23 @@ export function EcranDiff({
   })
   const [points, setPoints] = useState<string[][]>(adapte.experiences.map((e) => e.points))
   const [valide, setValide] = useState(false)
+  const [erreur, setErreur] = useState<string | null>(null)
+  const [fichier, setFichier] = useState<string | null>(null)
 
   const cvFinal = useMemo(
     () => composerCv(profil, { ...adapte, titre: titre.trim(), accroche: accroche.trim() }, choix, points),
     [profil, adapte, titre, accroche, choix, points],
   )
+
+  const exporter = async (format: FormatExport) => {
+    setErreur(null)
+    try {
+      const chemin = await window.api.exporterCv(cvFinal, format)
+      if (chemin) setFichier(chemin)
+    } catch (e) {
+      setErreur(messageErreur(e))
+    }
+  }
 
   const basculerExperience = (i: number, v: boolean) =>
     setChoix((c) => ({ ...c, experiences: c.experiences.map((x, j) => (j === i ? v : x)) }))
@@ -167,7 +180,21 @@ export function EcranDiff({
         />
       </Carte>
 
-      {valide && <Alerte type="succes">CV validé. L’export PDF/DOCX arrive à la prochaine étape.</Alerte>}
+      {erreur && <Alerte type="erreur">{erreur}</Alerte>}
+      {fichier && <Alerte type="succes">CV enregistré : {fichier}</Alerte>}
+      {valide && (
+        <Carte titre="Exporter">
+          <p className="text-xs text-slate-600">
+            Mise en page sobre sur une colonne, avec du vrai texte : lisible par les logiciels de recrutement (ATS).
+          </p>
+          <div className="flex gap-3">
+            <Bouton onClick={() => exporter('pdf')}>Exporter en PDF</Bouton>
+            <Bouton variante="secondaire" onClick={() => exporter('docx')}>
+              Exporter en DOCX
+            </Bouton>
+          </div>
+        </Carte>
+      )}
       <div className="flex gap-3">
         <Bouton
           onClick={() => {
