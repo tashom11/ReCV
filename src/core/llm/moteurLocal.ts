@@ -62,14 +62,14 @@ export class MoteurLocal implements MoteurLLM {
     return this.chargement
   }
 
-  async genererObjet<T>({ schema, systeme, utilisateur }: RequeteObjet<T>): Promise<T> {
+  async genererObjet<T>({ schema, systeme, utilisateur, temperature }: RequeteObjet<T>): Promise<T> {
     const { llama, modele } = await this.charger()
     const grammaire = await llama.createGrammarForJsonSchema(versSchemaGrammaire(schema))
     const { LlamaChatSession } = await import('node-llama-cpp')
     const contexte = await modele.createContext()
     try {
       const session = new LlamaChatSession({ contextSequence: contexte.getSequence(), systemPrompt: systeme })
-      const reponse = await session.prompt(utilisateur, { grammar: grammaire, temperature: 0.2 })
+      const reponse = await session.prompt(utilisateur, { grammar: grammaire, temperature: temperature ?? 0.2 })
       return schema.parse(retirerNulls(grammaire.parse(reponse)))
     } finally {
       await contexte.dispose()
