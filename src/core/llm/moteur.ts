@@ -6,6 +6,8 @@ export interface RequeteObjet<T> {
   schema: z.ZodType<T>
   systeme: string
   utilisateur: string
+  /** Température d'échantillonnage (défaut 0,2). 0 pour les étapes de jugement, qui doivent être reproductibles. */
+  temperature?: number
 }
 
 // Primitive commune à tous les backends : produire un objet validé par un schéma Zod.

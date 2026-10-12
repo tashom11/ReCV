@@ -4,7 +4,7 @@ import { analyserOffre, restreindreAnalyse } from './motsCles'
 import { evaluerPertinence, indicesConserves } from './pertinence'
 import { pointFidele, pointsOrigine, reecrireExperience } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
-import { redigerTitreAccroche } from './titreAccroche'
+import { redigerAccroche } from './titreAccroche'
 
 // Nombre de puces : plus détaillé pour ce qui est directement lié au poste visé.
 const POINTS_PRIORITAIRES = 5
@@ -47,6 +47,14 @@ function texteVerification(profil: Profil): string {
   ].join('\n')
 }
 
+// Les durées (« 4 ans », « 6 mois ») ne sont acceptées que si elles figurent telles quelles dans le profil :
+// le modèle les déduit des dates (souvent à tort, surtout quand des expériences ont été écartées).
+const MOTIF_DUREE = /\b\d+\s*(?:ans?|années?|mois)\b/gi
+function dureesFideles(texte: string, source: string): boolean {
+  const reference = normaliser(source).replace(/\s+/g, ' ')
+  return (texte.match(MOTIF_DUREE) ?? []).every((duree) => reference.includes(normaliser(duree).replace(/\s+/g, ' ')))
+}
+
 // Enchaîne les étapes : mots-clés → pertinence (tri) → réécriture expérience par expérience → titre + accroche.
 // Les faits (postes, entreprises, dates, formations, langues, compétences) sont recopiés du profil, jamais générés.
 // Ce qui n'a aucun rapport avec l'offre est écarté du CV (et listé dans `ecartes` pour que l'utilisateur décide).
@@ -59,8 +67,18 @@ export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre)
 
   const indicesExperiences = indicesConserves(pertinence.experiences)
   const indicesFormations = indicesConserves(pertinence.formations)
-  // Une compétence citée mot pour mot dans l'offre n'est jamais écartée, quoi qu'en dise le modèle.
-  const citees = new Set(profil.competences.flatMap((c, i) => (competenceCitee(c, termesNormalises) ? [i] : [])))
+  // Une compétence n'est jamais écartée, quoi qu'en dise le modèle, si l'offre la cite mot pour mot ou si elle
+  // apparaît dans une expérience conservée (RGAA, SEO…) : elle y est attestée.
+  const texteConserve = normaliser(
+    indicesExperiences
+      .flatMap((i) => (profil.experiences[i] ? [texteExperience(profil.experiences[i])] : []))
+      .join('\n'),
+  )
+  const citees = new Set(
+    profil.competences.flatMap((c, i) =>
+      competenceCitee(c, termesNormalises) || competenceCitee(c, [texteConserve]) ? [i] : [],
+    ),
+  )
   const indicesCompetences = indicesConserves(pertinence.competences, citees)
 
   // Ordre chronologique du profil conservé dans le CV ; la pertinence règle le niveau de détail.
@@ -110,7 +128,7 @@ export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre)
     competences: competencesGardees,
     formations: formationsGardees,
   }
-  const redige = await redigerTitreAccroche(
+  const redige = await redigerAccroche(
     moteur,
     profilRetenu,
     experiences,
@@ -128,11 +146,13 @@ export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre)
     ...competencesEcartees,
     ...experiencesEcartees.flatMap((e) => [e.poste, e.entreprise]),
   ]
-  const premierPoste = experiences[0]?.poste
-  const titreRepli = (aEcarte ? premierPoste : (profil.titrePoste ?? premierPoste)) ?? ''
-  const accrocheRepli = aEcarte ? '' : (profil.accroche ?? '')
-  const titre = pointFidele(redige.titre, source, termesInterdits) ? redige.titre : titreRepli
-  const accroche = pointFidele(redige.accroche, source, termesInterdits) ? redige.accroche : accrocheRepli
+  // Titre : jamais rédigé par le modèle. Titre d'origine du profil si rien n'est écarté ; sinon l'intitulé de
+  // l'expérience conservée la plus pertinente (la plus récente à pertinence égale).
+  const rang = (indice: number) => pertinence.experiences[indice] ?? 0
+  const principale = [...experiences].sort((a, b) => rang(b.indice ?? 0) - rang(a.indice ?? 0))[0]
+  const titre = (aEcarte ? principale?.poste : (profil.titrePoste ?? principale?.poste)) ?? ''
+  const accrocheFidele = pointFidele(redige.accroche, source, termesInterdits) && dureesFideles(redige.accroche, source)
+  const accroche = accrocheFidele ? redige.accroche : aEcarte ? '' : (profil.accroche ?? '')
 
   return cvAdapteSchema.parse({
     titre,

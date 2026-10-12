@@ -26,7 +26,7 @@ export class MoteurAiSdk implements MoteurLLM {
     private readonly options: OptionsMoteurAiSdk = {},
   ) {}
 
-  async genererObjet<T>({ nom, schema, systeme, utilisateur }: RequeteObjet<T>): Promise<T> {
+  async genererObjet<T>({ nom, schema, systeme, utilisateur, temperature }: RequeteObjet<T>): Promise<T> {
     const tentatives = this.options.tentatives ?? 2
     let derniereErreur: unknown
     for (let tentative = 0; tentative < tentatives; tentative++) {
@@ -36,7 +36,8 @@ export class MoteurAiSdk implements MoteurLLM {
           system: systeme,
           prompt: tentative === 0 ? utilisateur : utilisateur + RAPPEL_JSON,
           output: Output.object({ schema: schemaPourModele(schema) }),
-          temperature: 0.2,
+          temperature: temperature ?? 0.2,
+          ...(temperature === 0 ? { seed: 42 } : {}),
           providerOptions: this.options.optionsFournisseur,
         })
         // Validation Zod systématique : le JSON Schema seul ne garantit pas les types côté modèle.

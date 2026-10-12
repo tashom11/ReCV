@@ -44,40 +44,31 @@ describe('analyserOffre : termes réinjectés dans les prompts suivants', () => 
   })
 })
 
-describe('adapterCv : garde-fou sur titre et accroche', () => {
-  const moteurAvec = (titreAccroche: { titre: string; accroche: string }) =>
+describe('adapterCv : garde-fou sur l’accroche', () => {
+  const moteurAvec = (accroche: { accroche: string }) =>
     new MoteurMock({
       motsCles: { titreCible: 'Développeur React', motsCles: ['React', 'Kubernetes'], competencesRequises: [] },
       pertinence: {},
       reecriture: { points: ['Migration vers TypeScript'] },
-      titreAccroche,
+      accroche,
     })
 
   it('remplace une accroche qui cite un terme absent du profil', async () => {
-    const cv = await adapterCv(
-      moteurAvec({ titre: 'Développeuse web', accroche: 'Experte Kubernetes et React.' }),
-      profilCanned,
-      offre,
-    )
+    const cv = await adapterCv(moteurAvec({ accroche: 'Experte Kubernetes et React.' }), profilCanned, offre)
     expect(cv.accroche).toBe(profilCanned.accroche)
   })
 
-  it('remplace un titre ou une accroche contenant un chiffre inventé', async () => {
-    const cv = await adapterCv(
-      moteurAvec({ titre: 'Développeuse web', accroche: 'Plus de 12 ans d’expérience en React.' }),
-      profilCanned,
-      offre,
-    )
+  it('remplace une accroche contenant un chiffre inventé', async () => {
+    const cv = await adapterCv(moteurAvec({ accroche: 'Plus de 12 ans d’expérience en React.' }), profilCanned, offre)
     expect(cv.accroche).toBe(profilCanned.accroche)
   })
 
   it('conserve une accroche fidèle', async () => {
     const cv = await adapterCv(
-      moteurAvec({ titre: 'Développeuse React', accroche: 'Développeuse web orientée React et qualité.' }),
+      moteurAvec({ accroche: 'Développeuse web orientée React et qualité.' }),
       profilCanned,
       offre,
     )
-    expect(cv.titre).toBe('Développeuse React')
     expect(cv.accroche).toBe('Développeuse web orientée React et qualité.')
   })
 })

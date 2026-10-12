@@ -21,7 +21,7 @@ function moteurTricheur() {
     motsCles: { titreCible: 'Développeur Front-end React', motsCles: ['React', 'TypeScript', 'Kubernetes'] },
     pertinence: { experiences: [{ indice: 1, pertinence: 1 }] },
     reecriture: { points: ['Pilotage de la migration vers TypeScript', '  ', 'Maîtrise de Kubernetes'] },
-    titreAccroche: { titre: 'Développeuse Front-end React', accroche: 'Développeuse front-end orientée qualité.' },
+    accroche: { accroche: 'Développeuse front-end orientée qualité.' },
   })
 }
 
@@ -70,7 +70,8 @@ describe('adapterCv', () => {
   it('produit un CvAdapte valide', async () => {
     const cv = await adapterCv(moteurTricheur(), profilCanned, offre)
     expect(() => cvAdapteSchema.parse(cv)).not.toThrow()
-    expect(cv.titre).toBe('Développeuse Front-end React')
+    // Le titre n'est jamais rédigé par le modèle : c'est celui du profil.
+    expect(cv.titre).toBe(profilCanned.titrePoste)
   })
 
   it('recopie postes, entreprises, lieux et périodes du profil, dans l’ordre du profil', async () => {
@@ -107,7 +108,7 @@ describe('adapterCv', () => {
       motsCles: { titreCible: 'Dev', motsCles: [] },
       pertinence: {},
       reecriture: { points: [] },
-      titreAccroche: { titre: 'Dev', accroche: '' },
+      accroche: { accroche: '' },
     })
     const cv = await adapterCv(moteur, profilCanned, offre)
     expect(cv.experiences.map((experience) => experience.points)).toEqual(
@@ -132,7 +133,7 @@ describe('adapterCv', () => {
         ],
       },
       reecriture: { points: ['a', 'b', 'c', 'd', 'e', 'f'] },
-      titreAccroche: { titre: 'Dev', accroche: '' },
+      accroche: { accroche: '' },
     })
     const cv = await adapterCv(moteur, profil, offre)
     expect(moteur.requetes.filter((requete) => requete.nom === 'reecriture')).toHaveLength(3)
@@ -147,7 +148,7 @@ describe('adapterCv', () => {
       'pertinence',
       'reecriture',
       'reecriture',
-      'titreAccroche',
+      'accroche',
     ])
     for (const requete of moteur.requetes) expect(requete.systeme).toContain(REGLES_ANTI_INVENTION)
     expect(moteur.requetes[0]?.utilisateur).toContain(`<offre>\n${offre.texteBrut}\n</offre>`)

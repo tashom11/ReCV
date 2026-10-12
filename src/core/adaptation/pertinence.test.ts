@@ -39,7 +39,7 @@ const offre: Offre = {
   texteBrut: 'Nous recherchons un carrossier peintre rigoureux : ponçage, application de peinture et vernis.',
 }
 
-function moteur(titreAccroche: { titre: string; accroche: string }, competences = [0, 0, 1, 1]) {
+function moteur(accroche: { accroche: string }, competences = [0, 0, 1, 1]) {
   return new MoteurMock({
     motsCles: { titreCible: 'Carrossier peintre', motsCles: ['carrosserie', 'peinture', 'ponçage'] },
     pertinence: {
@@ -54,14 +54,14 @@ function moteur(titreAccroche: { titre: string; accroche: string }, competences 
       competences: competences.map((pertinence, indice) => ({ indice, pertinence })),
     },
     reecriture: { points: ['Ponçage et préparation des surfaces', 'Application de peinture et vernis'] },
-    titreAccroche,
+    accroche,
   })
 }
 
 describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
   it('ne garde que le métier visé et liste le reste dans « ecartes »', async () => {
     const cv = await adapterCv(
-      moteur({ titre: 'Carrossier peintre', accroche: 'Carrossier peintre rigoureux, attentif aux délais.' }),
+      moteur({ accroche: 'Carrossier peintre rigoureux, attentif aux délais.' }),
       profil,
       offre,
     )
@@ -77,34 +77,23 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
     expect(cv.accroche).toBe('Carrossier peintre rigoureux, attentif aux délais.')
   })
 
-  it('ne transmet rien du domaine écarté au modèle qui rédige le titre et l’accroche', async () => {
-    const m = moteur({ titre: 'Carrossier peintre', accroche: 'Carrossier peintre.' })
+  it('ne transmet rien du domaine écarté au modèle qui rédige l’accroche', async () => {
+    const m = moteur({ accroche: 'Carrossier peintre.' })
     await adapterCv(m, profil, offre)
-    const redaction = m.requetes.find((r) => r.nom === 'titreAccroche')
+    const redaction = m.requetes.find((r) => r.nom === 'accroche')
     expect(redaction?.utilisateur).not.toMatch(/Webagence|HTML|WordPress|développement web|Développeur web/i)
     expect(redaction?.utilisateur).toContain('Carrosserie Dupont')
   })
 
-  it('remplace une accroche qui réintroduit le domaine écarté (jamais celle du profil d’origine)', async () => {
-    const cv = await adapterCv(
-      moteur({
-        titre: 'Développeur web HTML / CSS',
-        accroche: 'Carrossier peintre et expert HTML / CSS.',
-      }),
-      profil,
-      offre,
-    )
+  it('remplace une accroche qui réintroduit le domaine écarté (jamais celle du profil d’origine) ; le titre vient du profil', async () => {
+    const cv = await adapterCv(moteur({ accroche: 'Carrossier peintre et expert HTML / CSS.' }), profil, offre)
     expect(cv.titre).toBe('Carrossier peintre')
     expect(cv.accroche).toBe('')
   })
 
   it('garde une compétence citée mot pour mot dans l’offre, même jugée sans rapport', async () => {
     const offreAvecCss: Offre = { ...offre, texteBrut: `${offre.texteBrut} Notions de WordPress appréciées.` }
-    const cv = await adapterCv(
-      moteur({ titre: 'Carrossier peintre', accroche: 'Carrossier peintre.' }),
-      profil,
-      offreAvecCss,
-    )
+    const cv = await adapterCv(moteur({ accroche: 'Carrossier peintre.' }), profil, offreAvecCss)
     expect(cv.competences).toContain('WordPress / CMS')
     expect(cv.ecartes.competences).toEqual(['HTML / CSS'])
   })
@@ -119,7 +108,7 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
         ],
       },
       reecriture: { points: [] },
-      titreAccroche: { titre: 'x', accroche: '' },
+      accroche: { accroche: '' },
     })
     const cv = await adapterCv(m, profil, { titrePoste: 'Astronaute', texteBrut: 'Voyager dans l’espace.' })
     expect(cv.experiences).toHaveLength(2)
