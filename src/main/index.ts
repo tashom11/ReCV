@@ -5,6 +5,7 @@ import { ouvrirBdd } from './bdd/connexion'
 import { choisirEtLireCv } from './cv'
 import { choisirDestination, genererPdf } from './export'
 import { enregistrerHandlers } from './ipc'
+import { verifierMisesAJour } from './miseAJour'
 import { GestionnaireModeles } from './modeles/gestionnaire'
 import { detecterRessources } from './modeles/ressources'
 import { rendreHtml } from './offre/rendu'
@@ -70,6 +71,7 @@ app.whenReady().then(() => {
   )
 
   creerFenetre()
+  verifierMisesAJour()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) creerFenetre()
   })

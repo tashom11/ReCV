@@ -1,0 +1,60 @@
+name: Release
+
+# Build et publie l'installeur Windows sur la release GitHub du tag `v*` (ex. v0.2.0).
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Vérifier que le tag correspond à la version du package
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Le tag $GITHUB_REF_NAME ne correspond pas à package.json (v$version)" >&2
+            exit 1
+          fi
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npx electron-vite build
+
+      # --- Signature (désactivée pour l'instant) ---------------------------------------------
+      # Quand le projet sera accepté sur SignPath (https://signpath.org, gratuit pour l'open source) :
+      #   1. Publier l'installeur non signé comme artefact de workflow :
+      #        - run: npx electron-builder --win --publish never
+      #        - uses: actions/upload-artifact@v4
+      #          id: installeur
+      #          with: { name: installeur, path: release/*.exe }
+      #   2. Le faire signer :
+      #        - uses: signpath/github-action-submit-signing-request@v1
+      #          with:
+      #            api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+      #            organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+      #            project-slug: recv
+      #            signing-policy-slug: release-signing
+      #            github-artifact-id: ${{ steps.installeur.outputs.artifact-id }}
+      #            wait-for-completion: true
+      #            output-artifact-directory: release-signe
+      #   3. Publier le fichier signé (et son latest.yml régénéré) sur la release.
+      # ---------------------------------------------------------------------------------------
+
+      - name: Packager et publier
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
