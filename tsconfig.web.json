@@ -1,6 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
-  "include": ["src/renderer/src/**/*", "src/preload/*.d.ts", "src/core/**/*"],
+  "include": [
+    "src/renderer/src/**/*",
+    "src/preload/*.d.ts",
+    "src/core/schemas/*.ts",
+    "src/core/api.ts",
+    "src/core/canaux.ts"
+  ],
+  "exclude": ["src/**/*.test.ts"],
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",

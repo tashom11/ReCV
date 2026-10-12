@@ -1,4 +1,4 @@
-import type { ApiReCV } from './index'
+import type { ApiReCV } from '@core/api'
 
 declare global {
   interface Window {
