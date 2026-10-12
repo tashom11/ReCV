@@ -1,0 +1,5 @@
+{
+  "permissions": {
+    "deny": ["Read(./node_modules/**)", "Read(./out/**)", "Read(./dist/**)", "Read(./release/**)", "Read(./**/*.gguf)"]
+  }
+}
