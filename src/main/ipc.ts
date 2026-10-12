@@ -1,4 +1,4 @@
-import { type ApiReCV, CANAUX, entreesIpc, type ResultatIpc } from '@core/api'
+import { type ApiService, CANAUX, entreesIpc, type ResultatIpc } from '@core/api'
 import { ErreurRecuperationOffre } from '@core/offre'
 import type { IpcMain } from 'electron'
 import type { ZodType } from 'zod'
@@ -18,7 +18,7 @@ function enveloppe(erreur: unknown): ResultatIpc<never> {
  * Branche l'API sur ipcMain. Chaque entrée du renderer est revalidée par Zod :
  * le renderer n'est jamais considéré comme fiable.
  */
-export function enregistrerHandlers(ipcMain: IpcMain, api: ApiReCV): void {
+export function enregistrerHandlers(ipcMain: IpcMain, api: ApiService): void {
   const gerer = (canal: string, traitement: (...args: unknown[]) => Promise<unknown>) => {
     ipcMain.handle(canal, async (_evenement, ...args): Promise<ResultatIpc<unknown>> => {
       try {
@@ -40,5 +40,9 @@ export function enregistrerHandlers(ipcMain: IpcMain, api: ApiReCV): void {
   gerer(CANAUX.exporterCv, (cv, format) =>
     api.exporterCv(analyser(entreesIpc.cv, cv), analyser(entreesIpc.format, format)),
   )
+  gerer(CANAUX.lireEtatModeles, () => api.lireEtatModeles())
+  gerer(CANAUX.telechargerModele, (id) => api.telechargerModele(analyser(entreesIpc.idModele, id)))
+  gerer(CANAUX.annulerTelechargement, () => api.annulerTelechargement())
+  gerer(CANAUX.supprimerModele, (id) => api.supprimerModele(analyser(entreesIpc.idModele, id)))
   gerer(CANAUX.definirCleApi, (cle) => api.definirCleApi(analyser(entreesIpc.cle, cle)))
 }
