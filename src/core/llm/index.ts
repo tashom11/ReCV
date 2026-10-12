@@ -1,2 +1,10 @@
+export * from './extraction'
 export * from './fournisseur'
 export * from './fournisseurMock'
+export * from './fournisseurStructure'
+export * from './fournisseurs'
+export * from './moteur'
+export * from './moteurAiSdk'
+export * from './moteurMock'
+export * from './prompts'
+// `moteurLocal` (node-llama-cpp, natif) s'importe directement depuis './moteurLocal', côté Node uniquement.

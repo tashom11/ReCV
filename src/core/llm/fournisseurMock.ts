@@ -1,7 +1,7 @@
 import type { CvAdapte, Offre, Profil } from '../schemas'
 import type { FournisseurLLM } from './fournisseur'
 
-const profilCanned: Profil = {
+export const profilCanned: Profil = {
   nom: 'Claire Dubois',
   email: 'claire.dubois@exemple.fr',
   telephone: '06 12 34 56 78',

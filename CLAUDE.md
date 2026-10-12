@@ -31,6 +31,8 @@ App bureau Windows open source (gratuite) : import d'un CV (PDF/DOCX) → profil
 
 ## Commandes
 - `npm run dev` | `npm test` | `npm run lint` | `npm run typecheck` | `npm run build:win`
+- `npm run essai -- cv.txt offre.txt [--fournisseur ollama|api|local] [--modele nom]` : pipeline complet hors Electron (config via `RECV_OLLAMA_URL`, `RECV_API_URL`, `RECV_API_CLE`, `RECV_MODELE_GGUF`)
+- `node-llama-cpp` est ESM avec top-level await : toujours l'importer dynamiquement (`await import(...)`), jamais en import statique de valeur.
 
 ## À ne pas lire
 `node_modules/`, `out/`, `dist/`, `release/`, `*.gguf`, `fixtures/*.pdf` (utiliser les `.txt` extraits)
