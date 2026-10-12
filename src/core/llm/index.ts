@@ -1,2 +1,2 @@
-// Phase 1+ : à implémenter.
-export {}
+export * from './fournisseur'
+export * from './fournisseurMock'
