@@ -6,6 +6,7 @@ import { FournisseurMock, profilCanned } from '@core/llm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './bdd/connexion'
 import { enregistrerProfil, obtenirProfilActif } from './bdd/depots'
+import { GestionnaireModeles } from './modeles/gestionnaire'
 import { type Chiffreur, StockageParametres } from './parametres'
 import { creerService } from './service'
 
@@ -54,7 +55,7 @@ describe('StockageParametres', () => {
 
   it('retombe sur les valeurs par défaut si le fichier est absent', async () => {
     const stockage = new StockageParametres(dossier, chiffreurFactice())
-    expect((await stockage.lire()).fournisseur).toBe('ollama')
+    expect((await stockage.lire()).fournisseur).toBe('local')
   })
 })
 
@@ -66,6 +67,11 @@ describe('service', () => {
     const api = creerService({
       bdd,
       parametres,
+      modeles: new GestionnaireModeles({
+        dossier: join(dossier, 'modeles'),
+        ressources: async () => ({ ramGo: 8, vramGo: 0 }),
+        emettre: () => undefined,
+      }),
       choisirEtLireCv: async () => 'texte du cv',
       rendreHtml: async () => '',
       choisirDestination: async (nom, extension) => join(dossier, nom.replace(/.w+$/, `.${extension}`)),

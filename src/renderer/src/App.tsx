@@ -5,6 +5,7 @@ import { EcranDiff } from './ecrans/Diff'
 import { EcranOffre } from './ecrans/Offre'
 import { EcranParametres } from './ecrans/Parametres'
 import { EcranProfil } from './ecrans/Profil'
+import { Alerte } from './ui'
 
 type Ecran = 'profil' | 'offre' | 'diff' | 'parametres'
 
@@ -19,6 +20,18 @@ export default function App() {
   const [resultat, setResultat] = useState<Resultat | null>(null)
   // Le CV validé servira à l’export (PDF/DOCX) à la prochaine étape.
   const [, setCvValide] = useState<CvAdapte | null>(null)
+
+  const [modeleManquant, setModeleManquant] = useState(false)
+
+  // Premier lancement : le modèle embarqué est le fournisseur par défaut mais n'est pas encore téléchargé.
+  useEffect(() => {
+    if (ecran === 'parametres') return
+    Promise.all([window.api.lireParametres(), window.api.lireEtatModeles()]).then(
+      ([p, m]) =>
+        setModeleManquant(p.fournisseur === 'local' && !p.cheminModeleLocal && !m.modeles.some((x) => x.installe)),
+      () => undefined,
+    )
+  }, [ecran])
 
   useEffect(() => {
     window.api.obtenirProfil().then(
@@ -58,6 +71,17 @@ export default function App() {
       </nav>
 
       <main className="mx-auto max-w-4xl px-6 py-8">
+        {modeleManquant && ecran !== 'parametres' && (
+          <div className="mb-6">
+            <Alerte type="avertissement">
+              Aucun modèle de langage n’est installé.{' '}
+              <button type="button" className="font-medium underline" onClick={() => setEcran('parametres')}>
+                Télécharger un modèle
+              </button>{' '}
+              (ou configurer Ollama / une API dans les paramètres).
+            </Alerte>
+          </div>
+        )}
         {ecran === 'profil' && <EcranProfil profil={profil} onProfil={setProfil} onSuivant={() => setEcran('offre')} />}
         {ecran === 'offre' && (
           <EcranOffre

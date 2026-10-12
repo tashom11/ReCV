@@ -1,6 +1,7 @@
 import type { EtatParametres, Parametres } from '@core/api'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Alerte, Bouton, Carte, Champ, messageErreur, Titre } from '../ui'
+import { GestionModeles } from './GestionModeles'
 
 const FOURNISSEURS: { valeur: Parametres['fournisseur']; nom: string; detail: string }[] = [
   {
@@ -28,6 +29,11 @@ export function EcranParametres() {
 
   useEffect(() => {
     window.api.lireParametres().then(setEtat, (e) => setErreur(messageErreur(e)))
+  }, [])
+
+  // Un modèle vient d'être installé : le process principal l'a sélectionné, on ne reprend que ce champ.
+  const surModeleInstalle = useCallback(() => {
+    window.api.lireParametres().then((p) => setEtat((e) => (e ? { ...e, cheminModeleLocal: p.cheminModeleLocal } : e)))
   }, [])
 
   if (!etat)
@@ -115,6 +121,8 @@ export function EcranParametres() {
 
         <Bouton onClick={enregistrer}>Enregistrer</Bouton>
       </Carte>
+
+      {etat.fournisseur === 'local' && <GestionModeles onChange={surModeleInstalle} />}
 
       {etat.fournisseur === 'api' && (
         <Carte titre="Clé API">

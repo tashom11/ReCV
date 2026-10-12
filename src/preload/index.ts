@@ -1,6 +1,6 @@
-import type { ApiReCV } from '@core/api'
+import type { ApiReCV, ProgressionModele } from '@core/api'
 import { CANAUX, type ResultatIpc } from '@core/canaux'
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
 
 // API typée exposée au renderer : uniquement ces méthodes, jamais ipcRenderer lui-même.
 async function appeler<T>(canal: string, ...args: unknown[]): Promise<T> {
@@ -20,6 +20,15 @@ const api: ApiReCV = {
   enregistrerParametres: (parametres) => appeler(CANAUX.enregistrerParametres, parametres),
   definirCleApi: (cle) => appeler(CANAUX.definirCleApi, cle),
   exporterCv: (cv, format) => appeler(CANAUX.exporterCv, cv, format),
+  lireEtatModeles: () => appeler(CANAUX.lireEtatModeles),
+  telechargerModele: (id) => appeler(CANAUX.telechargerModele, id),
+  annulerTelechargement: () => appeler(CANAUX.annulerTelechargement),
+  supprimerModele: (id) => appeler(CANAUX.supprimerModele, id),
+  surProgressionModele: (rappel) => {
+    const ecouteur = (_e: IpcRendererEvent, progression: ProgressionModele) => rappel(progression)
+    ipcRenderer.on(CANAUX.progressionModele, ecouteur)
+    return () => ipcRenderer.removeListener(CANAUX.progressionModele, ecouteur)
+  },
 }
 
 contextBridge.exposeInMainWorld('api', api)

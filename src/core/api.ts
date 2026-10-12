@@ -7,7 +7,7 @@ import { type CvAdapte, cvAdapteSchema, type Offre, offreSchema, type Profil, pr
 // Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
 
 export const parametresSchema = z.object({
-  fournisseur: z.enum(['ollama', 'api', 'local']).default('ollama'),
+  fournisseur: z.enum(['ollama', 'api', 'local']).default('local'),
   modeleOllama: z.string().default('qwen3:8b'),
   urlOllama: z.string().default('http://localhost:11434/v1'),
   urlApi: z.string().default('https://api.openai.com/v1'),
@@ -34,7 +34,36 @@ export interface CvGenere {
   cv: CvAdapte
 }
 
-export interface ApiReCV {
+export interface ModeleEmbarqueEtat {
+  id: string
+  nom: string
+  description: string
+  tailleOctets: number
+  chemin: string
+  installe: boolean
+  /** Adapté à la mémoire détectée sur cette machine. */
+  recommande: boolean
+  compatible: boolean
+}
+
+export interface ProgressionModele {
+  id: string
+  recuOctets: number
+  totalOctets: number
+  etat: 'en-cours' | 'verification' | 'termine' | 'erreur' | 'annule'
+  message?: string
+}
+
+export interface EtatModeles {
+  ramGo: number
+  vramGo: number
+  modeles: ModeleEmbarqueEtat[]
+  /** Téléchargement en cours (ou dernier état connu pendant celui-ci). */
+  telechargement: ProgressionModele | null
+}
+
+/** Méthodes requête/réponse, implémentées par le service du process principal. */
+export interface ApiService {
   /** Ouvre le sélecteur de fichier (PDF/DOCX), extrait le profil et l'enregistre. `null` si annulé. */
   importerCv(): Promise<ProfilEnregistre | null>
   obtenirProfil(): Promise<ProfilEnregistre | null>
@@ -49,6 +78,17 @@ export interface ApiReCV {
   exporterCv(cv: CvAdapte, format: FormatExport): Promise<string | null>
   /** Chaîne vide : supprime la clé. */
   definirCleApi(cle: string): Promise<EtatParametres>
+  lireEtatModeles(): Promise<EtatModeles>
+  /** Résout quand le fichier est téléchargé, vérifié et sélectionné dans les paramètres. */
+  telechargerModele(id: string): Promise<void>
+  annulerTelechargement(): Promise<void>
+  supprimerModele(id: string): Promise<void>
+}
+
+/** API complète vue par le renderer. */
+export interface ApiReCV extends ApiService {
+  /** Retourne la fonction de désabonnement. */
+  surProgressionModele(rappel: (progression: ProgressionModele) => void): () => void
 }
 
 export const entreesIpc = {
@@ -60,4 +100,5 @@ export const entreesIpc = {
   texte: z.string().min(1).max(200_000),
   url: z.string().min(1).max(2_048),
   cle: z.string().max(1_024),
+  idModele: z.string().min(1).max(64),
 }

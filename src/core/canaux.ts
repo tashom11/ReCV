@@ -12,6 +12,11 @@ export const CANAUX = {
   enregistrerParametres: 'parametres:enregistrer',
   definirCleApi: 'parametres:definir-cle',
   exporterCv: 'cv:exporter',
+  lireEtatModeles: 'modeles:etat',
+  telechargerModele: 'modeles:telecharger',
+  annulerTelechargement: 'modeles:annuler',
+  supprimerModele: 'modeles:supprimer',
+  progressionModele: 'modeles:progression',
 } as const
 
 /** Enveloppe sérialisable : les erreurs traversent l'IPC avec un message lisible. */

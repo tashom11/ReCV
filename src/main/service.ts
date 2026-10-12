@@ -1,11 +1,12 @@
 import { writeFile } from 'node:fs/promises'
-import type { ApiReCV, CvGenere, EtatParametres, Parametres, ProfilEnregistre } from '@core/api'
+import type { ApiService, CvGenere, EtatModeles, EtatParametres, Parametres, ProfilEnregistre } from '@core/api'
 import { construireModele, genererDocxCv, genererHtmlCv, nomFichierCv } from '@core/export'
 import { creerFournisseurApi, creerFournisseurOllama, type FournisseurLLM } from '@core/llm'
 import { recupererOffre } from '@core/offre'
 import type { Offre, Profil } from '@core/schemas'
 import type { Bdd } from './bdd/connexion'
 import { enregistrerCv, enregistrerOffre, enregistrerProfil, obtenirProfilActif } from './bdd/depots'
+import type { GestionnaireModeles } from './modeles/gestionnaire'
 import type { StockageParametres } from './parametres'
 
 export interface DependancesService {
@@ -15,6 +16,7 @@ export interface DependancesService {
   choisirEtLireCv: () => Promise<string | null>
   /** Repli de rendu navigateur pour les offres en JS. */
   rendreHtml: (url: string) => Promise<string>
+  modeles: GestionnaireModeles
   /** Sélecteur d'enregistrement : chemin choisi, ou `null` si annulé. */
   choisirDestination: (nomParDefaut: string, extension: 'pdf' | 'docx') => Promise<string | null>
   /** Rend le HTML en PDF (fenêtre cachée côté Electron). */
@@ -40,8 +42,8 @@ async function fournisseurParDefaut(parametres: Parametres, cleApi: string | nul
 }
 
 /** Logique des handlers IPC, sans dépendance directe à Electron (testable). */
-export function creerService(deps: DependancesService): ApiReCV {
-  const { bdd, parametres, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf } = deps
+export function creerService(deps: DependancesService): ApiService {
+  const { bdd, parametres, modeles, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf } = deps
   const creer = deps.creerFournisseur ?? fournisseurParDefaut
 
   const fournisseur = async () => creer(await parametres.lire(), await parametres.lireCle())
@@ -90,5 +92,10 @@ export function creerService(deps: DependancesService): ApiReCV {
     lireParametres: (): Promise<EtatParametres> => parametres.etat(),
     enregistrerParametres: (p: Parametres) => parametres.enregistrer(p),
     definirCleApi: (cle: string) => parametres.definirCle(cle),
+
+    lireEtatModeles: (): Promise<EtatModeles> => modeles.etat(),
+    telechargerModele: (id: string) => modeles.telecharger(id),
+    annulerTelechargement: async () => modeles.annuler(),
+    supprimerModele: (id: string) => modeles.supprimer(id),
   }
 }
