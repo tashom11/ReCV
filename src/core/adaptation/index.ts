@@ -1,5 +1,6 @@
-export * from './classement'
+export * from './composition'
 export * from './motsCles'
+export * from './pertinence'
 export * from './pipeline'
 export * from './reecriture'
 export * from './texte'
