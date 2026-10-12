@@ -1,7 +1,23 @@
 import type { Offre } from '../schemas/offre'
 import { extraireOffreDepuisHtml } from './extraction'
 
-export type CodeErreurOffre = 'url-invalide' | 'reseau' | 'http' | 'contenu-non-html' | 'contenu-vide'
+export type CodeErreurOffre = 'url-invalide' | 'reseau' | 'http' | 'contenu-non-html' | 'contenu-vide' | 'site-protege'
+
+// Sites qui servent un défi anti-robot ou exigent une connexion : inutile d'insister, on guide l'utilisateur.
+const SITES_PROTEGES: { motif: RegExp; nom: string }[] = [
+  { motif: /(^|\.)indeed\.[a-z.]+$/i, nom: 'Indeed' },
+  { motif: /(^|\.)linkedin\.com$/i, nom: 'LinkedIn' },
+  { motif: /(^|\.)glassdoor\.[a-z.]+$/i, nom: 'Glassdoor' },
+]
+
+function erreurSiteProtege(hote: string): ErreurRecuperationOffre | null {
+  const site = SITES_PROTEGES.find((s) => s.motif.test(hote))
+  if (!site) return null
+  return new ErreurRecuperationOffre(
+    'site-protege',
+    `${site.nom} protège ses pages contre les accès automatiques : ouvre l’offre dans ton navigateur, copie son texte, puis colle-le ici.`,
+  )
+}
 
 /** Erreur claire : l'UI doit proposer à l'utilisateur de coller le texte de l'offre. */
 export class ErreurRecuperationOffre extends Error {
@@ -122,5 +138,9 @@ export async function recupererOffre(urlBrute: string, options: OptionsRecuperat
     }
   }
 
-  throw erreurFetch ?? new ErreurRecuperationOffre('contenu-vide', `${MESSAGE_COLLER} (aucun texte trouvé sur la page)`)
+  throw (
+    erreurSiteProtege(url.hostname) ??
+    erreurFetch ??
+    new ErreurRecuperationOffre('contenu-vide', `${MESSAGE_COLLER} (aucun texte trouvé sur la page)`)
+  )
 }
