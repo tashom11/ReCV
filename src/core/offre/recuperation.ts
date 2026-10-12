@@ -20,6 +20,8 @@ export interface OptionsRecuperation {
   /** Repli pour les pages rendues en JS : retourne le HTML après rendu (fourni par `src/main`). */
   rendreHtml?: (url: string) => Promise<string>
   delaiMs?: number
+  /** User-Agent à présenter : beaucoup de sites refusent (401/403) l'agent par défaut de Node. */
+  userAgent?: string
 }
 
 const MESSAGE_COLLER = 'Impossible de récupérer cette offre automatiquement. Colle le texte de l’offre à la place.'
@@ -34,13 +36,22 @@ function validerUrl(brute: string): URL {
   throw new ErreurRecuperationOffre('url-invalide', 'Adresse invalide : une URL http(s) est attendue.')
 }
 
-async function telechargerHtml(url: URL, fetchImpl: typeof fetch, delaiMs: number): Promise<string> {
+async function telechargerHtml(
+  url: URL,
+  fetchImpl: typeof fetch,
+  delaiMs: number,
+  userAgent?: string,
+): Promise<string> {
   let reponse: Response
   try {
     reponse = await fetchImpl(url, {
       redirect: 'follow',
       signal: AbortSignal.timeout(delaiMs),
-      headers: { Accept: 'text/html,application/xhtml+xml', 'Accept-Language': 'fr,en;q=0.8' },
+      headers: {
+        Accept: 'text/html,application/xhtml+xml',
+        'Accept-Language': 'fr,en;q=0.8',
+        ...(userAgent ? { 'User-Agent': userAgent } : {}),
+      },
     })
   } catch {
     throw new ErreurRecuperationOffre('reseau', `${MESSAGE_COLLER} (site injoignable)`)
@@ -90,12 +101,12 @@ async function lireTexteBorne(reponse: Response): Promise<string> {
  * par rendu navigateur si la page est vide. Lève toujours `ErreurRecuperationOffre`.
  */
 export async function recupererOffre(urlBrute: string, options: OptionsRecuperation = {}): Promise<Offre> {
-  const { fetchImpl = fetch, rendreHtml, delaiMs = 15_000 } = options
+  const { fetchImpl = fetch, rendreHtml, delaiMs = 15_000, userAgent } = options
   const url = validerUrl(urlBrute)
 
   let erreurFetch: ErreurRecuperationOffre | undefined
   try {
-    const offre = extraireOffreDepuisHtml(await telechargerHtml(url, fetchImpl, delaiMs))
+    const offre = extraireOffreDepuisHtml(await telechargerHtml(url, fetchImpl, delaiMs, userAgent))
     if (offre) return offre
   } catch (e) {
     if (!(e instanceof ErreurRecuperationOffre)) throw e
