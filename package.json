@@ -16,10 +16,14 @@
     "test:watch": "vitest",
     "lint": "biome check .",
     "format": "biome format --write .",
+    "essai": "tsx scripts/essai.ts",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^3.0.67",
+    "ai": "^7.0.137",
     "mammoth": "^1.13.0",
+    "node-llama-cpp": "^3.22.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "unpdf": "^1.8.1",
@@ -35,6 +39,7 @@
     "electron": "^44.7.0",
     "electron-vite": "^5.0.0",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^7.3.7",
     "vitest": "^5.0.4"
