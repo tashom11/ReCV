@@ -1,0 +1,41 @@
+# ⚠️ Pas de « : » dans productName/artifactName (interdit dans les noms de fichiers Windows,
+# et Electron en dérive le dossier userData). Le nom affiché « Re:CV » vit dans les titres de l'UI.
+appId: org.recv.app
+productName: ReCV
+copyright: Re:CV contributors
+
+directories:
+  output: release
+  buildResources: build
+
+files:
+  - out/**
+  - package.json
+
+# Modules natifs / binaires : doivent rester hors de l'archive asar pour être chargés.
+asarUnpack:
+  - node_modules/better-sqlite3/**
+  - node_modules/node-llama-cpp/**
+  - node_modules/@node-llama-cpp/**
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: ReCV-Setup-${version}.${ext}
+  # Signature : voir le workflow .github/workflows/release.yml (étape SignPath commentée).
+  # Une fois un certificat obtenu, renseigner ici `signtoolOptions` ou signer via SignPath.
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+  shortcutName: ReCV
+
+# Mises à jour : electron-updater lit les releases GitHub de ce dépôt.
+publish:
+  provider: github
+  owner: tashom11
+  repo: recv
+  releaseType: release
