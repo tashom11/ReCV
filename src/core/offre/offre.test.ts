@@ -78,6 +78,24 @@ describe('recupererOffre', () => {
     })
   })
 
+  it('explique clairement qu’un site protégé (Indeed, LinkedIn…) demande de coller le texte', async () => {
+    const fetchImpl = vi.fn(async () => reponseHtml('', { status: 403 })) as unknown as typeof fetch
+    const rendreHtml = vi.fn(async () => HTML_VIDE_JS)
+    for (const url of ['https://fr.indeed.com/viewjob?jk=abc', 'https://www.linkedin.com/jobs/view/1']) {
+      await expect(recupererOffre(url, { fetchImpl, rendreHtml })).rejects.toMatchObject({
+        code: 'site-protege',
+        message: expect.stringMatching(/protège ses pages.*colle-le ici/),
+      })
+    }
+  })
+
+  it('ne confond pas un site quelconque avec un site protégé', async () => {
+    const fetchImpl = vi.fn(async () => reponseHtml('', { status: 403 })) as unknown as typeof fetch
+    await expect(recupererOffre('https://exemple-indeedlike.test/offre', { fetchImpl })).rejects.toMatchObject({
+      code: 'http',
+    })
+  })
+
   it('signale une erreur réseau', async () => {
     const fetchImpl = vi.fn(async () => {
       throw new TypeError('fetch failed')
