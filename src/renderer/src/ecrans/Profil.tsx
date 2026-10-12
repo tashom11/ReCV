@@ -40,6 +40,14 @@ export function EcranProfil({
   useEffect(() => setBrouillon(profil), [profil])
 
   const importer = async () => {
+    if (
+      brouillon &&
+      !window.confirm(
+        'Importer un autre CV remplace le profil affiché (ton ancien profil reste sauvegardé dans la base, mais n’est plus modifiable ici). Continuer ?',
+      )
+    ) {
+      return
+    }
     setOccupe(true)
     setErreur(null)
     setMessage(null)

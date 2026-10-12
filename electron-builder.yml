@@ -33,9 +33,19 @@ nsis:
   deleteAppDataOnUninstall: false
   shortcutName: ReCV
 
+# Fuses Electron : durcissent le binaire livré (pas d'usage comme interpréteur Node, pas d'inspecteur,
+# application chargée uniquement depuis l'asar vérifié).
+electronFuses:
+  runAsNode: false
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableCookieEncryption: true
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+
 # Mises à jour : electron-updater lit les releases GitHub de ce dépôt.
 publish:
   provider: github
   owner: tashom11
-  repo: recv
+  repo: ReCV
   releaseType: release

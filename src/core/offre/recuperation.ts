@@ -52,7 +52,37 @@ async function telechargerHtml(url: URL, fetchImpl: typeof fetch, delaiMs: numbe
   if (type && !/html|xml/i.test(type)) {
     throw new ErreurRecuperationOffre('contenu-non-html', `${MESSAGE_COLLER} (contenu non HTML)`)
   }
-  return reponse.text()
+  return lireTexteBorne(reponse)
+}
+
+/** Une page d'offre légitime pèse quelques centaines de Ko : au-delà, on refuse plutôt que de tout charger. */
+export const TAILLE_MAX_PAGE_OCTETS = 5 * 1024 * 1024
+
+async function lireTexteBorne(reponse: Response): Promise<string> {
+  const trop = () => new ErreurRecuperationOffre('contenu-non-html', `${MESSAGE_COLLER} (page trop volumineuse)`)
+  const annonce = Number(reponse.headers.get('content-length'))
+  if (annonce > TAILLE_MAX_PAGE_OCTETS) throw trop()
+  if (!reponse.body) return reponse.text()
+
+  const lecteur = reponse.body.getReader()
+  const morceaux: Uint8Array[] = []
+  let total = 0
+  try {
+    for (;;) {
+      const { done, value } = await lecteur.read()
+      if (done) break
+      total += value.byteLength
+      if (total > TAILLE_MAX_PAGE_OCTETS) {
+        await lecteur.cancel()
+        throw trop()
+      }
+      morceaux.push(value)
+    }
+  } catch (e) {
+    if (e instanceof ErreurRecuperationOffre) throw e
+    throw new ErreurRecuperationOffre('reseau', `${MESSAGE_COLLER} (lecture interrompue)`)
+  }
+  return Buffer.concat(morceaux).toString('utf8')
 }
 
 /**

@@ -19,4 +19,8 @@ export class FournisseurStructure implements FournisseurLLM {
   adapterCv(profil: Profil, offre: Offre): Promise<CvAdapte> {
     return adapterCv(this.moteur, profil, offre)
   }
+
+  async liberer(): Promise<void> {
+    await this.moteur.liberer?.()
+  }
 }

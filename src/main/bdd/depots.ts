@@ -9,6 +9,20 @@ export function obtenirProfilActif(bdd: Bdd): { id: number; profil: Profil } | n
   return ligne ? { id: ligne.id, profil: ligne.donnees } : null
 }
 
+/** Nouveau profil actif : les profils précédents (et les CV générés à partir d'eux) restent intacts. */
+export function creerProfil(bdd: Bdd, profil: Profil): { id: number; profil: Profil } {
+  const [cree] = bdd.insert(profils).values({ donnees: profil }).returning({ id: profils.id }).all()
+  if (!cree) throw new Error('Échec de l’enregistrement du profil')
+  return { id: cree.id, profil }
+}
+
+/** Efface toutes les données personnelles (ordre imposé par les clés étrangères). */
+export function effacerDonnees(bdd: Bdd): void {
+  bdd.delete(cvGeneres).run()
+  bdd.delete(offres).run()
+  bdd.delete(profils).run()
+}
+
 /** Met à jour le profil actif s'il existe, sinon le crée. */
 export function enregistrerProfil(bdd: Bdd, profil: Profil): { id: number; profil: Profil } {
   const actif = obtenirProfilActif(bdd)

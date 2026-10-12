@@ -18,10 +18,16 @@ function enveloppe(erreur: unknown): ResultatIpc<never> {
  * Branche l'API sur ipcMain. Chaque entrée du renderer est revalidée par Zod :
  * le renderer n'est jamais considéré comme fiable.
  */
-export function enregistrerHandlers(ipcMain: IpcMain, api: ApiService): void {
+export function enregistrerHandlers(
+  ipcMain: IpcMain,
+  api: ApiService,
+  /** Reçoit l'URL de la frame appelante ; refuse tout ce qui n'est pas l'interface de l'application. */
+  expediteurAutorise: (url: string) => boolean = () => true,
+): void {
   const gerer = (canal: string, traitement: (...args: unknown[]) => Promise<unknown>) => {
-    ipcMain.handle(canal, async (_evenement, ...args): Promise<ResultatIpc<unknown>> => {
+    ipcMain.handle(canal, async (evenement, ...args): Promise<ResultatIpc<unknown>> => {
       try {
+        if (!expediteurAutorise(evenement.senderFrame?.url ?? '')) throw new Error('Appel IPC refusé.')
         return { ok: true, valeur: await traitement(...args) }
       } catch (erreur) {
         return enveloppe(erreur)
@@ -44,5 +50,6 @@ export function enregistrerHandlers(ipcMain: IpcMain, api: ApiService): void {
   gerer(CANAUX.telechargerModele, (id) => api.telechargerModele(analyser(entreesIpc.idModele, id)))
   gerer(CANAUX.annulerTelechargement, () => api.annulerTelechargement())
   gerer(CANAUX.supprimerModele, (id) => api.supprimerModele(analyser(entreesIpc.idModele, id)))
+  gerer(CANAUX.effacerDonnees, () => api.effacerDonnees())
   gerer(CANAUX.definirCleApi, (cle) => api.definirCleApi(analyser(entreesIpc.cle, cle)))
 }

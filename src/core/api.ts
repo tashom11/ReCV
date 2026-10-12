@@ -6,14 +6,46 @@ import { type CvAdapte, cvAdapteSchema, type Offre, offreSchema, type Profil, pr
 
 // Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
 
+const HOTES_LOCAUX = new Set(['localhost', '127.0.0.1', '[::1]'])
+
+function analyserUrl(valeur: string): URL | null {
+  try {
+    const url = new URL(valeur)
+    const http = url.protocol === 'http:' || url.protocol === 'https:'
+    return http && !url.username && !url.password ? url : null
+  } catch {
+    return null
+  }
+}
+
+// Une URL de service est une destination de données personnelles (et de la clé API) : on la valide.
+const urlService = z
+  .string()
+  .max(2048)
+  .refine((v) => analyserUrl(v) !== null, 'Adresse invalide : une URL http(s) sans identifiants est attendue.')
+
+const urlApiSure = urlService.refine((v) => {
+  const url = analyserUrl(v)
+  return url !== null && (url.protocol === 'https:' || HOTES_LOCAUX.has(url.hostname))
+}, 'L’adresse de l’API doit être en https (http n’est accepté que pour localhost).')
+
 export const parametresSchema = z.object({
   fournisseur: z.enum(['ollama', 'api', 'local']).default('local'),
-  modeleOllama: z.string().default('qwen3:8b'),
-  urlOllama: z.string().default('http://localhost:11434/v1'),
-  urlApi: z.string().default('https://api.openai.com/v1'),
-  modeleApi: z.string().default(''),
-  cheminModeleLocal: z.string().optional(),
+  modeleOllama: z.string().max(200).default('qwen3:8b'),
+  urlOllama: urlService.default('http://localhost:11434/v1'),
+  urlApi: urlApiSure.default('https://api.openai.com/v1'),
+  modeleApi: z.string().max(200).default(''),
+  cheminModeleLocal: z
+    .string()
+    .max(1024)
+    .refine((v) => v === '' || v.toLowerCase().endsWith('.gguf'), 'Le modèle local doit être un fichier .gguf.')
+    .optional(),
 })
+
+/** Origine (schéma + hôte + port) d'une URL de service, pour détecter un changement de destination. */
+export function origineUrl(valeur: string): string | null {
+  return analyserUrl(valeur)?.origin ?? null
+}
 export type Parametres = z.infer<typeof parametresSchema>
 
 export interface EtatParametres extends Parametres {
@@ -83,6 +115,8 @@ export interface ApiService {
   telechargerModele(id: string): Promise<void>
   annulerTelechargement(): Promise<void>
   supprimerModele(id: string): Promise<void>
+  /** Supprime profil, offres, CV générés et clé API. Les paramètres et modèles sont conservés. */
+  effacerDonnees(): Promise<void>
 }
 
 /** API complète vue par le renderer. */
@@ -91,11 +125,17 @@ export interface ApiReCV extends ApiService {
   surProgressionModele(rappel: (progression: ProgressionModele) => void): () => void
 }
 
+// Bornes de taille : le renderer n'est pas fiable (les schémas métier eux-mêmes ne sont pas bornés,
+// car ils valident aussi les sorties du LLM).
+const TAILLE_MAX_JSON = 500_000
+const borne = <T extends z.ZodType>(schema: T) =>
+  schema.refine((v) => JSON.stringify(v).length <= TAILLE_MAX_JSON, 'Données trop volumineuses.')
+
 export const entreesIpc = {
-  cv: cvAdapteSchema,
+  cv: borne(cvAdapteSchema),
   format: z.enum(['pdf', 'docx']),
-  profil: profilSchema,
-  offre: offreSchema,
+  profil: borne(profilSchema),
+  offre: borne(offreSchema),
   parametres: parametresSchema,
   texte: z.string().min(1).max(200_000),
   url: z.string().min(1).max(2_048),
