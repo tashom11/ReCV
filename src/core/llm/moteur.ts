@@ -12,4 +12,6 @@ export interface RequeteObjet<T> {
 // Les prompts et les étapes d'adaptation sont écrits une seule fois au-dessus de cette interface.
 export interface MoteurLLM {
   genererObjet<T>(requete: RequeteObjet<T>): Promise<T>
+  /** Libère les ressources natives, si le moteur en détient. */
+  liberer?(): Promise<void>
 }

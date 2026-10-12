@@ -1,6 +1,6 @@
 import { join } from 'node:path'
 import { CANAUX } from '@core/canaux'
-import { app, BrowserWindow, ipcMain, safeStorage, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, safeStorage, session, shell } from 'electron'
 import { ouvrirBdd } from './bdd/connexion'
 import { choisirEtLireCv } from './cv'
 import { choisirDestination, genererPdf } from './export'
@@ -11,6 +11,14 @@ import { detecterRessources } from './modeles/ressources'
 import { rendreHtml } from './offre/rendu'
 import { StockageParametres } from './parametres'
 import { creerService } from './service'
+
+const URL_DEV = process.env.ELECTRON_RENDERER_URL
+
+// Seule l'interface de l'application peut appeler l'IPC (dev : serveur Vite ; installée : fichier local).
+function expediteurAutorise(url: string): boolean {
+  if (!app.isPackaged && URL_DEV) return url.startsWith(new URL(URL_DEV).origin)
+  return url.startsWith('file://')
+}
 
 function creerFenetre(): void {
   const fenetre = new BrowserWindow({
@@ -29,15 +37,19 @@ function creerFenetre(): void {
 
   fenetre.on('ready-to-show', () => fenetre.show())
 
+  // L'interface ne navigue jamais ailleurs que sur elle-même.
+  fenetre.webContents.on('will-navigate', (evenement, url) => {
+    if (!expediteurAutorise(url)) evenement.preventDefault()
+  })
+
   // Les liens externes s'ouvrent dans le navigateur, jamais dans l'app.
   fenetre.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https://')) void shell.openExternal(url)
     return { action: 'deny' }
   })
 
-  const urlDev = process.env.ELECTRON_RENDERER_URL
-  if (!app.isPackaged && urlDev) {
-    void fenetre.loadURL(urlDev)
+  if (!app.isPackaged && URL_DEV) {
+    void fenetre.loadURL(URL_DEV)
   } else {
     void fenetre.loadFile(join(__dirname, '../renderer/index.html'))
   }
@@ -45,6 +57,9 @@ function creerFenetre(): void {
 
 app.whenReady().then(() => {
   app.setAppUserModelId('org.recv.app')
+  // Electron accorde les permissions (caméra, micro, géolocalisation…) par défaut : l'app n'en a besoin d'aucune.
+  session.defaultSession.setPermissionRequestHandler((_contenu, _permission, rappel) => rappel(false))
+  session.defaultSession.setPermissionCheckHandler(() => false)
   const donnees = app.getPath('userData')
   const bdd = ouvrirBdd(join(donnees, 'recv.db'))
   const parametres = new StockageParametres(donnees, {
@@ -65,10 +80,25 @@ app.whenReady().then(() => {
       await parametres.enregistrer({ ...(await parametres.lire()), cheminModeleLocal: chemin })
     },
   })
-  enregistrerHandlers(
-    ipcMain,
-    creerService({ bdd, parametres, modeles, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf }),
-  )
+  const service = creerService({
+    bdd,
+    parametres,
+    modeles,
+    choisirEtLireCv,
+    rendreHtml,
+    choisirDestination,
+    genererPdf,
+  })
+  enregistrerHandlers(ipcMain, service, expediteurAutorise)
+
+  // Libère proprement le modèle local (mémoire native) avant de quitter.
+  let liberation = false
+  app.on('before-quit', (evenement) => {
+    if (liberation) return
+    evenement.preventDefault()
+    liberation = true
+    void service.liberer().finally(() => app.quit())
+  })
 
   creerFenetre()
   verifierMisesAJour()

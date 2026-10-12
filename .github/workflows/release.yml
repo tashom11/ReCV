@@ -12,9 +12,12 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      # Actions épinglées par empreinte de commit (et non par tag modifiable).
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 24
           cache: npm
@@ -38,11 +41,11 @@ jobs:
       # Quand le projet sera accepté sur SignPath (https://signpath.org, gratuit pour l'open source) :
       #   1. Publier l'installeur non signé comme artefact de workflow :
       #        - run: npx electron-builder --win --publish never
-      #        - uses: actions/upload-artifact@v4
+      #        - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       #          id: installeur
       #          with: { name: installeur, path: release/*.exe }
       #   2. Le faire signer :
-      #        - uses: signpath/github-action-submit-signing-request@v1
+      #        - uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # v1
       #          with:
       #            api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
       #            organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}

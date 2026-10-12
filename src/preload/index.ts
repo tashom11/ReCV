@@ -24,6 +24,7 @@ const api: ApiReCV = {
   telechargerModele: (id) => appeler(CANAUX.telechargerModele, id),
   annulerTelechargement: () => appeler(CANAUX.annulerTelechargement),
   supprimerModele: (id) => appeler(CANAUX.supprimerModele, id),
+  effacerDonnees: () => appeler(CANAUX.effacerDonnees),
   surProgressionModele: (rappel) => {
     const ecouteur = (_e: IpcRendererEvent, progression: ProgressionModele) => rappel(progression)
     ipcRenderer.on(CANAUX.progressionModele, ecouteur)

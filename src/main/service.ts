@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import type { ApiService, CvGenere, EtatModeles, EtatParametres, Parametres, ProfilEnregistre } from '@core/api'
 import { construireModele, genererDocxCv, genererHtmlCv, nomFichierCv } from '@core/export'
@@ -5,7 +6,14 @@ import { creerFournisseurApi, creerFournisseurOllama, type FournisseurLLM } from
 import { recupererOffre } from '@core/offre'
 import type { Offre, Profil } from '@core/schemas'
 import type { Bdd } from './bdd/connexion'
-import { enregistrerCv, enregistrerOffre, enregistrerProfil, obtenirProfilActif } from './bdd/depots'
+import {
+  creerProfil,
+  effacerDonnees,
+  enregistrerCv,
+  enregistrerOffre,
+  enregistrerProfil,
+  obtenirProfilActif,
+} from './bdd/depots'
 import type { GestionnaireModeles } from './modeles/gestionnaire'
 import type { StockageParametres } from './parametres'
 
@@ -42,18 +50,46 @@ async function fournisseurParDefaut(parametres: Parametres, cleApi: string | nul
 }
 
 /** Logique des handlers IPC, sans dépendance directe à Electron (testable). */
-export function creerService(deps: DependancesService): ApiService {
+export function creerService(deps: DependancesService): ApiService & { liberer(): Promise<void> } {
   const { bdd, parametres, modeles, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf } = deps
   const creer = deps.creerFournisseur ?? fournisseurParDefaut
 
-  const fournisseur = async () => creer(await parametres.lire(), await parametres.lireCle())
+  // Un seul fournisseur vivant, réutilisé tant que les paramètres (et la clé) ne changent pas :
+  // le modèle local pèse plusieurs Go et ne doit être chargé qu'une fois, puis libéré.
+  let courant: { empreinte: string; promesse: Promise<FournisseurLLM> } | null = null
+
+  const liberer = async (entree: typeof courant) => {
+    const ancien = await entree?.promesse.catch(() => null)
+    await ancien?.liberer?.()
+  }
+
+  const fournisseur = async (): Promise<FournisseurLLM> => {
+    const [params, cleApi] = await Promise.all([parametres.lire(), parametres.lireCle()])
+    const empreinte = createHash('sha256')
+      .update(JSON.stringify([params, cleApi]))
+      .digest('hex')
+    if (courant?.empreinte !== empreinte) {
+      const ancien = courant
+      courant = null
+      await liberer(ancien)
+      const promesse = creer(params, cleApi)
+      const entree = { empreinte, promesse }
+      courant = entree
+      // Une création en échec ne reste pas en cache : le prochain appel réessaie.
+      promesse.catch(() => {
+        if (courant === entree) courant = null
+      })
+    }
+    if (!courant) throw new Error('Fournisseur indisponible')
+    return courant.promesse
+  }
 
   return {
     async importerCv(): Promise<ProfilEnregistre | null> {
       const texte = await choisirEtLireCv()
       if (texte === null) return null
       const profil = await (await fournisseur()).extraireProfil(texte)
-      return enregistrerProfil(bdd, profil)
+      return creerProfil(bdd, profil)
     },
 
     async obtenirProfil() {
@@ -92,6 +128,13 @@ export function creerService(deps: DependancesService): ApiService {
     lireParametres: (): Promise<EtatParametres> => parametres.etat(),
     enregistrerParametres: (p: Parametres) => parametres.enregistrer(p),
     definirCleApi: (cle: string) => parametres.definirCle(cle),
+
+    async effacerDonnees() {
+      effacerDonnees(bdd)
+      await parametres.definirCle('')
+    },
+
+    liberer: () => liberer(courant),
 
     lireEtatModeles: (): Promise<EtatModeles> => modeles.etat(),
     telechargerModele: (id: string) => modeles.telecharger(id),

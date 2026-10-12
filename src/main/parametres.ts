@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { type EtatParametres, type Parametres, parametresSchema } from '@core/api'
+import { type EtatParametres, origineUrl, type Parametres, parametresSchema } from '@core/api'
 
 /** Abstraction de `safeStorage` d'Electron (injectable pour les tests). */
 export interface Chiffreur {
@@ -41,8 +41,13 @@ export class StockageParametres {
   }
 
   async enregistrer(parametres: Parametres): Promise<EtatParametres> {
+    const valides = parametresSchema.parse(parametres)
+    // La clé est liée à la destination : si l'adresse de l'API change d'origine, elle est supprimée,
+    // pour qu'une modification des paramètres ne puisse pas rediriger la clé vers un autre serveur.
+    const precedente = (await this.lire()).urlApi
+    if (origineUrl(precedente) !== origineUrl(valides.urlApi)) await rm(this.fichierCle, { force: true })
     await mkdir(this.dossier, { recursive: true })
-    await writeFile(this.fichierParametres, JSON.stringify(parametresSchema.parse(parametres), null, 2))
+    await writeFile(this.fichierParametres, JSON.stringify(valides, null, 2))
     return this.etat()
   }
 

@@ -41,12 +41,16 @@ export function EcranParametres() {
 
   const maj = (partiel: Partial<Parametres>) => setEtat({ ...etat, ...partiel })
 
-  const executer = async (action: () => Promise<EtatParametres>, confirmation: string) => {
+  const executer = async (
+    action: () => Promise<EtatParametres>,
+    confirmation: string | ((etat: EtatParametres) => string),
+  ) => {
     setErreur(null)
     setMessage(null)
     try {
-      setEtat(await action())
-      setMessage(confirmation)
+      const resultat = await action()
+      setEtat(resultat)
+      setMessage(typeof confirmation === 'function' ? confirmation(resultat) : confirmation)
     } catch (e) {
       setErreur(messageErreur(e))
     }
@@ -54,7 +58,14 @@ export function EcranParametres() {
 
   const enregistrer = () => {
     const { cleApiDefinie: _ignore, ...parametres } = etat
-    return executer(() => window.api.enregistrerParametres(parametres), 'Paramètres enregistrés.')
+    const avaitUneCle = etat.cleApiDefinie
+    return executer(
+      () => window.api.enregistrerParametres(parametres),
+      (apres) =>
+        avaitUneCle && !apres.cleApiDefinie
+          ? 'Paramètres enregistrés. L’adresse de l’API a changé : la clé a été supprimée par sécurité, saisis-la à nouveau.'
+          : 'Paramètres enregistrés.',
+    )
   }
 
   return (
@@ -152,6 +163,25 @@ export function EcranParametres() {
           </div>
         </Carte>
       )}
+
+      <Carte titre="Mes données">
+        <p className="text-xs text-slate-600">
+          Profil, offres, CV générés et clé API sont stockés uniquement sur cet ordinateur. Tu peux tout effacer ; les
+          paramètres et les modèles téléchargés sont conservés.
+        </p>
+        <Bouton
+          variante="danger"
+          onClick={() => {
+            if (!window.confirm('Effacer définitivement ton profil, tes offres, tes CV générés et ta clé API ?')) return
+            executer(async () => {
+              await window.api.effacerDonnees()
+              return window.api.lireParametres()
+            }, 'Toutes tes données ont été effacées. Recharge l’application pour repartir de zéro.')
+          }}
+        >
+          Effacer toutes mes données
+        </Bouton>
+      </Carte>
     </div>
   )
 }

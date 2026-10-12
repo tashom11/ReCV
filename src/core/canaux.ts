@@ -17,6 +17,7 @@ export const CANAUX = {
   annulerTelechargement: 'modeles:annuler',
   supprimerModele: 'modeles:supprimer',
   progressionModele: 'modeles:progression',
+  effacerDonnees: 'donnees:effacer',
 } as const
 
 /** Enveloppe sérialisable : les erreurs traversent l'IPC avec un message lisible. */

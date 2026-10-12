@@ -10,6 +10,8 @@ import { Alerte } from './ui'
 type Ecran = 'profil' | 'offre' | 'diff' | 'parametres'
 
 interface Resultat {
+  /** Profil au moment de la génération : les indices des expériences doivent correspondre. */
+  profil: Profil
   offre: Offre
   genere: CvGenere
 }
@@ -87,16 +89,16 @@ export default function App() {
           <EcranOffre
             profilPresent={profil !== null}
             onResultat={(offre, genere) => {
-              setResultat({ offre, genere })
+              if (profil) setResultat({ profil, offre, genere })
               setCvValide(null)
               setEcran('diff')
             }}
           />
         )}
-        {ecran === 'diff' && resultat && profil && (
+        {ecran === 'diff' && resultat && (
           <EcranDiff
             key={resultat.genere.id}
-            profil={profil}
+            profil={resultat.profil}
             offre={resultat.offre}
             adapte={resultat.genere.cv}
             onValider={setCvValide}

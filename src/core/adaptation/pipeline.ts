@@ -2,7 +2,7 @@ import type { MoteurLLM } from '../llm/moteur'
 import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
 import { classerExperiences } from './classement'
 import { analyserOffre, restreindreAnalyse } from './motsCles'
-import { reecrireExperience } from './reecriture'
+import { pointFidele, reecrireExperience } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
 import { redigerTitreAccroche } from './titreAccroche'
 
@@ -31,6 +31,16 @@ function texteProfil(profil: Profil): string {
   ].join('\n')
 }
 
+// Source de vérification de l'accroche et du titre : tout ce que le profil affirme, dates et lieux compris.
+function texteVerification(profil: Profil): string {
+  return [
+    texteProfil(profil),
+    ...profil.experiences.flatMap((e) => [e.entreprise, e.lieu ?? '', e.periode ?? '']),
+    ...profil.formations.flatMap((f) => [f.etablissement, f.lieu ?? '', f.periode ?? '', f.description ?? '']),
+    ...profil.langues.map((l) => `${l.nom} ${l.niveau ?? ''}`),
+  ].join('\n')
+}
+
 // Enchaîne les étapes : mots-clés → classement → réécriture expérience par expérience → titre + accroche.
 // Les faits (postes, entreprises, dates, formations, langues, compétences) sont recopiés du profil, jamais générés.
 export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre): Promise<CvAdapte> {
@@ -52,12 +62,20 @@ export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre)
     })
   }
 
-  const { titre, accroche } = await redigerTitreAccroche(
+  const redige = await redigerTitreAccroche(
     moteur,
     profil,
     experiences,
     restreindreAnalyse(analyse, texteProfil(profil)),
   )
+  // Garde-fou en code (le prompt seul ne suffit pas, notamment face à une offre piégée) : un titre ou une
+  // accroche qui cite un terme de l'offre absent du profil ou un nombre inconnu est remplacé par l'original.
+  const source = texteVerification(profil)
+  const termesAbsents = [...analyse.motsCles, ...analyse.competencesRequises].filter(
+    (terme) => !contientMot(normaliser(source), normaliser(terme)),
+  )
+  const titre = pointFidele(redige.titre, source, termesAbsents) ? redige.titre : (profil.titrePoste ?? '')
+  const accroche = pointFidele(redige.accroche, source, termesAbsents) ? redige.accroche : (profil.accroche ?? '')
   return cvAdapteSchema.parse({
     titre,
     accroche,
