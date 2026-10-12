@@ -2,6 +2,7 @@ import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain, safeStorage, shell } from 'electron'
 import { ouvrirBdd } from './bdd/connexion'
 import { choisirEtLireCv } from './cv'
+import { choisirDestination, genererPdf } from './export'
 import { enregistrerHandlers } from './ipc'
 import { rendreHtml } from './offre/rendu'
 import { StockageParametres } from './parametres'
@@ -47,7 +48,10 @@ app.whenReady().then(() => {
     chiffrer: (texte) => safeStorage.encryptString(texte),
     dechiffrer: (buffer) => safeStorage.decryptString(buffer),
   })
-  enregistrerHandlers(ipcMain, creerService({ bdd, parametres, choisirEtLireCv, rendreHtml }))
+  enregistrerHandlers(
+    ipcMain,
+    creerService({ bdd, parametres, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf }),
+  )
 
   creerFenetre()
   app.on('activate', () => {

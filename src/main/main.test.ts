@@ -68,6 +68,8 @@ describe('service', () => {
       parametres,
       choisirEtLireCv: async () => 'texte du cv',
       rendreHtml: async () => '',
+      choisirDestination: async (nom, extension) => join(dossier, nom.replace(/.w+$/, `.${extension}`)),
+      genererPdf: async (html) => Buffer.from(`%PDF-fake ${html.length}`),
       creerFournisseur: async (p, cle) => {
         recu = { parametres: p, cle }
         return new FournisseurMock()
@@ -87,6 +89,18 @@ describe('service', () => {
     const genere = await api.adapterCv(offre)
     expect(genere.cv.titre).toBeTruthy()
     expect(genere.id).toBeGreaterThan(0)
+  })
+
+  it('exporte le CV validé en PDF et DOCX avec les coordonnées du profil', async () => {
+    const { api } = service()
+    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { titrePoste: 'Dev', texteBrut: 'x' })
+    await expect(api.exporterCv(cvCanned, 'pdf')).rejects.toThrow(/importe d’abord/)
+    await api.importerCv()
+    const pdf = await api.exporterCv(cvCanned, 'pdf')
+    const docx = await api.exporterCv(cvCanned, 'docx')
+    expect(pdf).toMatch(/CV-Claire-Dubois.pdf$/)
+    expect((await readFile(pdf as string)).toString().startsWith('%PDF')).toBe(true)
+    expect((await readFile(docx as string)).subarray(0, 2).toString()).toBe('PK')
   })
 
   it('transmet les paramètres et la clé au fabricant de fournisseur', async () => {

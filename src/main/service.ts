@@ -1,4 +1,6 @@
+import { writeFile } from 'node:fs/promises'
 import type { ApiReCV, CvGenere, EtatParametres, Parametres, ProfilEnregistre } from '@core/api'
+import { construireModele, genererDocxCv, genererHtmlCv, nomFichierCv } from '@core/export'
 import { creerFournisseurApi, creerFournisseurOllama, type FournisseurLLM } from '@core/llm'
 import { recupererOffre } from '@core/offre'
 import type { Offre, Profil } from '@core/schemas'
@@ -13,6 +15,10 @@ export interface DependancesService {
   choisirEtLireCv: () => Promise<string | null>
   /** Repli de rendu navigateur pour les offres en JS. */
   rendreHtml: (url: string) => Promise<string>
+  /** Sélecteur d'enregistrement : chemin choisi, ou `null` si annulé. */
+  choisirDestination: (nomParDefaut: string, extension: 'pdf' | 'docx') => Promise<string | null>
+  /** Rend le HTML en PDF (fenêtre cachée côté Electron). */
+  genererPdf: (html: string) => Promise<Buffer>
   /** Surchargeable pour les tests (jamais d'appel LLM réel). */
   creerFournisseur?: (parametres: Parametres, cleApi: string | null) => Promise<FournisseurLLM>
 }
@@ -35,7 +41,7 @@ async function fournisseurParDefaut(parametres: Parametres, cleApi: string | nul
 
 /** Logique des handlers IPC, sans dépendance directe à Electron (testable). */
 export function creerService(deps: DependancesService): ApiReCV {
-  const { bdd, parametres, choisirEtLireCv, rendreHtml } = deps
+  const { bdd, parametres, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf } = deps
   const creer = deps.creerFournisseur ?? fournisseurParDefaut
 
   const fournisseur = async () => creer(await parametres.lire(), await parametres.lireCle())
@@ -68,6 +74,17 @@ export function creerService(deps: DependancesService): ApiReCV {
       const cv = await (await fournisseur()).adapterCv(actif.profil, offre)
       const offreId = enregistrerOffre(bdd, offre)
       return { id: enregistrerCv(bdd, actif.id, offreId, cv), offreId, cv }
+    },
+
+    async exporterCv(cv, format) {
+      const actif = obtenirProfilActif(bdd)
+      if (!actif) throw new Error('Aucun profil : importe d’abord ton CV.')
+      const modele = construireModele(actif.profil, cv)
+      const chemin = await choisirDestination(nomFichierCv(modele, format), format)
+      if (chemin === null) return null
+      const contenu = format === 'pdf' ? await genererPdf(genererHtmlCv(modele)) : await genererDocxCv(modele)
+      await writeFile(chemin, contenu)
+      return chemin
     },
 
     lireParametres: (): Promise<EtatParametres> => parametres.etat(),

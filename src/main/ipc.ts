@@ -37,5 +37,8 @@ export function enregistrerHandlers(ipcMain: IpcMain, api: ApiReCV): void {
   gerer(CANAUX.adapterCv, (offre) => api.adapterCv(analyser(entreesIpc.offre, offre)))
   gerer(CANAUX.lireParametres, () => api.lireParametres())
   gerer(CANAUX.enregistrerParametres, (p) => api.enregistrerParametres(analyser(entreesIpc.parametres, p)))
+  gerer(CANAUX.exporterCv, (cv, format) =>
+    api.exporterCv(analyser(entreesIpc.cv, cv), analyser(entreesIpc.format, format)),
+  )
   gerer(CANAUX.definirCleApi, (cle) => api.definirCleApi(analyser(entreesIpc.cle, cle)))
 }
