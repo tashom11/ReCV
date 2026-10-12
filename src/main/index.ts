@@ -8,7 +8,7 @@ import { enregistrerHandlers } from './ipc'
 import { verifierMisesAJour } from './miseAJour'
 import { GestionnaireModeles } from './modeles/gestionnaire'
 import { detecterRessources } from './modeles/ressources'
-import { rendreHtml } from './offre/rendu'
+import { rendreHtml, userAgentNavigateur } from './offre/rendu'
 import { StockageParametres } from './parametres'
 import { creerService } from './service'
 
@@ -86,6 +86,7 @@ app.whenReady().then(() => {
     modeles,
     choisirEtLireCv,
     rendreHtml,
+    userAgent: userAgentNavigateur(session.defaultSession.getUserAgent()),
     choisirDestination,
     genererPdf,
   })

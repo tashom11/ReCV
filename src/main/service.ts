@@ -24,6 +24,8 @@ export interface DependancesService {
   choisirEtLireCv: () => Promise<string | null>
   /** Repli de rendu navigateur pour les offres en JS. */
   rendreHtml: (url: string) => Promise<string>
+  /** User-Agent de navigateur utilisé pour récupérer les offres. */
+  userAgent?: string
   modeles: GestionnaireModeles
   /** Sélecteur d'enregistrement : chemin choisi, ou `null` si annulé. */
   choisirDestination: (nomParDefaut: string, extension: 'pdf' | 'docx') => Promise<string | null>
@@ -100,7 +102,7 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       return enregistrerProfil(bdd, profil)
     },
 
-    recupererOffre: (url: string) => recupererOffre(url, { rendreHtml }),
+    recupererOffre: (url: string) => recupererOffre(url, { rendreHtml, userAgent: deps.userAgent }),
 
     async analyserTexteOffre(texte: string): Promise<Offre> {
       return (await fournisseur()).extraireOffre(texte)

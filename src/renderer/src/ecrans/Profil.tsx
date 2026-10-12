@@ -1,6 +1,6 @@
 import type { Experience, Formation, Langue, Profil } from '@core/schemas'
 import { useEffect, useState } from 'react'
-import { Alerte, Bouton, Carte, Champ, messageErreur, Titre } from '../ui'
+import { Alerte, Bouton, Carte, Champ, messageErreur, Selection, Titre } from '../ui'
 
 const lignes = (texte: string) => texte.split('\n')
 const nettoyer = (valeurs: string[]) => valeurs.map((v) => v.trim()).filter(Boolean)
@@ -13,6 +13,25 @@ function nettoyerProfil(profil: Profil): Profil {
     competences: nettoyer(profil.competences),
     experiences: profil.experiences.map((e) => ({ ...e, realisations: nettoyer(e.realisations) })),
   }
+}
+
+// Niveaux du CECRL. La valeur enregistrée est celle qui apparaît sur le CV (« Anglais (C1) »).
+const NIVEAUX_LANGUE = [
+  { valeur: '', libelle: 'Niveau non précisé' },
+  { valeur: 'Langue maternelle', libelle: 'Langue maternelle' },
+  { valeur: 'C2', libelle: 'C2 — Maîtrise' },
+  { valeur: 'C1', libelle: 'C1 — Autonome, courant' },
+  { valeur: 'B2', libelle: 'B2 — Intermédiaire supérieur' },
+  { valeur: 'B1', libelle: 'B1 — Intermédiaire' },
+  { valeur: 'A2', libelle: 'A2 — Élémentaire' },
+  { valeur: 'A1', libelle: 'A1 — Débutant' },
+]
+
+// Conserve un niveau déjà présent (ex. « Courant » extrait d'un CV) même s'il n'est pas dans la liste.
+function optionsNiveau(courant: string) {
+  return courant && !NIVEAUX_LANGUE.some((n) => n.valeur === courant)
+    ? [...NIVEAUX_LANGUE, { valeur: courant, libelle: courant }]
+    : NIVEAUX_LANGUE
 }
 
 const experienceVide = (): Experience => ({ poste: '', entreprise: '', realisations: [] })
@@ -237,9 +256,10 @@ export function EcranProfil({
                   valeur={langue.nom}
                   onChange={(v) => maj({ langues: remplacer(brouillon.langues, i, { ...langue, nom: v }) })}
                 />
-                <Champ
+                <Selection
                   etiquette="Niveau"
                   valeur={langue.niveau ?? ''}
+                  options={optionsNiveau(langue.niveau ?? '')}
                   onChange={(v) => maj({ langues: remplacer(brouillon.langues, i, { ...langue, niveau: v }) })}
                 />
               </div>

@@ -45,6 +45,31 @@ export function Champ({
   )
 }
 
+export function Selection({
+  etiquette,
+  valeur,
+  onChange,
+  options,
+}: {
+  etiquette: string
+  valeur: string
+  onChange: (valeur: string) => void
+  options: { valeur: string; libelle: string }[]
+}) {
+  return (
+    <label className="block space-y-1">
+      <span className="text-xs font-medium text-slate-600">{etiquette}</span>
+      <select className={BASE_CHAMP} value={valeur} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => (
+          <option key={o.valeur} value={o.valeur}>
+            {o.libelle}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 export function Bouton({
   children,
   onClick,
