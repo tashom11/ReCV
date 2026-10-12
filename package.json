@@ -21,7 +21,9 @@
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.67",
+    "@mozilla/readability": "^0.6.0",
     "ai": "^7.0.137",
+    "linkedom": "^0.18.13",
     "mammoth": "^1.13.0",
     "node-llama-cpp": "^3.22.1",
     "react": "^19.3.0",

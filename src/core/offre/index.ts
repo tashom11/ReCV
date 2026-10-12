@@ -1,2 +1,7 @@
-// Phase 1+ : à implémenter.
-export {}
+export { extraireOffreDepuisHtml, LONGUEUR_MIN_TEXTE } from './extraction'
+export {
+  type CodeErreurOffre,
+  ErreurRecuperationOffre,
+  type OptionsRecuperation,
+  recupererOffre,
+} from './recuperation'
