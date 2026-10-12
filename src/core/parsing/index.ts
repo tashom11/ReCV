@@ -1,2 +1,2 @@
-// Phase 1+ : à implémenter.
-export {}
+export * from './docx'
+export * from './pdf'

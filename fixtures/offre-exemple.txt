@@ -1,0 +1,25 @@
+Développeur·se Front-end React (H/F)
+Société Gamma — Lyon (possibilité de télétravail partiel)
+
+À propos du poste
+
+Nous recherchons un·e développeur·se front-end expérimenté·e pour renforcer notre équipe
+produit. Vous travaillerez sur une application React/TypeScript utilisée par des milliers
+d'utilisateurs au quotidien.
+
+Missions
+
+- Développer de nouvelles fonctionnalités sur notre application React/TypeScript
+- Participer à la mise en place de tests automatisés
+- Collaborer avec les équipes design et back-end
+- Contribuer à l'amélioration continue des performances de l'application
+
+Profil recherché
+
+- Expérience significative en développement front-end (React, TypeScript)
+- Connaissance des bonnes pratiques de tests automatisés
+- Bon niveau d'anglais pour échanger avec les équipes internationales
+
+Conditions
+
+CDI, statut cadre, basé à Lyon.
