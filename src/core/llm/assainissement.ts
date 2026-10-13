@@ -1,0 +1,82 @@
+import { type Profil, profilSchema } from '../schemas'
+
+// Un modèle qui extrait un CV peut inventer des entrées (une « expérience » faite d'une ligne « Permis B –
+// Disponibilité immédiate »), ou en créer à partir d'une simple compétence. Ce contrôle en code garde uniquement
+// ce qui est attesté dans le texte du CV.
+
+/** Minuscules sans accents ni ligatures. */
+function simplifier(texte: string): string {
+  return texte
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+}
+
+/** Texte réduit à ses lettres et chiffres : insensible aux espaces, tirets, retours à la ligne de l'extraction PDF. */
+function compacter(texte: string): string {
+  return simplifier(texte).replace(/[^\p{L}\p{N}]/gu, '')
+}
+
+function motsSignificatifs(valeur: string): string[] {
+  return simplifier(valeur).match(/[\p{L}\p{N}]{3,}/gu) ?? []
+}
+
+/** Vrai si au moins 75 % des mots significatifs de `valeur` figurent dans le CV (vrai si rien à vérifier). */
+function presentDansSource(valeur: string | undefined, sourceCompacte: string): boolean {
+  const mots = motsSignificatifs(valeur ?? '')
+  if (mots.length === 0) return true
+  return mots.filter((mot) => sourceCompacte.includes(mot)).length / mots.length >= 0.75
+}
+
+const vide = (valeur: string | undefined) => !valeur || valeur.trim() === ''
+
+/**
+ * Retire du profil extrait ce qui n'est pas attesté dans `texteCv` :
+ * - expérience sans entreprise ni période (poste fantôme, ligne diverse prise pour une expérience), ou dont le
+ *   poste ou l'entreprise n'apparaît pas dans le CV ;
+ * - formation, langue, compétence, e-mail ou téléphone absents du CV ;
+ * - doublons et valeurs vides.
+ */
+export function assainirProfil(profil: Profil, texteCv: string): Profil {
+  const source = compacter(texteCv)
+  const chiffresSource = texteCv.replace(/\D/g, '')
+
+  // Doublons (casse et accents ignorés) : la première occurrence est conservée.
+  const vues = new Set<string>()
+  const competences = profil.competences
+    .map((c) => c.trim())
+    .filter((c) => c !== '' && presentDansSource(c, source))
+    .filter((c) => {
+      const cle = simplifier(c)
+      if (vues.has(cle)) return false
+      vues.add(cle)
+      return true
+    })
+
+  const emailAttesté = !vide(profil.email) && source.includes(compacter(profil.email ?? ''))
+  const chiffresTel = (profil.telephone ?? '').replace(/\D/g, '')
+  const telAttesté = chiffresTel.length >= 6 && chiffresSource.includes(chiffresTel)
+
+  return profilSchema.parse({
+    ...profil,
+    nom: presentDansSource(profil.nom, source) ? profil.nom : undefined,
+    email: emailAttesté ? profil.email : undefined,
+    telephone: telAttesté ? profil.telephone : undefined,
+    titrePoste: presentDansSource(profil.titrePoste, source) ? profil.titrePoste : undefined,
+    experiences: profil.experiences.filter(
+      (e) =>
+        !vide(e.poste) &&
+        (!vide(e.entreprise) || !vide(e.periode)) &&
+        presentDansSource(e.poste, source) &&
+        presentDansSource(e.entreprise, source),
+    ),
+    formations: profil.formations.filter(
+      (f) =>
+        (!vide(f.diplome) || !vide(f.etablissement)) &&
+        presentDansSource(f.diplome, source) &&
+        presentDansSource(f.etablissement, source),
+    ),
+    langues: profil.langues.filter((l) => !vide(l.nom) && presentDansSource(l.nom, source)),
+    competences,
+  })
+}
