@@ -82,7 +82,8 @@ export class MoteurLocal implements MoteurLLM {
     const chargement = (async () => {
       // Import dynamique : node-llama-cpp est ESM avec top-level await (incompatible avec require).
       const { getLlama } = await import('node-llama-cpp')
-      const llama = await getLlama()
+      // Repli processeur : instance SANS backend GPU, pour que ni les poids ni le cache de contexte ne réclament de VRAM.
+      const llama = await getLlama(surCpu ? { gpu: false } : undefined)
       // GPU : autant de couches que possible TOUT EN laissant la place d'un contexte de CONTEXTE_CIBLE jetons.
       const modele = await llama.loadModel({
         modelPath: this.cheminModele,
