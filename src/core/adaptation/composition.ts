@@ -1,4 +1,5 @@
 import type { CvAdapte, Profil } from '../schemas'
+import { eclaterCompetences, estCompetenceCourte, formaterCompetence } from './competences'
 
 /** Décisions de l'utilisateur sur l'écran de vérification. */
 export interface ChoixComposition {
@@ -34,15 +35,20 @@ export function composerCv(profil: Profil, adapte: CvAdapte, choix: ChoixComposi
     (a, b) => (a.indice ?? Number.MAX_SAFE_INTEGER) - (b.indice ?? Number.MAX_SAFE_INTEGER),
   )
 
-  const base = choix.competences ? adapte.competences : profil.competences
+  // Sans sélection adaptée : toutes les compétences du profil, mais jamais ses phrases d'activités.
+  const base = choix.competences
+    ? adapte.competences
+    : eclaterCompetences(profil.competences).filter(estCompetenceCourte)
   const competences = [
     ...base,
     ...adapte.ecartes.competences.filter((c, i) => choix.reintegrer.competences[i] && !base.includes(c)),
-    // Déclarées par l'utilisateur : c'est lui qui atteste, pas le modèle.
-    ...adapte.demandees.manquantes.filter(
-      (c, i) => choix.ajouterDemandees[i] && !base.some((b) => b.toLowerCase() === c.toLowerCase()),
-    ),
   ]
+  // Demandées par l'offre et déclarées par l'utilisateur : c'est lui qui atteste, pas le modèle. Elles rejoignent
+  // les compétences clés, avec la formulation de l'offre.
+  const declarees = adapte.demandees.manquantes.filter((_, i) => choix.ajouterDemandees[i]).map(formaterCompetence)
+  const competencesCles = [...adapte.competencesCles, ...declarees].filter(
+    (c, i, tous) => tous.findIndex((u) => u.toLowerCase() === c.toLowerCase()) === i,
+  )
 
   const rang = (diplome: string, etablissement: string) => {
     const i = profil.formations.findIndex((f) => f.diplome === diplome && f.etablissement === etablissement)
@@ -57,6 +63,7 @@ export function composerCv(profil: Profil, adapte: CvAdapte, choix: ChoixComposi
     ...adapte,
     titre: choix.titre ? adapte.titre : (profil.titrePoste ?? adapte.titre),
     accroche: choix.accroche ? adapte.accroche : (profil.accroche ?? adapte.accroche),
+    competencesCles,
     competences,
     experiences,
     formations,
@@ -77,6 +84,7 @@ export function choixInitial(adapte: CvAdapte): ChoixComposition {
       competences: adapte.ecartes.competences.map(() => false),
       formations: adapte.ecartes.formations.map(() => false),
     },
-    ajouterDemandees: adapte.demandees.manquantes.map(() => false),
+    // Cochées par défaut pour que le CV colle à l'offre ; l'utilisateur décoche ce qu'il ne maîtrise pas.
+    ajouterDemandees: adapte.demandees.manquantes.map(() => true),
   }
 }

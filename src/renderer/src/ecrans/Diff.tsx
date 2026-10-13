@@ -30,6 +30,14 @@ function Garder({ actif, onChange, etiquette }: { actif: boolean; onChange: (v: 
   )
 }
 
+// Qualification de la correspondance entre l'offre et le CV (part des compétences demandées présentes).
+function niveauCorrespondance(presentes: number, total: number): { ratio: number; libelle: string } {
+  const ratio = total === 0 ? 0 : presentes / total
+  const libelle =
+    ratio >= 0.6 ? 'Bonne correspondance' : ratio >= 0.3 ? 'Correspondance partielle' : 'Correspondance faible'
+  return { ratio, libelle }
+}
+
 const remplacer = <T,>(liste: T[], indice: number, valeur: T) => liste.map((x, i) => (i === indice ? valeur : x))
 
 export function EcranDiff({
@@ -60,6 +68,10 @@ export function EcranDiff({
   )
 
   const { ecartes } = adapte
+  const nbDemandees = adapte.demandees.attestees.length + adapte.demandees.manquantes.length
+  const declarees = choix.ajouterDemandees.filter(Boolean).length
+  const correspondanceProfil = niveauCorrespondance(adapte.demandees.attestees.length, nbDemandees)
+  const correspondanceCv = niveauCorrespondance(adapte.demandees.attestees.length + declarees, nbDemandees)
   const nbEcartes = ecartes.experiences.length + ecartes.competences.length + ecartes.formations.length
 
   const exporter = async (format: FormatExport) => {
@@ -154,7 +166,21 @@ export function EcranDiff({
       <Carte titre="Compétences">
         <Colonnes
           avant={<p className="text-sm text-slate-800">{profil.competences.join(', ') || '—'}</p>}
-          apres={<p className="text-sm text-slate-800">{adapte.competences.join(', ') || '—'}</p>}
+          apres={
+            <div className="space-y-1 text-sm text-slate-800">
+              {cvFinal.competencesCles.length > 0 && (
+                <p>
+                  <span className="font-medium">Compétences clés :</span> {cvFinal.competencesCles.join(', ')}
+                </p>
+              )}
+              {cvFinal.competences.length > 0 && (
+                <p>
+                  <span className="font-medium">Autres :</span> {cvFinal.competences.join(', ')}
+                </p>
+              )}
+              {cvFinal.competencesCles.length + cvFinal.competences.length === 0 && <p>—</p>}
+            </div>
+          }
         />
         <Garder
           actif={choix.competences}
@@ -163,17 +189,33 @@ export function EcranDiff({
         />
       </Carte>
 
-      {(adapte.demandees.attestees.length > 0 || adapte.demandees.manquantes.length > 0) && (
+      {nbDemandees > 0 && (
         <Carte titre="Compétences demandées par l’offre">
-          <p className="text-xs text-slate-600">
-            C’est ce que le recruteur (ou son logiciel de tri) cherche en premier. Seules celles que ton profil atteste
-            sont mises en avant automatiquement.
-          </p>
+          <div className="space-y-2 rounded-md bg-slate-50 p-3">
+            <p className="text-sm font-medium text-slate-900">
+              {correspondanceCv.libelle}{' '}
+              <span className="font-normal text-slate-600">
+                : {adapte.demandees.attestees.length + declarees} compétence
+                {adapte.demandees.attestees.length + declarees > 1 ? 's' : ''} demandée
+                {adapte.demandees.attestees.length + declarees > 1 ? 's' : ''} sur {nbDemandees} dans ce CV
+              </span>
+            </p>
+            <div className="h-2 overflow-hidden rounded bg-slate-200" aria-hidden="true">
+              <div
+                className="h-full bg-emerald-500 transition-all"
+                style={{ width: `${Math.round(correspondanceCv.ratio * 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-slate-600">
+              Ton profil seul en contient {adapte.demandees.attestees.length} sur {nbDemandees}
+              {correspondanceProfil.ratio < 0.4 ? ' : cette offre s’éloigne de ton parcours.' : '.'}
+            </p>
+          </div>
 
           {adapte.demandees.attestees.length > 0 && (
             <div className="space-y-1">
               <p className="text-xs font-medium text-emerald-700">
-                Déjà dans ton profil ({adapte.demandees.attestees.length})
+                Déjà dans ton profil ({adapte.demandees.attestees.length}) : mises en avant en tête du CV
               </p>
               <div className="flex flex-wrap gap-2">
                 {adapte.demandees.attestees.map((c) => (
@@ -188,12 +230,27 @@ export function EcranDiff({
           {adapte.demandees.manquantes.length > 0 && (
             <div className="space-y-2">
               <p className="text-xs font-medium text-amber-800">
-                Demandées mais absentes de ton profil ({adapte.demandees.manquantes.length})
+                Demandées mais absentes de ton profil ({adapte.demandees.manquantes.length}) : ajoutées à ce CV si
+                cochées
               </p>
-              <p className="text-xs text-slate-600">
-                Coche uniquement ce que tu maîtrises réellement : ces compétences seront ajoutées à ce CV (pas à ton
-                profil).
-              </p>
+              <Alerte type="avertissement">
+                Pour coller à l’offre, elles sont cochées par défaut. Décoche celles que tu ne maîtrises pas : garde
+                uniquement ce que tu pourras défendre en entretien. Elles sont ajoutées à ce CV, pas à ton profil.
+              </Alerte>
+              <div className="flex gap-2">
+                <Bouton
+                  variante="secondaire"
+                  onClick={() => setChoix((x) => ({ ...x, ajouterDemandees: x.ajouterDemandees.map(() => true) }))}
+                >
+                  Tout cocher
+                </Bouton>
+                <Bouton
+                  variante="secondaire"
+                  onClick={() => setChoix((x) => ({ ...x, ajouterDemandees: x.ajouterDemandees.map(() => false) }))}
+                >
+                  Tout décocher
+                </Bouton>
+              </div>
               <div className="flex flex-wrap gap-x-5 gap-y-1">
                 {adapte.demandees.manquantes.map((c, i) => (
                   <Garder

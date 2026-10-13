@@ -33,6 +33,8 @@ export const cvAdapteSchema = z.object({
   titre: z.string(),
   accroche: z.string(),
   experiences: z.array(experienceAdapteeSchema).default([]),
+  /** Compétences demandées par l'offre que le profil atteste (ou que l'utilisateur déclare) : en tête du CV. */
+  competencesCles: z.array(z.string()).default([]),
   competences: z.array(z.string()).default([]),
   formations: z.array(formationSchema).default([]),
   langues: z.array(langueSchema).default([]),

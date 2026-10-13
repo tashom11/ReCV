@@ -1,3 +1,4 @@
+import { separerCompetences } from '../adaptation/competences'
 import type { CvAdapte, Profil } from '../schemas'
 
 // Modèle intermédiaire unique : le PDF (HTML) et le DOCX en sont deux rendus,
@@ -39,11 +40,19 @@ export function construireModele(profil: Profil, cv: CvAdapte): CvModele {
     sections.push({ titre: TITRES_SECTIONS.profil, blocs: [{ type: 'paragraphe', texte: cv.accroche.trim() }] })
   }
 
-  const competences = cv.competences.filter(nonVide)
-  if (competences.length > 0) {
+  // Compétences en trois lignes étiquetées, lisibles par un humain comme par un ATS :
+  // compétences clés (celles de l'offre), savoir-être, outils et techniques.
+  const cles = cv.competencesCles.filter(nonVide)
+  const { savoirEtre, techniques } = separerCompetences(cv.competences.filter(nonVide))
+  const lignes = [
+    { etiquette: 'Compétences clés', elements: cles },
+    { etiquette: 'Savoir-être', elements: savoirEtre },
+    { etiquette: 'Outils et techniques', elements: techniques },
+  ].filter((l) => l.elements.length > 0)
+  if (lignes.length > 0) {
     sections.push({
       titre: TITRES_SECTIONS.competences,
-      blocs: [{ type: 'paragraphe', texte: competences.join(', ') }],
+      blocs: lignes.map((l) => ({ type: 'paragraphe' as const, texte: `${l.etiquette} : ${l.elements.join(', ')}` })),
     })
   }
 
