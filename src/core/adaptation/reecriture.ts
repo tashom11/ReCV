@@ -66,6 +66,17 @@ export function selectionnerPoints(experience: Experience, termes: string[], max
   return origine.filter((_, rang) => retenus.has(rang))
 }
 
+/** Puces d'origine qui recoupent au moins un terme de l'offre (les plus proches d'abord), au plus `max`. */
+export function pointsProchesOffre(experience: Experience, termes: string[], max: number): string[] {
+  const racinesOffre = new Set(termes.flatMap(racinesMots))
+  return pointsOrigine(experience)
+    .map((point, rang) => ({ point, rang, score: new Set(racinesMots(point).filter((r) => racinesOffre.has(r))).size }))
+    .filter((e) => e.score > 0)
+    .sort((a, b) => b.score - a.score || a.rang - b.rang)
+    .slice(0, max)
+    .map((e) => e.point)
+}
+
 // Étape 3 : réécriture d'UNE expérience (appelée expérience par expérience).
 export async function reecrireExperience(
   moteur: MoteurLLM,
