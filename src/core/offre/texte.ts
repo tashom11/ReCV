@@ -151,3 +151,32 @@ export function preparerTexteOffre(texte: string, max = LONGUEUR_MAX_ANALYSE): s
   const finLigne = coupe.lastIndexOf('\n')
   return (finLigne > max * 0.6 ? coupe.slice(0, finLigne) : coupe).trim()
 }
+
+// --- Intitulé d'offre → titre de CV --------------------------------------------------------------------
+
+const MARQUES_GENRE = /\s*[([]?\s*\b(?:[hfmwd]\s*[/.-]\s*){1,3}[hfmwdx]\b\s*[)\]]?/giu
+const MOTS_CONTRAT =
+  /^(?:cdi|cdd|stage|alternance|apprentissage|freelance|ind[ée]pendant|int[ée]rim|temps (?:plein|partiel)|full[ -]?time|part[ -]?time)\b/iu
+
+/**
+ * Intitulé d'offre prêt à servir de titre de CV : retire les mentions « (H/F) », le nom de l'entreprise et le type de
+ * contrat souvent accolés au titre (« Consultant SEO (H/F) - Eskimoz - CDI » → « Consultant SEO »).
+ */
+export function nettoyerTitreOffre(titre: string, entreprise?: string): string {
+  const sansGenre = titre.replace(MARQUES_GENRE, ' ')
+  const parties = sansGenre
+    .split(/\s+[-–—|]\s+/u)
+    // Espaces normalisés, parenthèses orphelines en bordure retirées (« (e) » au milieu d'un mot est conservé).
+    .map((p) =>
+      p
+        .replace(/\s+/g, ' ')
+        .replace(/^[-–—|\s()[\]]+|[-–—|\s([]+$/g, '')
+        .trim(),
+    )
+    .filter((p) => p !== '' && !/^[-–—|]+$/.test(p))
+  const societe = entreprise?.trim().toLowerCase()
+  const gardees = parties.filter(
+    (p, i) => i === 0 || (!MOTS_CONTRAT.test(p) && (societe === undefined || p.toLowerCase() !== societe)),
+  )
+  return gardees.join(' - ').trim() || titre.trim()
+}

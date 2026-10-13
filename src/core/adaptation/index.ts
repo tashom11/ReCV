@@ -1,5 +1,6 @@
 export * from './accrocheProfil'
 export * from './composition'
+export * from './couverture'
 export * from './motsCles'
 export * from './pertinence'
 export * from './pipeline'

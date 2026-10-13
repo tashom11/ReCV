@@ -1,6 +1,8 @@
 import type { OptionsAdaptation } from '../llm/fournisseur'
 import type { MoteurLLM } from '../llm/moteur'
+import { nettoyerTitreOffre } from '../offre/texte'
 import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
+import { analyserCouverture } from './couverture'
 import { analyserOffre, restreindreAnalyse } from './motsCles'
 import { evaluerPertinence, indicesConserves } from './pertinence'
 import { pointFidele, pointsOrigine, reecrireExperience, selectionnerPoints } from './reecriture'
@@ -190,21 +192,34 @@ export async function adapterCv(
     ...competencesEcartees,
     ...experiencesEcartees.flatMap((e) => [e.poste, e.entreprise]),
   ]
-  // Titre : jamais rédigé par le modèle. Titre d'origine du profil si rien n'est écarté ; sinon l'intitulé de
-  // l'expérience conservée la plus pertinente (la plus récente à pertinence égale).
+  // Titre : celui de l'offre visée (nettoyé de « H/F », du contrat et du nom de l'entreprise), comme le veut l'usage
+  // pour passer le premier tri. Jamais rédigé par le modèle. Repli : titre du profil, puis poste conservé le plus pertinent.
   const rang = (indice: number) => pertinence.experiences[indice] ?? 0
   const principale = [...experiences].sort((a, b) => rang(b.indice ?? 0) - rang(a.indice ?? 0))[0]
-  const titre = (aEcarte ? principale?.poste : (profil.titrePoste ?? principale?.poste)) ?? ''
+  const titre =
+    nettoyerTitreOffre(offre.titrePoste, offre.entreprise) ||
+    (aEcarte ? principale?.poste : (profil.titrePoste ?? principale?.poste)) ||
+    ''
   const proposee = borneAccroche(redige.accroche)
   const accrocheFidele =
     proposee !== '' && pointFidele(proposee, source, termesInterdits) && dureesFideles(proposee, source)
-  const accroche = accrocheFidele ? proposee : aEcarte ? '' : (profil.accroche ?? '')
+  // Compétences demandées par l'offre, rapprochées du profil. Celles que le profil atteste figurent déjà dans le
+  // CV (compétences ou expériences, que les ATS lisent en texte) ; les absentes sont seulement PROPOSÉES à
+  // l'utilisateur, qui coche celles qu'il maîtrise.
+  const couverture = analyserCouverture(profil, analyse)
+  // Repli si l'accroche du modèle est rejetée : une phrase composée des compétences demandées que le profil atteste.
+  const attesteesCourtes = couverture.attestees.filter((t) => t.split(/s+/).length <= 3).slice(0, 4)
+  const accrocheRepliOffre =
+    attesteesCourtes.length > 0 ? `Je mets en avant mes compétences en ${attesteesCourtes.join(', ')}.` : ''
+  const accroche = accrocheFidele ? proposee : aEcarte ? accrocheRepliOffre : (profil.accroche ?? accrocheRepliOffre)
+  const listees = prioriserCompetences(competencesGardees, termesOffre)
 
   return cvAdapteSchema.parse({
     titre,
     accroche,
     experiences,
-    competences: prioriserCompetences(competencesGardees, termesOffre),
+    competences: listees,
+    demandees: couverture,
     formations: formationsGardees,
     langues: profil.langues,
     ecartes: { experiences: experiencesEcartees, competences: competencesEcartees, formations: formationsEcartees },

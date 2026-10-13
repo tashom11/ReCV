@@ -70,8 +70,8 @@ describe('adapterCv', () => {
   it('produit un CvAdapte valide', async () => {
     const cv = await adapterCv(moteurTricheur(), profilCanned, offre)
     expect(() => cvAdapteSchema.parse(cv)).not.toThrow()
-    // Le titre n'est jamais rédigé par le modèle : c'est celui du profil.
-    expect(cv.titre).toBe(profilCanned.titrePoste)
+    // Le titre n'est jamais rédigé par le modèle : c'est l'intitulé de l'offre, débarrassé de « (H/F) ».
+    expect(cv.titre).toBe('Développeur·se Front-end React')
   })
 
   it('recopie postes, entreprises, lieux et périodes du profil, dans l’ordre du profil', async () => {

@@ -163,6 +163,52 @@ export function EcranDiff({
         />
       </Carte>
 
+      {(adapte.demandees.attestees.length > 0 || adapte.demandees.manquantes.length > 0) && (
+        <Carte titre="Compétences demandées par l’offre">
+          <p className="text-xs text-slate-600">
+            C’est ce que le recruteur (ou son logiciel de tri) cherche en premier. Seules celles que ton profil atteste
+            sont mises en avant automatiquement.
+          </p>
+
+          {adapte.demandees.attestees.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-emerald-700">
+                Déjà dans ton profil ({adapte.demandees.attestees.length})
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {adapte.demandees.attestees.map((c) => (
+                  <span key={c} className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs text-emerald-900">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {adapte.demandees.manquantes.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-amber-800">
+                Demandées mais absentes de ton profil ({adapte.demandees.manquantes.length})
+              </p>
+              <p className="text-xs text-slate-600">
+                Coche uniquement ce que tu maîtrises réellement : ces compétences seront ajoutées à ce CV (pas à ton
+                profil).
+              </p>
+              <div className="flex flex-wrap gap-x-5 gap-y-1">
+                {adapte.demandees.manquantes.map((c, i) => (
+                  <Garder
+                    key={c}
+                    actif={choix.ajouterDemandees[i] ?? false}
+                    onChange={(v) => setChoix((x) => ({ ...x, ajouterDemandees: remplacer(x.ajouterDemandees, i, v) }))}
+                    etiquette={`Je maîtrise « ${c} »`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </Carte>
+      )}
+
       {adapte.formations.length > 0 && (
         <Carte titre="Formations conservées">
           <ul className="space-y-1 text-sm text-slate-800">

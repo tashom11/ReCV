@@ -61,16 +61,15 @@ describe('adapterCv : titre, durées et compétences attestées', () => {
       accroche: { accroche },
     })
 
-  it('ne laisse jamais le modèle donner au CV le titre du poste visé', async () => {
+  it('le titre du CV est celui de l’offre, jamais rédigé par le modèle ; l’accroche ne s’en réclame pas', async () => {
     const cv = await adapterCv(moteur('Community Manager expérimenté.'), profil, offre)
-    expect(cv.titre).toBe('Développeur web front')
+    expect(cv.titre).toBe('Community Manager')
     expect(cv.accroche).toBe('')
   })
 
-  it('rejette une durée déduite des dates (« 1 an ») et garde le titre issu du profil', async () => {
+  it('rejette une durée déduite des dates (« 1 an »)', async () => {
     const cv = await adapterCv(moteur('Développeur web avec 1 an d’expérience en SEO.'), profil, offre)
     expect(cv.accroche).toBe('')
-    expect(cv.titre).toBe('Développeur web front')
   })
 
   it('accepte une accroche fidèle sans durée', async () => {
@@ -84,10 +83,14 @@ describe('adapterCv : titre, durées et compétences attestées', () => {
     expect(cv.ecartes.competences).toEqual(['PHP'])
   })
 
-  it('titre de repli : intitulé de l’expérience conservée la plus pertinente quand le profil n’a pas de titre', async () => {
-    const sansTitre: Profil = { ...profil, titrePoste: undefined }
-    const cv = await adapterCv(moteur('Développeur web front.'), sansTitre, offre)
-    expect(cv.titre).toBe('Développeur web front')
+  it('nettoie l’intitulé de l’offre (genre, entreprise, contrat) pour en faire le titre', async () => {
+    const offreBrute: Offre = {
+      titrePoste: 'Community Manager (H/F) - Inéa - CDD',
+      entreprise: 'Inéa',
+      texteBrut: offre.texteBrut,
+    }
+    const cv = await adapterCv(moteur('Développeur web front.'), profil, offreBrute)
+    expect(cv.titre).toBe('Community Manager')
   })
 })
 
@@ -122,7 +125,7 @@ describe('adapterCv : aucune expérience jugée pertinente', () => {
     const cv = await adapterCv(m, profil, offre)
     expect(cv.experiences.map((e) => e.entreprise)).toEqual(['Webagence'])
     expect(cv.ecartes.experiences.map((e) => e.entreprise)).toEqual(['Dupont'])
-    expect(cv.titre).toBe('Développeur web front')
+    expect(cv.titre).toBe('Community Manager')
   })
 
   it('garde tout si le choix est incohérent', async () => {
