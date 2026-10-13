@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { CANAUX } from '@core/canaux'
 import { app, BrowserWindow, ipcMain, safeStorage, session, shell } from 'electron'
@@ -20,8 +21,13 @@ function expediteurAutorise(url: string): boolean {
   return url.startsWith('file://')
 }
 
+// Icône de la fenêtre : en application installée, elle vient de l'exécutable (build/icon.ico) ; ce PNG sert
+// au mode développement, où l'exécutable est celui d'Electron.
+const CHEMIN_ICONE = join(__dirname, '../../build/icon.png')
+
 function creerFenetre(): void {
   const fenetre = new BrowserWindow({
+    ...(existsSync(CHEMIN_ICONE) ? { icon: CHEMIN_ICONE } : {}),
     width: 1200,
     height: 800,
     show: false,
