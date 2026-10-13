@@ -6,9 +6,11 @@ import { borneAccroche } from './pipeline'
 import { pointFidele } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
 
+// Bornes minimales : avec une grammaire JSON, un modèle peut sinon répondre par la sortie la plus courte
+// valide (« [] » et « "" »). `min` les exclut de la grammaire elle-même.
 export const accrocheProfilSchema = z.object({
-  competencesTransversales: z.array(z.string()).default([]),
-  accroche: z.string().default(''),
+  competencesTransversales: z.array(z.string().min(2)).min(1),
+  accroche: z.string().min(15),
 })
 
 const SYSTEME = `Tu es un expert en rédaction de CV.

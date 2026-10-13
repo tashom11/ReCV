@@ -68,7 +68,7 @@ describe('genererAccrocheProfil', () => {
   })
 
   it('signale clairement l’absence de compétence transversale', async () => {
-    const m = moteur({ competencesTransversales: ['Leadership'], accroche: 'Leader.' })
+    const m = moteur({ competencesTransversales: ['Leadership'], accroche: 'Leader inspirant et visionnaire.' })
     await expect(genererAccrocheProfil(m, profil)).rejects.toThrow(MESSAGE_AUCUNE_COMPETENCE)
   })
 })

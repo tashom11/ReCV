@@ -55,6 +55,8 @@ export function EcranProfil({
   const [brouillon, setBrouillon] = useState<Profil | null>(profil)
   const [occupe, setOccupe] = useState<'import' | 'enregistrement' | 'accroche' | null>(null)
   const progressionAccroche = useProgressionTache('accroche', occupe === 'accroche')
+  // Retour affiché sous le champ : le bandeau global est en haut de page, hors de vue quand on est au milieu du formulaire.
+  const [retourAccroche, setRetourAccroche] = useState<{ type: 'erreur' | 'succes'; texte: string } | null>(null)
   const progressionImport = useProgressionTache('import', occupe === 'import')
   const [erreur, setErreur] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -114,14 +116,16 @@ export function EcranProfil({
       return
     }
     setOccupe('accroche')
-    setErreur(null)
-    setMessage(null)
+    setRetourAccroche(null)
     try {
       const accroche = await window.api.genererAccroche(nettoyerProfil(brouillon))
       setBrouillon((p) => (p ? { ...p, accroche } : p))
-      setMessage('Accroche générée à partir de tes compétences transversales : relis-la et ajuste-la si besoin.')
+      setRetourAccroche({
+        type: 'succes',
+        texte: 'Accroche générée à partir de tes compétences transversales : relis-la et ajuste-la si besoin.',
+      })
     } catch (e) {
-      setErreur(messageErreur(e))
+      setRetourAccroche({ type: 'erreur', texte: messageErreur(e) })
     } finally {
       setOccupe(null)
     }
@@ -203,6 +207,7 @@ export function EcranProfil({
               L’accroche générée repose uniquement sur tes compétences transversales (rigueur, autonomie,
               organisation…), pas sur ton métier : elle reste valable pour toutes les offres.
             </p>
+            {retourAccroche && <Alerte type={retourAccroche.type}>{retourAccroche.texte}</Alerte>}
             {occupe === 'accroche' && (
               <Chargement
                 titre="Génération de l’accroche…"
