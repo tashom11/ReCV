@@ -192,3 +192,42 @@ describe('adapterCv : signalement des étapes', () => {
     expect(etapes.filter((e) => e.courant !== undefined).map((e) => `${e.courant}/${e.total}`)).toEqual(['1/2', '2/2'])
   })
 })
+
+describe('adapterCv : compétences composées', () => {
+  const profil: Profil = {
+    liensProfessionnels: [],
+    experiences: [
+      {
+        poste: 'Carrossier peintre',
+        entreprise: 'Dupont',
+        realisations: ['Gestion du diagnostic des dégâts', 'Ponçage'],
+      },
+    ],
+    competences: ['Gestion & créa. de landing pages', 'HTML / CSS', 'Rigueur'],
+    formations: [],
+    langues: [],
+  }
+  const offre: Offre = {
+    titrePoste: 'Carrossier peintre',
+    texteBrut: 'Gestion des véhicules confiés, ponçage, peinture. Rigueur exigée.',
+  }
+
+  it('ne valide pas « Gestion & créa. de landing pages » sur le seul mot « gestion »', async () => {
+    const m = new MoteurMock({
+      motsCles: { titreCible: 'Carrossier peintre', motsCles: ['ponçage'] },
+      pertinence: {
+        experiences: [{ indice: 0, pertinence: 2 }],
+        competences: [
+          { indice: 0, pertinence: 0 },
+          { indice: 1, pertinence: 0 },
+          { indice: 2, pertinence: 1 },
+        ],
+      },
+      reecriture: { points: [] },
+      accroche: { accroche: '' },
+    })
+    const cv = await adapterCv(m, profil, offre)
+    expect(cv.competences).toEqual(['Rigueur'])
+    expect(cv.ecartes.competences).toEqual(['Gestion & créa. de landing pages', 'HTML / CSS'])
+  })
+})
