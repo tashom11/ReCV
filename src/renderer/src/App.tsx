@@ -1,6 +1,7 @@
 import type { CvGenere } from '@core/api'
 import type { CvAdapte, Offre, Profil } from '@core/schemas'
 import { useEffect, useState } from 'react'
+import logo from './assets/logo.png'
 import { EcranDiff } from './ecrans/Diff'
 import { EcranOffre } from './ecrans/Offre'
 import { EcranParametres } from './ecrans/Parametres'
@@ -53,7 +54,10 @@ export default function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <nav className="sticky top-0 z-10 border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-4xl items-center gap-6 px-6">
-          <span className="py-3 text-base font-semibold text-indigo-600">Re:CV</span>
+          <span className="flex items-center gap-2 py-2 text-base font-semibold text-indigo-600">
+            <img src={logo} alt="" width={28} height={28} className="rounded-md" />
+            Re:CV
+          </span>
           {onglets.map((o) => (
             <button
               key={o.id}

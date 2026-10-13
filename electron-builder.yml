@@ -19,6 +19,7 @@ asarUnpack:
   - node_modules/@node-llama-cpp/**
 
 win:
+  icon: build/icon.ico
   target:
     - target: nsis
       arch: [x64]
