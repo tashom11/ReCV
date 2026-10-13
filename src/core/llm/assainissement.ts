@@ -1,5 +1,6 @@
 import { eclaterCompetences, estCompetenceCourte } from '../adaptation/competences'
 import { type Profil, profilSchema } from '../schemas'
+import { filtrerLiens } from '../schemas/liens'
 
 // Un modèle qui extrait un CV peut inventer des entrées (une « expérience » faite d'une ligne « Permis B –
 // Disponibilité immédiate »), ou en créer à partir d'une simple compétence. Ce contrôle en code garde uniquement
@@ -27,6 +28,12 @@ function presentDansSource(valeur: string | undefined, sourceCompacte: string): 
   const mots = motsSignificatifs(valeur ?? '')
   if (mots.length === 0) return true
   return mots.filter((mot) => sourceCompacte.includes(mot)).length / mots.length >= 0.75
+}
+
+/** Un « poste » identique à l'intitulé d'une formation est un diplôme rangé à tort dans les expériences. */
+function estDiplome(poste: string | undefined, formations: Profil['formations']): boolean {
+  const cle = compacter(poste ?? '')
+  return cle !== '' && formations.some((f) => compacter(f.diplome ?? '') === cle)
 }
 
 const vide = (valeur: string | undefined) => !valeur || valeur.trim() === ''
@@ -67,6 +74,7 @@ export function assainirProfil(profil: Profil, texteCv: string): Profil {
     experiences: profil.experiences.filter(
       (e) =>
         !vide(e.poste) &&
+        !estDiplome(e.poste, profil.formations) &&
         (!vide(e.entreprise) || !vide(e.periode)) &&
         presentDansSource(e.poste, source) &&
         presentDansSource(e.entreprise, source),
@@ -79,5 +87,6 @@ export function assainirProfil(profil: Profil, texteCv: string): Profil {
     ),
     langues: profil.langues.filter((l) => !vide(l.nom) && presentDansSource(l.nom, source)),
     competences,
+    liensProfessionnels: filtrerLiens(profil.liensProfessionnels),
   })
 }

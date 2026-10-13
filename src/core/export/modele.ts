@@ -1,5 +1,6 @@
 import { separerCompetences } from '../adaptation/competences'
 import type { CvAdapte, Profil } from '../schemas'
+import { filtrerLiens } from '../schemas/liens'
 
 // Modèle intermédiaire unique : le PDF (HTML) et le DOCX en sont deux rendus,
 // donc même ordre et mêmes titres de section standards (lus par les ATS).
@@ -32,6 +33,7 @@ export const TITRES_SECTIONS = {
 } as const
 
 const nonVide = (valeur: string | undefined): valeur is string => !!valeur?.trim()
+const cle = (valeur: string) => valeur.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
 const joindre = (...parties: (string | undefined)[]) => parties.filter(nonVide).join(', ')
 
 /** Les coordonnées viennent du profil (le CV adapté n'en contient pas). */
@@ -58,10 +60,13 @@ export function construireModele(profil: Profil, cv: CvAdapte): CvModele {
     })
   }
 
-  if (cv.experiences.length > 0) {
+  // Un diplôme déjà listé en formation n'est pas une expérience (profil enregistré avant le contrôle d'import).
+  const diplomes = new Set(cv.formations.map((f) => cle(f.diplome)))
+  const experiences = cv.experiences.filter((e) => !diplomes.has(cle(e.poste)))
+  if (experiences.length > 0) {
     sections.push({
       titre: TITRES_SECTIONS.experience,
-      blocs: cv.experiences.map((e) => ({
+      blocs: experiences.map((e) => ({
         type: 'entree' as const,
         intitule: e.poste,
         sousTitre: joindre(e.entreprise, e.lieu),
@@ -99,7 +104,9 @@ export function construireModele(profil: Profil, cv: CvAdapte): CvModele {
   return {
     nom: profil.nom?.trim() ?? '',
     titre: cv.titre.trim(),
-    contact: [profil.email, profil.telephone, profil.adresse, ...profil.liensProfessionnels].filter(nonVide),
+    contact: [profil.email, profil.telephone, profil.adresse, ...filtrerLiens(profil.liensProfessionnels)].filter(
+      nonVide,
+    ),
     photo: profil.photo,
     sections,
   }

@@ -50,6 +50,25 @@ describe('assainirProfil', () => {
     expect(assainirProfil(base, CV)).toEqual(base)
   })
 
+  it('ne garde pour liens que de vraies adresses web, pas des noms d’entreprises', () => {
+    const profil: Profil = {
+      ...base,
+      liensProfessionnels: ['Agence Pixel', 'Carrosserie Dupont', 'julien-moreau.exemple.dev', 'https://github.com/x'],
+    }
+    expect(assainirProfil(profil, CV).liensProfessionnels).toEqual(['julien-moreau.exemple.dev', 'https://github.com/x'])
+  })
+
+  it('retire un diplôme rangé à tort dans les expériences', () => {
+    const profil: Profil = {
+      ...base,
+      experiences: [
+        ...base.experiences,
+        { poste: 'BAC PRO', entreprise: 'Lycée Jean Moulin', periode: '2015', realisations: [] },
+      ],
+    }
+    expect(assainirProfil(profil, CV).experiences).toEqual(base.experiences)
+  })
+
   it('retire la « expérience » faite d’une ligne diverse (permis, disponibilité, site)', () => {
     const profil: Profil = {
       ...base,

@@ -86,10 +86,11 @@ export function GalerieModeles({
   return (
     <Carte titre="Modèle de CV">
       <p className="text-xs text-slate-600">
-        Choisis la mise en page avant d’exporter. Tous les modèles gardent une seule colonne et du vrai texte : ils
-        restent lisibles par les logiciels de recrutement.
+        Choisis la mise en page avant d’exporter. Tous les modèles gardent du vrai texte, sans tableau ni image de texte
+        : ils restent lisibles par les logiciels de recrutement. Les modèles à colonne latérale s’appliquent au PDF ; le
+        DOCX reste sur une seule colonne.
       </p>
-      <fieldset className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <fieldset className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <legend className="sr-only">Modèle de CV</legend>
         {MODELES_CV.map((m) => {
           const apercu = apercus[m.id]
