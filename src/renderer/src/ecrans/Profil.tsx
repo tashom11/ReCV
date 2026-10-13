@@ -129,8 +129,18 @@ export function EcranProfil({
       {brouillon && (
         <>
           <Carte titre="Identité">
+            {(brouillon.nom ?? '').trim() !== '' && !/s/.test((brouillon.nom ?? '').trim()) && (
+              <Alerte type="avertissement">
+                Un seul mot dans « Nom et prénom » : il manque peut-être ton prénom (il apparaît en tête du CV exporté).
+              </Alerte>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
-              <Champ etiquette="Nom" valeur={brouillon.nom ?? ''} onChange={(v) => maj({ nom: v })} />
+              <Champ
+                etiquette="Nom et prénom"
+                valeur={brouillon.nom ?? ''}
+                placeholder="Prénom NOM"
+                onChange={(v) => maj({ nom: v })}
+              />
               <Champ
                 etiquette="Titre du poste"
                 valeur={brouillon.titrePoste ?? ''}

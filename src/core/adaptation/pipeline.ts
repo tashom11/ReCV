@@ -12,11 +12,12 @@ const POINTS_PRIORITAIRES = 5
 const POINTS_SECONDAIRES = 3
 
 // Vrai si la compétence est citée dans les termes de l'offre (comparaison par mots entiers).
-// Une compétence composée (« WordPress / CMS », « HTML, CSS ») est citée dès que l'une de ses parties l'est.
+// Une liste d'outils (« WordPress / CMS », « HTML, CSS ») est citée dès que l'une de ses parties l'est.
+// On ne découpe que sur « / » et « , » : découper « Gestion & créa. de landing pages » sur « & » ferait
+// valider la compétence par le seul mot « gestion », présent dans presque toutes les offres.
 function competenceCitee(competence: string, termesNormalises: string[]): boolean {
-  const parties = normaliser(competence)
-    .split(/\s*[/,&+|]\s*/)
-    .filter((partie) => partie.length > 0)
+  const complete = normaliser(competence)
+  const parties = [complete, ...complete.split(/\s*[/,]\s*/)].filter((partie) => partie.length >= 3)
   return parties.some((c) => termesNormalises.some((terme) => contientMot(terme, c) || contientMot(c, terme)))
 }
 
