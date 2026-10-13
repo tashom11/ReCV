@@ -1,6 +1,6 @@
 import type { ApiReCV, ProgressionModele, ProgressionTache } from '@core/api'
 import { CANAUX, type ResultatIpc } from '@core/canaux'
-import { contextBridge, type IpcRendererEvent, ipcRenderer } from 'electron'
+import { contextBridge, type IpcRendererEvent, ipcRenderer, webUtils } from 'electron'
 
 // API typée exposée au renderer : uniquement ces méthodes, jamais ipcRenderer lui-même.
 async function appeler<T>(canal: string, ...args: unknown[]): Promise<T> {
@@ -11,11 +11,17 @@ async function appeler<T>(canal: string, ...args: unknown[]): Promise<T> {
 
 const api: ApiReCV = {
   importerCv: () => appeler(CANAUX.importerCv),
+  // Le chemin d'un fichier déposé n'est lisible qu'ici : le renderer ne transmet que l'objet File.
+  importerCvDepose: (fichier) => appeler(CANAUX.importerCvDepose, webUtils.getPathForFile(fichier as File)),
   obtenirProfil: () => appeler(CANAUX.obtenirProfil),
   enregistrerProfil: (profil) => appeler(CANAUX.enregistrerProfil, profil),
   recupererOffre: (url) => appeler(CANAUX.recupererOffre, url),
   analyserTexteOffre: (texte) => appeler(CANAUX.analyserTexteOffre, texte),
+  analyserAnnonce: (offre) => appeler(CANAUX.analyserAnnonce, offre),
   adapterCv: (offre) => appeler(CANAUX.adapterCv, offre),
+  annulerAdaptation: () => appeler(CANAUX.annulerAdaptation),
+  ouvrirFichier: (chemin) => appeler(CANAUX.ouvrirFichier, chemin),
+  montrerDansDossier: (chemin) => appeler(CANAUX.montrerDansDossier, chemin),
   lireParametres: () => appeler(CANAUX.lireParametres),
   enregistrerParametres: (parametres) => appeler(CANAUX.enregistrerParametres, parametres),
   definirCleApi: (cle) => appeler(CANAUX.definirCleApi, cle),

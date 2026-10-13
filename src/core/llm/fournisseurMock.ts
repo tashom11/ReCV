@@ -1,3 +1,4 @@
+import type { AnalyseOffre } from '../adaptation/motsCles'
 import type { CvAdapte, Offre, Profil } from '../schemas'
 import type { FournisseurLLM, OptionsAdaptation } from './fournisseur'
 
@@ -71,11 +72,23 @@ export class FournisseurMock implements FournisseurLLM {
     }
   }
 
+  async analyserOffre(offre: Offre): Promise<AnalyseOffre> {
+    return {
+      titreCible: offre.titrePoste,
+      competencesRequises: ['React', 'TypeScript', 'Figma'],
+      qualites: ['Autonomie'],
+      motsCles: [],
+      formationRequise: '',
+      experienceRequise: '',
+    }
+  }
+
   async genererAccroche(profil: Profil): Promise<string> {
     return `Je fais preuve de ${profil.competences.slice(0, 3).join(', ')}.`
   }
 
-  async adapterCv(profil: Profil, _offre: Offre, _options?: OptionsAdaptation): Promise<CvAdapte> {
+  async adapterCv(profil: Profil, _offre: Offre, options?: OptionsAdaptation): Promise<CvAdapte> {
+    options?.signal?.throwIfAborted()
     return {
       titre: profil.titrePoste ?? 'CV adapté',
       accroche: profil.accroche ?? '',

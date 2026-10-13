@@ -2,8 +2,19 @@ import { z } from 'zod'
 
 export { CANAUX, type ResultatIpc } from './canaux'
 
+import type { CleEtape } from './etapes'
 import { IDS_MODELES } from './export/modeles'
-import { type CvAdapte, cvAdapteSchema, type Offre, offreSchema, type Profil, profilSchema } from './schemas'
+import {
+  type CvAdapte,
+  cvAdapteSchema,
+  type Offre,
+  offreSchema,
+  type Prerequis,
+  type Profil,
+  profilSchema,
+} from './schemas'
+
+export type { CodeErreur } from './erreurs'
 
 // Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
 
@@ -71,6 +82,21 @@ export interface CvGenere {
   cv: CvAdapte
 }
 
+/** Ce que l'annonce demande, rapproché du CV : affiché sur la carte de confirmation, avant toute création. */
+export interface ApercuAnnonce {
+  /** Compétences et qualités recherchées par l'employeur (8 au plus), dans l'ordre de l'annonce. */
+  recherchees: string[]
+  /** Type de contrat et temps de travail, s'ils sont écrits dans l'annonce (« CDI · temps plein »). */
+  contrat?: string
+  prerequis: Prerequis
+}
+
+/** Fichier déposé dans la fenêtre : le preload en retrouve le chemin, le renderer ne le voit jamais. */
+export interface FichierDepose {
+  readonly name: string
+  readonly size: number
+}
+
 export interface ModeleEmbarqueEtat {
   id: string
   nom: string
@@ -102,6 +128,8 @@ export interface EtatModeles {
 /** Étape en cours d'une tâche longue (import du CV, analyse d'offre, adaptation) : le renderer l'affiche. */
 export interface ProgressionTache {
   tache: 'import' | 'offre' | 'adaptation' | 'accroche'
+  /** Étape stable de l'adaptation (l'interface la traduit en langage courant). */
+  cle?: CleEtape
   /** Libellé lisible, ex. « Réécriture des expériences ». */
   etape: string
   courant?: number
@@ -114,18 +142,28 @@ export interface ProgressionTache {
 export interface ApiService {
   /** Ouvre le sélecteur de fichier (PDF/DOCX), extrait le profil et l'enregistre. `null` si annulé. */
   importerCv(): Promise<ProfilEnregistre | null>
+  /** Même traitement pour un fichier déposé dans la fenêtre, désigné par son chemin. */
+  importerCvDepose(chemin: string): Promise<ProfilEnregistre>
   obtenirProfil(): Promise<ProfilEnregistre | null>
   enregistrerProfil(profil: Profil): Promise<ProfilEnregistre>
   recupererOffre(url: string): Promise<Offre>
   analyserTexteOffre(texte: string): Promise<Offre>
+  /** Analyse l'annonce avec le modèle (résultat mémorisé pour `adapterCv`) et la rapproche du profil enregistré. */
+  analyserAnnonce(offre: Offre): Promise<ApercuAnnonce>
   /** Adapte le profil enregistré à l'offre, puis enregistre l'offre et le CV obtenu. */
   adapterCv(offre: Offre): Promise<CvGenere>
+  /** Interrompt l'adaptation en cours : `adapterCv` échoue alors avec le code `annule`. */
+  annulerAdaptation(): Promise<void>
   lireParametres(): Promise<EtatParametres>
   enregistrerParametres(parametres: Parametres): Promise<EtatParametres>
   /** Enregistre le CV validé (coordonnées du profil actif) via un sélecteur de fichier. Chemin écrit, ou `null` si annulé. */
   exporterCv(cv: CvAdapte, format: FormatExport, modeleId?: string): Promise<string | null>
   /** HTML complet du CV mis en page avec un modèle (photo comprise), à afficher dans un cadre isolé. */
   htmlModeleCv(cv: CvAdapte, modeleId: string): Promise<string>
+  /** Ouvre un CV exporté pendant cette session (tout autre chemin est refusé). */
+  ouvrirFichier(chemin: string): Promise<void>
+  /** Montre dans l'explorateur un CV exporté pendant cette session (tout autre chemin est refusé). */
+  montrerDansDossier(chemin: string): Promise<void>
   /** Accroche générique fondée sur les compétences transversales du profil fourni (même non enregistré). */
   genererAccroche(profil: Profil): Promise<string>
   /** Chaîne vide : supprime la clé. */
@@ -140,7 +178,8 @@ export interface ApiService {
 }
 
 /** API complète vue par le renderer. */
-export interface ApiReCV extends ApiService {
+export interface ApiReCV extends Omit<ApiService, 'importerCvDepose'> {
+  importerCvDepose(fichier: FichierDepose): Promise<ProfilEnregistre>
   /** Retourne la fonction de désabonnement. */
   surProgressionModele(rappel: (progression: ProgressionModele) => void): () => void
   /** Étapes des tâches longues (adaptation…). Retourne la fonction de désabonnement. */
@@ -164,4 +203,5 @@ export const entreesIpc = {
   url: z.string().min(1).max(2_048),
   cle: z.string().max(1_024),
   idModele: z.string().min(1).max(64),
+  chemin: z.string().min(1).max(1_024),
 }

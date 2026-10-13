@@ -6,6 +6,7 @@ import { ouvrirBdd } from './bdd/connexion'
 import { choisirEtLireCv } from './cv'
 import { choisirDestination, genererPdf } from './export'
 import { enregistrerHandlers } from './ipc'
+import { lireCv } from './lectureCv'
 import { verifierMisesAJour } from './miseAJour'
 import { GestionnaireModeles } from './modeles/gestionnaire'
 import { detecterRessources } from './modeles/ressources'
@@ -96,6 +97,12 @@ app.whenReady().then(() => {
       }
     },
     choisirEtLireCv,
+    lireCv,
+    ouvrirChemin: async (chemin) => {
+      const echec = await shell.openPath(chemin)
+      if (echec) throw new Error(echec)
+    },
+    montrerChemin: (chemin) => shell.showItemInFolder(chemin),
     rendreHtml,
     userAgent: userAgentNavigateur(session.defaultSession.getUserAgent()),
     choisirDestination,

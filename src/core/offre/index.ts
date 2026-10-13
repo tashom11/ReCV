@@ -1,3 +1,4 @@
+export { repererContrat } from './contrat'
 export { extraireOffreDepuisHtml, LONGUEUR_MIN_TEXTE } from './extraction'
 export {
   type CodeErreurOffre,

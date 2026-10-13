@@ -148,7 +148,7 @@ describe('adapterCv : profil recherché', () => {
       accroche: { accroche: '' },
     })
 
-  it('place outils demandés en compétences clés et qualités demandées parmi les savoir-être, cochés par défaut', async () => {
+  it('place outils demandés en compétences clés et qualités demandées parmi les savoir-être, une fois cochés', async () => {
     const cv = await adapterCv(moteur(), profil, offre)
     expect(cv.titre).toBe('Chargé de sourcing et de recrutement')
     expect(cv.demandees.manquantes).toEqual(
@@ -159,7 +159,7 @@ describe('adapterCv : profil recherché', () => {
     const final = composerCv(
       profil,
       cv,
-      choixInitial(cv),
+      { ...choixInitial(cv), ajouterDemandees: cv.demandees.manquantes.map(() => true) },
       cv.experiences.map((e) => e.points),
     )
     expect(final.competencesCles).toEqual(expect.arrayContaining(['LinkedIn Recruiter', 'CRM candidats']))
