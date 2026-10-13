@@ -17,6 +17,7 @@ export const CANAUX = {
   annulerTelechargement: 'modeles:annuler',
   supprimerModele: 'modeles:supprimer',
   progressionModele: 'modeles:progression',
+  progressionTache: 'taches:progression',
   effacerDonnees: 'donnees:effacer',
 } as const
 

@@ -1,7 +1,7 @@
 import { adapterCv } from '../adaptation/pipeline'
 import type { CvAdapte, Offre, Profil } from '../schemas'
 import { extraireOffre, extraireProfil } from './extraction'
-import type { FournisseurLLM } from './fournisseur'
+import type { FournisseurLLM, OptionsAdaptation } from './fournisseur'
 import type { MoteurLLM } from './moteur'
 
 // Implémentation commune à Ollama, API (BYOK) et modèle local : seul le moteur change.
@@ -16,8 +16,8 @@ export class FournisseurStructure implements FournisseurLLM {
     return extraireOffre(this.moteur, texteOffre)
   }
 
-  adapterCv(profil: Profil, offre: Offre): Promise<CvAdapte> {
-    return adapterCv(this.moteur, profil, offre)
+  adapterCv(profil: Profil, offre: Offre, options?: OptionsAdaptation): Promise<CvAdapte> {
+    return adapterCv(this.moteur, profil, offre, options)
   }
 
   async liberer(): Promise<void> {
