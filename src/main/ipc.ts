@@ -44,8 +44,15 @@ export function enregistrerHandlers(
   gerer(CANAUX.lireParametres, () => api.lireParametres())
   gerer(CANAUX.enregistrerParametres, (p) => api.enregistrerParametres(analyser(entreesIpc.parametres, p)))
   gerer(CANAUX.genererAccroche, (profil) => api.genererAccroche(analyser(entreesIpc.profil, profil)))
-  gerer(CANAUX.exporterCv, (cv, format) =>
-    api.exporterCv(analyser(entreesIpc.cv, cv), analyser(entreesIpc.format, format)),
+  gerer(CANAUX.exporterCv, (cv, format, modele) =>
+    api.exporterCv(
+      analyser(entreesIpc.cv, cv),
+      analyser(entreesIpc.format, format),
+      modele === undefined ? undefined : analyser(entreesIpc.idModeleCv, modele),
+    ),
+  )
+  gerer(CANAUX.htmlModeleCv, (cv, modele) =>
+    api.htmlModeleCv(analyser(entreesIpc.cv, cv), analyser(entreesIpc.idModeleCv, modele)),
   )
   gerer(CANAUX.lireEtatModeles, () => api.lireEtatModeles())
   gerer(CANAUX.telechargerModele, (id) => api.telechargerModele(analyser(entreesIpc.idModele, id)))

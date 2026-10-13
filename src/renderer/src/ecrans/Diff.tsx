@@ -1,8 +1,10 @@
 import { type ChoixComposition, choixInitial, composerCv } from '@core/adaptation/composition'
 import type { FormatExport } from '@core/api'
+import type { IdModele } from '@core/export/modeles'
 import type { CvAdapte, Offre, Profil } from '@core/schemas'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Alerte, Bouton, Carte, Champ, messageErreur, Titre } from '../ui'
+import { GalerieModeles } from './GalerieModeles'
 
 const lignes = (texte: string) => texte.split('\n')
 
@@ -61,6 +63,23 @@ export function EcranDiff({
   const [erreur, setErreur] = useState<string | null>(null)
   const [fichier, setFichier] = useState<string | null>(null)
   const [export_, setExport] = useState<FormatExport | null>(null)
+  const [modeleCv, setModeleCv] = useState<IdModele>('classique')
+
+  // Dernier modèle choisi (paramètre mémorisé).
+  useEffect(() => {
+    window.api.lireParametres().then(
+      (p) => setModeleCv(p.modeleCv),
+      () => undefined,
+    )
+  }, [])
+
+  const choisirModele = (id: IdModele) => {
+    setModeleCv(id)
+    window.api
+      .lireParametres()
+      .then(({ cleApiDefinie: _cle, ...p }) => window.api.enregistrerParametres({ ...p, modeleCv: id }))
+      .catch(() => undefined)
+  }
 
   const cvFinal = useMemo(
     () => composerCv(profil, { ...adapte, titre: titre.trim(), accroche: accroche.trim() }, choix, points),
@@ -79,7 +98,7 @@ export function EcranDiff({
     setFichier(null)
     setExport(format)
     try {
-      const chemin = await window.api.exporterCv(cvFinal, format)
+      const chemin = await window.api.exporterCv(cvFinal, format, modeleCv)
       if (chemin) setFichier(chemin)
     } catch (e) {
       setErreur(messageErreur(e))
@@ -361,12 +380,15 @@ export function EcranDiff({
         </Carte>
       )}
 
+      <GalerieModeles cv={cvFinal} valeur={modeleCv} onChange={choisirModele} />
+
       {erreur && <Alerte type="erreur">{erreur}</Alerte>}
       {fichier && <Alerte type="succes">CV enregistré : {fichier}</Alerte>}
       {valide && (
         <Carte titre="Exporter">
           <p className="text-xs text-slate-600">
-            Mise en page sobre sur une colonne, avec du vrai texte : lisible par les logiciels de recrutement (ATS).
+            Le CV sera exporté avec le modèle choisi ci-dessus : une colonne et du vrai texte, lisible par les logiciels
+            de recrutement (ATS).
           </p>
           <div className="flex gap-3">
             <Bouton onClick={() => exporter('pdf')} enCours={export_ === 'pdf'} desactive={export_ !== null}>

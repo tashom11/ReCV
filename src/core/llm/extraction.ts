@@ -1,5 +1,5 @@
 import { preparerTexteOffre } from '../offre/texte'
-import { type Offre, offreSchema, type Profil, profilSchema } from '../schemas'
+import { type Offre, offreSchema, type Profil, profilExtractionSchema } from '../schemas'
 import { assainirProfil } from './assainissement'
 import type { MoteurLLM } from './moteur'
 import { encadrer, PROMPT_EXTRACTION_OFFRE, PROMPT_EXTRACTION_PROFIL } from './prompts'
@@ -12,7 +12,7 @@ const offreExtraiteSchema = offreSchema.omit({ texteBrut: true })
 export async function extraireProfil(moteur: MoteurLLM, texteCv: string): Promise<Profil> {
   const extrait = await moteur.genererObjet({
     nom: 'extraireProfil',
-    schema: profilSchema,
+    schema: profilExtractionSchema,
     systeme: PROMPT_EXTRACTION_PROFIL,
     utilisateur: encadrer('cv', texteCv),
   })

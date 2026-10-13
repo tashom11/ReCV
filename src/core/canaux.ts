@@ -12,6 +12,7 @@ export const CANAUX = {
   enregistrerParametres: 'parametres:enregistrer',
   definirCleApi: 'parametres:definir-cle',
   exporterCv: 'cv:exporter',
+  htmlModeleCv: 'cv:html-modele',
   genererAccroche: 'profil:generer-accroche',
   lireEtatModeles: 'modeles:etat',
   telechargerModele: 'modeles:telecharger',

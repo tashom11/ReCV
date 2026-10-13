@@ -18,6 +18,8 @@ export interface CvModele {
   nom: string
   titre: string
   contact: string[]
+  /** Photo facultative (data URL), reprise du profil. */
+  photo?: string
   sections: Section[]
 }
 
@@ -98,6 +100,7 @@ export function construireModele(profil: Profil, cv: CvAdapte): CvModele {
     nom: profil.nom?.trim() ?? '',
     titre: cv.titre.trim(),
     contact: [profil.email, profil.telephone, profil.adresse, ...profil.liensProfessionnels].filter(nonVide),
+    photo: profil.photo,
     sections,
   }
 }

@@ -10,7 +10,14 @@ import type {
   ProfilEnregistre,
   ProgressionTache,
 } from '@core/api'
-import { construireModele, genererDocxCv, genererHtmlCv, nomFichierCv } from '@core/export'
+import {
+  construireModele,
+  genererDocxCv,
+  genererHtmlCv,
+  type IdModele,
+  nomFichierCv,
+  trouverModele,
+} from '@core/export'
 import { creerFournisseurApi, creerFournisseurOllama, type FournisseurLLM } from '@core/llm'
 import { recupererOffre } from '@core/offre'
 import type { Offre, Profil } from '@core/schemas'
@@ -104,8 +111,10 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       const texte = await choisirEtLireCv()
       if (texte === null) return null
       signaler({ tache: 'import', etape: 'Analyse du CV par le modèle' })
-      const profil = await (await fournisseur()).extraireProfil(texte)
-      return creerProfil(bdd, profil)
+      const extrait = await (await fournisseur()).extraireProfil(texte)
+      // La photo est choisie par l'utilisateur, pas extraite du CV : elle suit le profil actif.
+      const photo = obtenirProfilActif(bdd)?.profil.photo
+      return creerProfil(bdd, photo ? { ...extrait, photo } : extrait)
     },
 
     async obtenirProfil() {
@@ -149,13 +158,22 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       return (await fournisseur()).genererAccroche(profil)
     },
 
-    async exporterCv(cv, format) {
+    async htmlModeleCv(cv, modeleId) {
       const actif = obtenirProfilActif(bdd)
       if (!actif) throw new Error('Aucun profil : importe d’abord ton CV.')
+      return genererHtmlCv(construireModele(actif.profil, cv), trouverModele(modeleId).id)
+    },
+
+    async exporterCv(cv, format, modeleId) {
+      const actif = obtenirProfilActif(bdd)
+      if (!actif) throw new Error('Aucun profil : importe d’abord ton CV.')
+      const params = await parametres.lire()
+      const style: IdModele = trouverModele(modeleId ?? params.modeleCv).id
       const modele = construireModele(actif.profil, cv)
       const chemin = await choisirDestination(nomFichierCv(modele, format), format)
       if (chemin === null) return null
-      const contenu = format === 'pdf' ? await genererPdf(genererHtmlCv(modele)) : await genererDocxCv(modele)
+      const contenu =
+        format === 'pdf' ? await genererPdf(genererHtmlCv(modele, style)) : await genererDocxCv(modele, style)
       await writeFile(chemin, contenu)
       return chemin
     },
