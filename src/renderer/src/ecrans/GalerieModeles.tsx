@@ -65,6 +65,9 @@ export function GalerieModeles({
     setApercus({})
     for (const modele of MODELES_CV) {
       try {
+        if (typeof window.api.htmlModeleCv !== 'function') {
+          throw new Error('l’application doit être relancée (la partie principale est en version antérieure).')
+        }
         const html = await window.api.htmlModeleCv(cvCourant.current, modele.id)
         if (numero !== generation.current) return
         setApercus((a) => ({ ...a, [modele.id]: { html } }))
@@ -135,7 +138,10 @@ export function GalerieModeles({
         <span className="text-xs text-slate-500">À refaire après avoir modifié le CV ou la photo.</span>
       </div>
       {Object.values(apercus).some((a) => a?.erreur) && (
-        <Alerte type="info">Un aperçu n’a pas pu être généré ; le modèle reste utilisable pour l’export.</Alerte>
+        <Alerte type="info">
+          Un aperçu n’a pas pu être généré ; le modèle reste utilisable pour l’export. Détail :{' '}
+          {Object.values(apercus).find((a) => a?.erreur)?.erreur}
+        </Alerte>
       )}
     </Carte>
   )
