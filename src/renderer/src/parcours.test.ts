@@ -94,6 +94,9 @@ describe('parcours', () => {
   it('cite le poste sans la mention (H/F)', () => {
     expect(titreSansMention('Agent d’accueil polyvalent (H/F)')).toBe('Agent d’accueil polyvalent')
     expect(titreSansMention('Développeur [F/H/X] React')).toBe('Développeur React')
+    expect(titreSansMention('Peintre H/F')).toBe('Peintre')
+    expect(titreSansMention('Peintre - F/H en bâtiment')).toBe('Peintre en bâtiment')
+    expect(titreSansMention('Agent CAF/Habitat')).toBe('Agent CAF/Habitat')
     expect(titreSansMention('Comptable')).toBe('Comptable')
     expect(titreSansMention('(H/F)')).toBe('(H/F)')
   })
