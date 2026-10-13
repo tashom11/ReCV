@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 export { CANAUX, type ResultatIpc } from './canaux'
 
+import { IDS_MODELES } from './export/modeles'
 import { type CvAdapte, cvAdapteSchema, type Offre, offreSchema, type Profil, profilSchema } from './schemas'
 
 // Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
@@ -38,7 +39,7 @@ export const parametresSchema = z.object({
   /** Reformuler les puces avec le modèle (plus lent). Par défaut : sélection des puces, sans modèle. */
   reformulerPuces: z.boolean().default(false),
   /** Modèle de mise en page du CV exporté (voir `core/export/modeles.ts`). */
-  modeleCv: z.enum(['classique', 'moderne', 'elegant', 'bandeau']).default('classique'),
+  modeleCv: z.enum(IDS_MODELES).default('classique'),
   cheminModeleLocal: z
     .string()
     .max(1024)
@@ -155,7 +156,7 @@ const borne = <T extends z.ZodType>(schema: T) =>
 export const entreesIpc = {
   cv: borne(cvAdapteSchema),
   format: z.enum(['pdf', 'docx']),
-  idModeleCv: z.enum(['classique', 'moderne', 'elegant', 'bandeau']),
+  idModeleCv: z.enum(IDS_MODELES),
   profil: borne(profilSchema),
   offre: borne(offreSchema),
   parametres: parametresSchema,

@@ -45,11 +45,35 @@ describe.each(IDS_MODELES)('modèle %s', (id) => {
   const modele = construireModele(profil, cv)
   const html = genererHtmlCv(modele, id)
 
-  it('reste compatible ATS : une colonne, texte réel, aucun tableau ni SVG', () => {
+  it('reste compatible ATS : texte réel, titres standards, aucun tableau ni SVG', () => {
     expect(html).not.toMatch(/<table|<svg|<canvas|<script/i)
-    expect(html).toContain('Compétences clés : LinkedIn Recruiter')
+    if (trouverModele(id).disposition === 'lateral') {
+      // Colonne latérale : sous-titre et liste, le contenu principal restant avant la colonne dans le code.
+      expect(html).toContain('<h3>Compétences clés</h3><ul><li>LinkedIn Recruiter</li>')
+      expect(html.indexOf('<h2>Expérience professionnelle</h2>')).toBeLessThan(html.indexOf('<h2>Compétences</h2>'))
+    } else {
+      expect(html).toContain('Compétences clés : LinkedIn Recruiter')
+    }
     expect(html).toContain('<h2>Compétences</h2>')
     expect(html).toContain(`data-modele="${id}"`)
+  })
+
+  it('n’espace jamais les lettres (l’extraction ATS lirait « p r o f i l »)', () => {
+    expect(trouverModele(id).css).not.toMatch(/letter-spacing\s*:\s*[^;0]/)
+  })
+
+  it('n’affiche pas de nom d’entreprise parmi les coordonnées ni de diplôme parmi les expériences', () => {
+    const sale = construireModele(
+      { ...profil, liensProfessionnels: ['Webagence', 'linkedin.com/in/julien'] },
+      {
+        ...cv,
+        experiences: [...cv.experiences, { poste: 'BAC +2', entreprise: '', lieu: '', periode: '', points: [] }],
+      },
+    )
+    const rendu = genererHtmlCv(sale, id)
+    expect(rendu).toContain('linkedin.com/in/julien')
+    expect(rendu).not.toContain('Webagence</span>')
+    expect(rendu.match(/<h3>BAC \+2<\/h3>/g)).toHaveLength(1)
   })
 
   it('affiche la photo quand le profil en a une, sinon rien', () => {

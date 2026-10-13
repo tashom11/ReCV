@@ -1,8 +1,10 @@
-// Modèles de CV : une même structure (une colonne, texte réel, titres de section standards) habillée de plusieurs
-// styles. Aucun modèle n'utilise de tableau, de colonne latérale ni de texte dans une image : ils restent lisibles
-// par les logiciels de recrutement (ATS). La photo, facultative, est une image décorative ignorée par ces logiciels.
+// Modèles de CV : une même structure (titres de section standards, texte réel) habillée de plusieurs styles.
+// Aucun modèle n'utilise de tableau, de texte dans une image ni d'espacement de lettres (qui fait lire « p r o f i l »
+// aux logiciels de recrutement, ATS). Les modèles « latéral » rangent compétences et langues dans une colonne de côté
+// en PDF ; dans le code HTML, le contenu principal reste en premier : l'ordre de lecture est identique.
+// La photo, facultative, est une image décorative ignorée par ces logiciels.
 
-export const IDS_MODELES = ['classique', 'moderne', 'elegant', 'bandeau'] as const
+export const IDS_MODELES = ['classique', 'moderne', 'elegant', 'bandeau', 'lateral', 'pastel'] as const
 export type IdModele = (typeof IDS_MODELES)[number]
 
 export interface ModeleCv {
@@ -11,6 +13,8 @@ export interface ModeleCv {
   description: string
   /** Pastille de couleur du modèle (aperçu dans la galerie). */
   couleur: string
+  /** `lateral` : compétences et langues dans une colonne de côté (PDF) ; le DOCX reste en une colonne. */
+  disposition: 'simple' | 'lateral'
   /** Jetons du rendu DOCX (le HTML/PDF utilise `css`). */
   docx: {
     police: string
@@ -40,28 +44,29 @@ const BASE = `
   .entete { display: flex; align-items: center; gap: 14pt; }
   .identite { flex: 1; min-width: 0; }
   .photo { width: 28mm; height: 28mm; object-fit: cover; flex: none; }
+  .contact span + span::before { content: '  |  '; white-space: pre; }
   section { break-inside: auto; }
   h3, .meta { break-after: avoid; }
 `
 
 const CLASSIQUE = `
   body { font-family: Arial, Helvetica, sans-serif; }
-  h1 { font-size: 20pt; }
+  h1 { font-size: 22pt; }
   .titre-poste { font-size: 12pt; margin-top: 2pt; }
   .contact { margin-top: 4pt; color: #333; }
   .photo { order: 2; border-radius: 3pt; }
-  h2 { font-size: 11.5pt; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #111; margin: 14pt 0 6pt; padding-bottom: 2pt; }
+  h2 { font-size: 11.5pt; text-transform: uppercase; border-bottom: 1px solid #111; margin: 14pt 0 6pt; padding-bottom: 2pt; }
   h3 { font-size: 10.5pt; margin-top: 8pt; }
   .meta { color: #333; }
 `
 
 const MODERNE = `
   body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #1f2937; }
-  h1 { font-size: 26pt; font-weight: 700; letter-spacing: -.01em; }
+  h1 { font-size: 26pt; font-weight: 700; }
   .titre-poste { font-size: 13pt; color: #2563eb; font-weight: 600; margin-top: 2pt; }
   .contact { margin-top: 5pt; color: #4b5563; font-size: 9.5pt; }
   .photo { border-radius: 50%; border: 2pt solid #2563eb; }
-  h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: .12em; color: #2563eb; border-bottom: 2pt solid #2563eb; margin: 16pt 0 7pt; padding-bottom: 3pt; }
+  h2 { font-size: 10.5pt; text-transform: uppercase; color: #2563eb; border-bottom: 2pt solid #2563eb; margin: 16pt 0 7pt; padding-bottom: 3pt; }
   h3 { font-size: 11pt; margin-top: 9pt; color: #111827; }
   .meta { color: #6b7280; font-size: 9.5pt; }
   li::marker { color: #2563eb; }
@@ -71,10 +76,10 @@ const ELEGANT = `
   body { font-family: Georgia, 'Times New Roman', serif; color: #2a2a2a; }
   .entete { flex-direction: column; text-align: center; gap: 8pt; padding-bottom: 10pt; border-bottom: 0.75pt solid #c9b99a; }
   .photo { order: -1; border-radius: 50%; width: 30mm; height: 30mm; border: 1pt solid #c9b99a; }
-  h1 { font-size: 22pt; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; }
+  h1 { font-size: 24pt; font-weight: 400; text-transform: uppercase; }
   .titre-poste { font-size: 12pt; font-style: italic; color: #7a5c2e; margin-top: 3pt; }
   .contact { margin-top: 5pt; color: #555; font-size: 9.5pt; }
-  h2 { font-size: 11pt; font-weight: 400; font-variant: small-caps; letter-spacing: .16em; text-transform: lowercase; color: #7a5c2e; text-align: center; border-bottom: 0.5pt solid #c9b99a; margin: 16pt 0 7pt; padding-bottom: 3pt; }
+  h2 { font-size: 11pt; font-weight: 700; text-transform: uppercase; color: #7a5c2e; text-align: center; border-bottom: 0.5pt solid #c9b99a; margin: 16pt 0 7pt; padding-bottom: 3pt; }
   h3 { font-size: 11pt; margin-top: 9pt; }
   .meta { font-style: italic; color: #555; }
 `
@@ -82,13 +87,62 @@ const ELEGANT = `
 const BANDEAU = `
   body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #1e293b; }
   .entete { background: #0f172a; color: #fff; margin: -14mm -16mm 8mm; padding: 14mm 16mm 9mm; }
-  .entete h1 { font-size: 25pt; font-weight: 700; }
+  .entete h1 { font-size: 26pt; font-weight: 700; }
   .titre-poste { font-size: 12.5pt; color: #38bdf8; font-weight: 600; margin-top: 3pt; }
   .contact { margin-top: 6pt; color: #cbd5e1; font-size: 9.5pt; }
   .photo { order: 2; border-radius: 50%; border: 2pt solid #38bdf8; }
-  h2 { font-size: 10.5pt; text-transform: uppercase; letter-spacing: .12em; color: #0f172a; border-left: 3pt solid #38bdf8; padding-left: 7pt; margin: 15pt 0 7pt; }
+  h2 { font-size: 10.5pt; text-transform: uppercase; color: #0f172a; border-left: 3pt solid #38bdf8; padding-left: 7pt; margin: 15pt 0 7pt; }
   h3 { font-size: 11pt; margin-top: 9pt; }
   .meta { color: #64748b; font-size: 9.5pt; }
+`
+
+// Modèles à colonne latérale : le fond de la colonne est peint par le fond de la page (répété sur chaque page
+// imprimée) ; les marges verticales viennent de @page, les marges horizontales des colonnes.
+const LATERAL_BASE = `
+  @page { size: A4; margin: 12mm 0; }
+  @media screen { body { padding: 12mm 0; } }
+  .colonnes { display: flex; flex-direction: row-reverse; align-items: flex-start; }
+  .principal { flex: 1; min-width: 0; padding: 0 12mm 0 9mm; }
+  .lateral { width: 68mm; flex: none; padding: 0 7mm; }
+  .entete { display: block; }
+  .principal .entete { margin-bottom: 4pt; }
+  .photo { display: block; width: 38mm; height: 38mm; border-radius: 50%; margin: 0 auto 10pt; }
+  .lateral h2 { margin: 14pt 0 5pt; padding-bottom: 3pt; }
+  .lateral h3 { margin: 7pt 0 2pt; }
+  .lateral ul { margin: 0; padding-left: 13pt; }
+  .lateral p + p { margin-top: 4pt; }
+  .contact { display: block; }
+  .contact span { display: block; overflow-wrap: anywhere; }
+  .contact span + span::before { content: none; }
+`
+
+const LATERAL = `
+  html { background: linear-gradient(to right, #1e293b 68mm, #fff 68mm); }
+  body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #1e293b; }
+  h1 { font-size: 26pt; font-weight: 700; line-height: 1.1; color: #0f172a; }
+  .titre-poste { font-size: 13pt; color: #0e7490; font-weight: 600; margin-top: 4pt; }
+  .principal h2 { font-size: 11pt; text-transform: uppercase; color: #0f172a; border-bottom: 2pt solid #0e7490; margin: 16pt 0 6pt; padding-bottom: 2pt; }
+  .principal h3 { font-size: 11pt; margin-top: 9pt; }
+  .meta { color: #64748b; font-size: 9.5pt; }
+  .lateral { color: #e2e8f0; font-size: 9.5pt; }
+  .lateral h2 { font-size: 10.5pt; text-transform: uppercase; color: #fff; border-bottom: 1pt solid #5eead4; }
+  .lateral h3 { font-size: 9.5pt; color: #5eead4; font-weight: 600; }
+  .lateral .contact { color: #e2e8f0; }
+  .photo { border: 2pt solid #5eead4; }
+`
+
+const PASTEL = `
+  html { background: linear-gradient(to right, #f3ece2 68mm, #fff 68mm); }
+  body { font-family: Georgia, 'Times New Roman', serif; color: #3b3330; }
+  h1 { font-size: 26pt; font-weight: 400; line-height: 1.1; text-transform: uppercase; color: #3b3330; }
+  .titre-poste { font-size: 12.5pt; font-style: italic; color: #b4532a; margin-top: 4pt; }
+  .principal h2 { font-size: 11pt; text-transform: uppercase; color: #b4532a; border-bottom: 0.75pt solid #d9c7b0; margin: 16pt 0 6pt; padding-bottom: 2pt; }
+  .principal h3 { font-size: 11pt; margin-top: 9pt; }
+  .meta { font-style: italic; color: #7a6b60; font-size: 9.5pt; }
+  .lateral { color: #3b3330; font-size: 9.5pt; }
+  .lateral h2 { font-size: 10.5pt; text-transform: uppercase; color: #b4532a; border-bottom: 0.75pt solid #d9c7b0; }
+  .lateral h3 { font-size: 9.5pt; color: #7a6b60; font-style: italic; font-weight: 400; }
+  .photo { border: 2pt solid #fff; box-shadow: 0 0 0 1pt #d9c7b0; }
 `
 
 export const MODELES_CV: readonly ModeleCv[] = [
@@ -97,6 +151,7 @@ export const MODELES_CV: readonly ModeleCv[] = [
     nom: 'Classique',
     description: 'Sobre et neutre, titres soulignés. Le choix le plus universel.',
     couleur: '#111111',
+    disposition: 'simple',
     docx: { police: 'Calibri', accent: '111111', texte: '111111', entete: 'gauche', titreSectionCouleur: false },
     css: BASE + CLASSIQUE,
   },
@@ -105,6 +160,7 @@ export const MODELES_CV: readonly ModeleCv[] = [
     nom: 'Moderne',
     description: 'Accent bleu, nom en grand, photo ronde. Dynamique sans fioriture.',
     couleur: '#2563eb',
+    disposition: 'simple',
     docx: { police: 'Calibri', accent: '2563EB', texte: '1F2937', entete: 'gauche', titreSectionCouleur: true },
     css: BASE + MODERNE,
   },
@@ -113,6 +169,7 @@ export const MODELES_CV: readonly ModeleCv[] = [
     nom: 'Élégant',
     description: 'Typographie à empattements, en-tête centré, filets fins. Pour les métiers de contact ou de création.',
     couleur: '#7a5c2e',
+    disposition: 'simple',
     docx: { police: 'Georgia', accent: '7A5C2E', texte: '2A2A2A', entete: 'centre', titreSectionCouleur: true },
     css: BASE + ELEGANT,
   },
@@ -121,6 +178,7 @@ export const MODELES_CV: readonly ModeleCv[] = [
     nom: 'Bandeau',
     description: 'En-tête sur fond sombre avec le nom en blanc, rubriques à liseré. Fort impact visuel.',
     couleur: '#0f172a',
+    disposition: 'simple',
     docx: {
       police: 'Calibri',
       accent: '0F172A',
@@ -130,6 +188,25 @@ export const MODELES_CV: readonly ModeleCv[] = [
       titreSectionCouleur: true,
     },
     css: BASE + BANDEAU,
+  },
+  {
+    id: 'lateral',
+    nom: 'Latéral',
+    description: 'Colonne sombre à gauche (photo, contact, compétences, langues), parcours à droite. Style « Canva ».',
+    couleur: '#1e293b',
+    disposition: 'lateral',
+    docx: { police: 'Calibri', accent: '0E7490', texte: '1E293B', entete: 'gauche', titreSectionCouleur: true },
+    css: BASE + LATERAL_BASE + LATERAL,
+  },
+  {
+    id: 'pastel',
+    nom: 'Pastel',
+    description:
+      'Colonne beige à gauche, typographie douce et accents terracotta. Chaleureux, pour les métiers du contact.',
+    couleur: '#e7d8c4',
+    disposition: 'lateral',
+    docx: { police: 'Georgia', accent: 'B4532A', texte: '3B3330', entete: 'gauche', titreSectionCouleur: true },
+    css: BASE + LATERAL_BASE + PASTEL,
   },
 ]
 
