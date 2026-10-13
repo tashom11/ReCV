@@ -60,7 +60,14 @@ describe('adapterCv : mode rapide par défaut', () => {
 
   it('réutilise une analyse déjà connue (aucun appel « motsCles »)', async () => {
     const m = new MoteurMock(reponses)
-    const connue = { titreCible: 'Carrossier peintre', motsCles: ['ponçage'], competencesRequises: [] }
+    const connue = {
+      titreCible: 'Carrossier peintre',
+      motsCles: ['ponçage'],
+      competencesRequises: [],
+      qualites: [],
+      formationRequise: '',
+      experienceRequise: '',
+    }
     await adapterCv(m, profil, offre, { analyse: connue })
     expect(m.requetes.map((r) => r.nom)).not.toContain('motsCles')
   })
@@ -76,10 +83,10 @@ describe('adapterCv : mode rapide par défaut', () => {
 describe('réponses compactes', () => {
   it('borne la liste des mots-clés dans le schéma (grammaire) et tronque une réponse trop longue', () => {
     const grammaire = JSON.stringify(versSchemaGrammaire(analyseOffreSchema))
-    expect(grammaire).toContain('"maxItems":10')
+    expect(grammaire).toContain('"maxItems":8')
     expect(grammaire).toContain('"maxLength":40')
     const bornee = analyseOffreSchema.parse({ motsCles: Array.from({ length: 30 }, () => 'x'.repeat(100)) })
-    expect(bornee.motsCles).toHaveLength(10)
+    expect(bornee.motsCles).toHaveLength(8)
     expect(bornee.motsCles[0]).toHaveLength(40)
   })
 

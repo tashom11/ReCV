@@ -1,5 +1,5 @@
 import type { CvAdapte, Profil } from '../schemas'
-import { eclaterCompetences, estCompetenceCourte, formaterCompetence } from './competences'
+import { eclaterCompetences, estCompetenceCourte, estSavoirEtre, formaterCompetence, sansDoublons } from './competences'
 
 /** Décisions de l'utilisateur sur l'écran de vérification. */
 export interface ChoixComposition {
@@ -46,9 +46,11 @@ export function composerCv(profil: Profil, adapte: CvAdapte, choix: ChoixComposi
   // Demandées par l'offre et déclarées par l'utilisateur : c'est lui qui atteste, pas le modèle. Elles rejoignent
   // les compétences clés, avec la formulation de l'offre.
   const declarees = adapte.demandees.manquantes.filter((_, i) => choix.ajouterDemandees[i]).map(formaterCompetence)
-  const competencesCles = [...adapte.competencesCles, ...declarees].filter(
-    (c, i, tous) => tous.findIndex((u) => u.toLowerCase() === c.toLowerCase()) === i,
-  )
+  const sansDoublon = (liste: string[]) =>
+    liste.filter((c, i, tous) => tous.findIndex((u) => u.toLowerCase() === c.toLowerCase()) === i)
+  const competencesCles = sansDoublon([...adapte.competencesCles, ...declarees.filter((c) => !estSavoirEtre(c))])
+  // Qualités déclarées : en tête de la ligne Savoir-être.
+  const qualitesDeclarees = declarees.filter(estSavoirEtre)
 
   const rang = (diplome: string, etablissement: string) => {
     const i = profil.formations.findIndex((f) => f.diplome === diplome && f.etablissement === etablissement)
@@ -64,11 +66,11 @@ export function composerCv(profil: Profil, adapte: CvAdapte, choix: ChoixComposi
     titre: choix.titre ? adapte.titre : (profil.titrePoste ?? adapte.titre),
     accroche: choix.accroche ? adapte.accroche : (profil.accroche ?? adapte.accroche),
     competencesCles,
-    competences,
+    competences: sansDoublons([...qualitesDeclarees, ...competences]),
     experiences,
     formations,
     ecartes: { experiences: [], competences: [], formations: [] },
-    demandees: { attestees: [], manquantes: [] },
+    demandees: { attestees: [], manquantes: [], prerequis: {} },
   }
 }
 

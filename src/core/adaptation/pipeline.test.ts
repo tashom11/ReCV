@@ -163,11 +163,17 @@ describe('restreindreAnalyse', () => {
       titreCible: 'Dev',
       motsCles: ['React', 'Collaborer avec les équipes design', 'tests automatises'],
       competencesRequises: ['Kubernetes', 'TypeScript'],
+      qualites: ['Autonomie'],
+      formationRequise: '',
+      experienceRequise: '',
     }
     expect(restreindreAnalyse(analyse, 'Migration React vers TypeScript, tests automatisés')).toEqual({
       titreCible: 'Dev',
       motsCles: ['React', 'tests automatises'],
       competencesRequises: ['TypeScript'],
+      qualites: [],
+      formationRequise: '',
+      experienceRequise: '',
     })
   })
 
