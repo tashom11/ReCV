@@ -1,4 +1,107 @@
 @import "tailwindcss";
+@import "@fontsource/atkinson-hyperlegible/400.css";
+@import "@fontsource/atkinson-hyperlegible/700.css";
+@import "@fontsource-variable/bricolage-grotesque";
+
+/* Design system « Atelier chaleureux » : l'encre et le vert-jaune du logo, un papier crème, des formes douces. */
+@theme {
+  --font-sans: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-titre: "Bricolage Grotesque Variable", "Segoe UI", sans-serif;
+
+  --color-encre: #1e2622;
+  --color-encre-douce: #3b443e;
+  --color-aide: #4a534d;
+  --color-papier: #f7f4ec;
+  --color-surface: #ffffff;
+  --color-trait: #ded8ca;
+  --color-trait-fort: #8c8778;
+  --color-creux: #efeadf;
+  --color-marque: #23624a;
+  --color-marque-survol: #1b4f3b;
+  --color-marque-pale: #e6f0ea;
+  --color-accent: #c9e265;
+  --color-accent-pale: #f1f8d6;
+  --color-erreur: #a12a1e;
+  --color-erreur-fond: #fce9e6;
+  --color-alerte: #7a4b00;
+  --color-alerte-fond: #fdf1d6;
+  --color-info: #1f4e79;
+  --color-info-fond: #e7f0f8;
+  --color-succes: #23624a;
+  --color-succes-fond: #e8f3e4;
+
+  --text-titre-accueil: 3.25rem;
+  --text-titre-accueil--line-height: 1.05;
+  --text-titre-ecran: 2.25rem;
+  --text-titre-ecran--line-height: 1.15;
+  --text-titre-section: 1.5rem;
+  --text-titre-section--line-height: 1.25;
+  --text-intro: 1.125rem;
+  --text-intro--line-height: 1.5;
+  --text-corps: 1rem;
+  --text-corps--line-height: 1.5;
+  --text-libelle: 0.9375rem;
+  --text-libelle--line-height: 1.4;
+  --text-petit: 0.875rem;
+  --text-petit--line-height: 1.45;
+
+  --radius-champ: 10px;
+  --radius-bouton: 12px;
+  --radius-carte: 16px;
+  --radius-panneau: 20px;
+
+  --shadow-carte: 0 1px 2px rgb(30 38 34 / 0.06);
+  --shadow-panneau: 0 10px 30px rgb(30 38 34 / 0.1);
+  --shadow-barre: 0 -6px 20px rgb(30 38 34 / 0.14);
+
+  --ease-courbe: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+:root {
+  --duree-rapide: 150ms;
+  --duree: 250ms;
+}
+
+@layer base {
+  body {
+    background: var(--color-papier);
+    color: var(--color-encre);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  /* Focus toujours visible : contour encre, décalé. Sur fond sombre, il passe à la couleur d'accent. */
+  :focus-visible {
+    outline: 3px solid var(--color-encre);
+    outline-offset: 3px;
+  }
+
+  .sur-sombre :focus-visible {
+    outline-color: var(--color-accent);
+  }
+
+  summary {
+    cursor: pointer;
+    list-style: none;
+  }
+
+  summary::-webkit-details-marker {
+    display: none;
+  }
+
+  button:not(:disabled),
+  select,
+  label:has(input[type="checkbox"]),
+  label:has(input[type="radio"]) {
+    cursor: pointer;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-marque);
+  }
+}
 
 /* Barre de progression indéterminée : la tâche tourne en arrière-plan, sans pourcentage connu. */
 @keyframes indetermine {
@@ -14,7 +117,48 @@
   animation: indetermine 1.4s ease-in-out infinite;
 }
 
+/* Seule animation « de plaisir » : la coche de l'écran de succès. */
+@keyframes coche-rond {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes coche-trait {
+  0% {
+    stroke-dashoffset: 30;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.coche-succes {
+  animation: coche-rond 450ms var(--ease-courbe) both;
+}
+
+.coche-succes path {
+  stroke-dasharray: 30;
+  animation: coche-trait 400ms 300ms var(--ease-courbe) both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  :root {
+    --duree-rapide: 0ms;
+    --duree: 0ms;
+    --default-transition-duration: 0ms;
+  }
+
+  .coche-succes,
+  .coche-succes path {
+    animation: none;
+  }
+
   .barre-indeterminee {
     animation: none;
     transform: none;
