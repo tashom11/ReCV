@@ -5,6 +5,7 @@ import type { Profil } from '../schemas'
 import { borneAccroche } from './pipeline'
 import { pointFidele } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
+import { motsNonAttestes } from './vocabulaire'
 
 // Bornes minimales : avec une grammaire JSON, un modèle peut sinon répondre par la sortie la plus courte
 // valide (« [] » et « "" »). `min` les exclut de la grammaire elle-même.
@@ -23,136 +24,6 @@ ${REGLES_ANTI_INVENTION}`
 export const MESSAGE_AUCUNE_COMPETENCE =
   'Aucune compétence transversale repérée dans ton profil. Ajoute-en (rigueur, autonomie, organisation, communication…) dans « Compétences » ou dans les réalisations, puis réessaie.'
 
-// Mots neutres qu'une accroche peut employer sans qu'ils figurent dans le profil.
-const MOTS_NEUTRES = new Set([
-  'professionnel',
-  'professionnelle',
-  'professionnels',
-  'profil',
-  'candidat',
-  'candidate',
-  'capable',
-  'alliant',
-  'allie',
-  'solide',
-  'solides',
-  'grande',
-  'grandes',
-  'forte',
-  'fortes',
-  'bonne',
-  'bonnes',
-  'serieux',
-  'serieuse',
-  'qualites',
-  'qualite',
-  'competences',
-  'capacite',
-  'capacites',
-  'esprit',
-  'savoir',
-  'atouts',
-  'permettent',
-  'permet',
-  'assurer',
-  'garantir',
-  'favorise',
-  'favoriser',
-  'toujours',
-  'ainsi',
-  'notamment',
-  'situations',
-  'contextes',
-  'environnement',
-  'environnements',
-  'quotidien',
-  'efficace',
-  'efficacement',
-  'mission',
-  'missions',
-  'projets',
-  'equipe',
-  'equipes',
-  'tache',
-  'taches',
-  'preuve',
-  'faire',
-  'mettre',
-  'apporter',
-  'souhaite',
-  'disposant',
-  'dispose',
-  'veille',
-  'veiller',
-  // Verbes et compléments courants d'une phrase de présentation (aucun ne décrit une qualité).
-  'nouveaux',
-  'nouvelles',
-  'nouveau',
-  'nouvelle',
-  'resultats',
-  'attentes',
-  'exigences',
-  'objectifs',
-  'parties',
-  'prenantes',
-  'collaborer',
-  'collaboration',
-  'repondre',
-  'repond',
-  'maitrise',
-  'maitrisant',
-  'adapter',
-  'rapidement',
-  'rapide',
-  'contribuer',
-  'contribue',
-  'atteindre',
-  'permettant',
-  'permettre',
-  'garantissant',
-  'assurant',
-  'assure',
-  'gerer',
-  'gestion',
-  'allie',
-  'alliance',
-  'respect',
-  'delais',
-  'clients',
-  'interlocuteurs',
-  'fonctionnement',
-  'efficacite',
-  'travailler',
-  'evoluer',
-  'apporte',
-  'apportant',
-  'interne',
-  'internes',
-  'externes',
-  'diverses',
-  'variees',
-  'differents',
-  'differentes',
-])
-
-// Racine grossière pour rapprocher « rigoureux » de « Rigueur », « autonome » de « Autonomie »…
-function racine(mot: string): string {
-  return mot.replace(/^rigoureu/, 'rigueu').slice(0, 5)
-}
-
-function mots(texte: string): string[] {
-  return normaliser(texte).match(/\p{L}{5,}/gu) ?? []
-}
-
-/**
- * Mots significatifs de l'accroche qui n'ont aucun équivalent dans le profil (ni mot neutre) : un tel mot est
- * une qualité ou une notion que le modèle a ajoutée (« Leader visionnaire »), donc une invention.
- */
-export function motsNonAttestes(accroche: string, source: string): string[] {
-  const racinesSource = new Set(mots(source).map(racine))
-  return mots(accroche).filter((mot) => !MOTS_NEUTRES.has(mot) && !racinesSource.has(racine(mot)))
-}
-
 // « de rigueur, d'autonomie et de sens du détail » (élision devant une voyelle ou un h)
 function enumererAvecDe(elements: string[]): string {
   const avecDe = elements.map((e) => (/^[aeiouyàâäéèêëîïôöùûüh]/i.test(e) ? `d’${e}` : `de ${e}`))
@@ -161,7 +32,7 @@ function enumererAvecDe(elements: string[]): string {
 }
 
 // Première personne exigée ; toute désignation à la troisième personne est rejetée.
-const MOTIF_PREMIERE_PERSONNE = /(?:^|[^p{L}])(?:je|mon|ma|mes)(?![p{L}])|(?:^|[^p{L}])j['’]/iu
+const MOTIF_PREMIERE_PERSONNE = /(?:^|[^\p{L}])(?:je|mon|ma|mes)(?![\p{L}])|(?:^|[^\p{L}])j['’]/iu
 const MOTIF_TROISIEME_PERSONNE = /(?:^|[^\p{L}])(?:il|elle|le candidat|la candidate|sa|son|ses)(?![\p{L}])/iu
 
 function texteSource(profil: Profil): string {
@@ -219,3 +90,5 @@ export async function genererAccrocheProfil(moteur: MoteurLLM, profil: Profil): 
   if (valide) return proposee.replace(/'/g, '’')
   return `Je fais preuve ${enumererAvecDe(retenues.slice(0, 5).map((c) => c.toLowerCase()))}.`
 }
+
+export { motsNonAttestes }

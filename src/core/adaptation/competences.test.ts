@@ -9,6 +9,7 @@ import {
   estCompetenceCourte,
   estSavoirEtre,
   formaterCompetence,
+  phraseQualites,
   separerCompetences,
 } from './competences'
 import { adapterCv } from './pipeline'
@@ -144,5 +145,15 @@ describe('adapterCv : profil dont les compétences contiennent des phrases', () 
       { type: 'paragraphe', texte: 'Savoir-être : Rigueur, Autonomie' },
       { type: 'paragraphe', texte: 'Outils et techniques : HTML / CSS' },
     ])
+  })
+})
+
+describe('phraseQualites', () => {
+  it('compose une phrase correcte : adjectifs convertis en noms, élisions respectées', () => {
+    expect(phraseQualites(['Adaptable', 'Travail en équipe', 'Autonomie', 'Rigueur'])).toBe(
+      'Je fais preuve d’adaptabilité, d’esprit d’équipe, d’autonomie et de rigueur.',
+    )
+    expect(phraseQualites(['Sens du détail'])).toBe('Je fais preuve de sens du détail.')
+    expect(phraseQualites([])).toBe('')
   })
 })

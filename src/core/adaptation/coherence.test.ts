@@ -64,17 +64,20 @@ describe('adapterCv : titre, durées et compétences attestées', () => {
   it('le titre du CV est celui de l’offre, jamais rédigé par le modèle ; l’accroche ne s’en réclame pas', async () => {
     const cv = await adapterCv(moteur('Community Manager expérimenté.'), profil, offre)
     expect(cv.titre).toBe('Community Manager')
-    expect(cv.accroche).toBe('')
+    // Rejetée (le poste visé n'est pas à affirmer) : phrase de qualités attestées, jamais l'ancienne accroche.
+    expect(cv.accroche).not.toMatch(/expérimenté/)
+    expect(cv.accroche).toBe('Je fais preuve de rigueur.')
   })
 
   it('rejette une durée déduite des dates (« 1 an »)', async () => {
     const cv = await adapterCv(moteur('Développeur web avec 1 an d’expérience en SEO.'), profil, offre)
-    expect(cv.accroche).toBe('')
+    expect(cv.accroche).not.toMatch(/1 an/)
   })
 
   it('accepte une accroche fidèle sans durée', async () => {
-    const cv = await adapterCv(moteur('Développeur web front attentif au SEO et à l’accessibilité.'), profil, offre)
-    expect(cv.accroche).toBe('Développeur web front attentif au SEO et à l’accessibilité.')
+    const fidele = 'Je fais preuve de rigueur pour la gestion éditoriale et l’animation des réseaux sociaux.'
+    const cv = await adapterCv(moteur(fidele), profil, offre)
+    expect(cv.accroche).toBe(fidele)
   })
 
   it('conserve une compétence attestée dans une expérience conservée, même jugée sans rapport', async () => {

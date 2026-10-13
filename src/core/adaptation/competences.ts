@@ -136,3 +136,52 @@ export function sansDoublons(liste: string[]): string[] {
     return true
   })
 }
+
+// Adjectifs et expressions courants d'un « profil recherché » → forme nominale utilisable après « je fais preuve de ».
+const NOMS_DES_QUALITES: Record<string, string> = {
+  adaptable: 'adaptabilité',
+  autonome: 'autonomie',
+  rigoureux: 'rigueur',
+  rigoureuse: 'rigueur',
+  organisé: 'organisation',
+  organisée: 'organisation',
+  assertif: 'assertivité',
+  'assertif(ve)': 'assertivité',
+  assertive: 'assertivité',
+  curieux: 'curiosité',
+  curieuse: 'curiosité',
+  polyvalent: 'polyvalence',
+  polyvalente: 'polyvalence',
+  créatif: 'créativité',
+  créative: 'créativité',
+  réactif: 'réactivité',
+  réactive: 'réactivité',
+  ponctuel: 'ponctualité',
+  ponctuelle: 'ponctualité',
+  fiable: 'fiabilité',
+  dynamique: 'dynamisme',
+  motivé: 'motivation',
+  motivée: 'motivation',
+  sociable: 'sens du contact',
+  'travail en équipe': 'esprit d’équipe',
+  'orienté résultats': 'sens des résultats',
+  'orienté résultat': 'sens des résultats',
+  'orienté(e) résultats': 'sens des résultats',
+}
+
+/**
+ * « Je fais preuve d'autonomie, d'adaptabilité et de rigueur. » : phrase de repli composée uniquement de qualités
+ * attestées, à la première personne, sans accord de genre. Chaîne vide si la liste est vide.
+ */
+export function phraseQualites(qualites: string[]): string {
+  const elements = qualites
+    .map((q) => q.trim().toLowerCase())
+    // « Je fais preuve d'adaptable » n'est pas du français : les adjectifs sont remplacés par leur nom.
+    .map((q) => NOMS_DES_QUALITES[q] ?? q)
+    .filter(Boolean)
+    .map((q) => (/^[aeiouyàâäéèêëîïôöùûüh]/i.test(q) ? `d’${q}` : `de ${q}`))
+  if (elements.length === 0) return ''
+  const liste =
+    elements.length === 1 ? elements[0] : `${elements.slice(0, -1).join(', ')} et ${elements[elements.length - 1]}`
+  return `Je fais preuve ${liste}.`
+}

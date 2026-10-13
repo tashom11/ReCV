@@ -2,13 +2,21 @@ import type { OptionsAdaptation } from '../llm/fournisseur'
 import type { MoteurLLM } from '../llm/moteur'
 import { nettoyerTitreOffre } from '../offre/texte'
 import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
-import { eclaterCompetences, estCompetenceCourte, estSavoirEtre, formaterCompetence, sansDoublons } from './competences'
+import {
+  eclaterCompetences,
+  estCompetenceCourte,
+  estSavoirEtre,
+  formaterCompetence,
+  phraseQualites,
+  sansDoublons,
+} from './competences'
 import { analyserCouverture, dejaListee } from './couverture'
-import { analyserOffre, restreindreAnalyse } from './motsCles'
+import { analyserOffre } from './motsCles'
 import { evaluerPertinence, indicesConserves } from './pertinence'
-import { pointFidele, pointsOrigine, reecrireExperience, selectionnerPoints } from './reecriture'
+import { pointFidele, pointsOrigine, pointsProchesOffre, reecrireExperience, selectionnerPoints } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
 import { redigerAccroche } from './titreAccroche'
+import { motsNonAttestes } from './vocabulaire'
 
 const MAX_COMPETENCES_CLES = 12
 const MAX_SAVOIR_ETRE = 8
@@ -175,23 +183,25 @@ export async function adapterCv(
   const formationsEcartees = profil.formations.filter((_, i) => !indicesFormations.includes(i))
   const aEcarte = experiencesEcartees.length > 0 || competencesEcartees.length > 0 || formationsEcartees.length > 0
 
-  // Le titre et l'accroche d'origine résument tout le profil : ils ne sont transmis au modèle que si rien
-  // n'a été écarté (sinon ils réintroduiraient le domaine écarté).
-  const profilRetenu: Profil = {
-    ...profil,
-    titrePoste: aEcarte ? undefined : profil.titrePoste,
-    accroche: aEcarte ? undefined : profil.accroche,
-    experiences: indicesExperiences.flatMap((i) => profil.experiences[i] ?? []),
-    competences: competencesGardees,
-    formations: formationsGardees,
+  // Couverture des exigences de l'offre par le profil (réutilisée plus bas pour les compétences clés).
+  const couverture = analyserCouverture(profil, analyse)
+
+  // L'accroche ne doit parler que de ce qui répond à l'offre. Ni l'ancienne accroche du profil (écrite pour un autre
+  // métier), ni les tâches sans rapport : elles donnaient « transformer des maquettes en sites web » à une offre de
+  // recrutement. Le modèle ne reçoit que les savoir-être, les exigences attestées et les réalisations qui recoupent
+  // des termes de l'offre.
+  const termesProches = [...analyse.competencesRequises, ...analyse.qualites, ...analyse.motsCles, analyse.titreCible]
+  const contenuAccroche = {
+    competences: sansDoublons([
+      ...couverture.attestees.filter(estCompetenceCourte),
+      ...competencesGardees.filter(estSavoirEtre),
+    ]),
+    realisations: indicesExperiences.flatMap((i) =>
+      profil.experiences[i] ? pointsProchesOffre(profil.experiences[i], termesProches, 3) : [],
+    ),
   }
   signaler({ etape: 'Rédaction de l’accroche' })
-  const redige = await redigerAccroche(
-    moteur,
-    profilRetenu,
-    experiences,
-    restreindreAnalyse(analyse, texteProfil(profilRetenu)),
-  )
+  const redige = await redigerAccroche(moteur, contenuAccroche, analyse)
 
   // Garde-fou en code (le prompt seul ne suffit pas, notamment face à une offre piégée) : un titre ou une
   // accroche qui cite un terme de l'offre absent du profil, un nombre inconnu ou un élément écarté
@@ -213,17 +223,28 @@ export async function adapterCv(
     (aEcarte ? principale?.poste : (profil.titrePoste ?? principale?.poste)) ||
     ''
   const proposee = borneAccroche(redige.accroche)
+  // Vocabulaire autorisé : celui de l'offre et les données confiées au modèle. Un mot qui n'en vient pas (« maquettes »,
+  // « atelier ») est une dérive vers le reste du profil ; au plus un écart est toléré.
+  const vocabulaire = [
+    offre.texteBrut,
+    ...termesProches,
+    ...contenuAccroche.competences,
+    ...contenuAccroche.realisations,
+  ].join(' ')
   const accrocheFidele =
-    proposee !== '' && pointFidele(proposee, source, termesInterdits) && dureesFideles(proposee, source)
-  // Compétences demandées par l'offre, rapprochées du profil. Celles que le profil atteste figurent déjà dans le
-  // CV (compétences ou expériences, que les ATS lisent en texte) ; les absentes sont seulement PROPOSÉES à
-  // l'utilisateur, qui coche celles qu'il maîtrise.
-  const couverture = analyserCouverture(profil, analyse)
-  // Repli si l'accroche du modèle est rejetée : une phrase composée des compétences demandées que le profil atteste.
-  const attesteesCourtes = couverture.attestees.filter((t) => t.split(/s+/).length <= 3).slice(0, 4)
+    proposee !== '' &&
+    pointFidele(proposee, source, termesInterdits) &&
+    dureesFideles(proposee, source) &&
+    motsNonAttestes(proposee, vocabulaire).length <= 1
+  // Repli : phrase de qualités attestées demandées par l'offre, puis autres savoir-être du profil. Jamais l'ancienne
+  // accroche du profil, souvent rédigée pour un autre métier.
+  const qualitesAttestees = contenuAccroche.competences.filter(estSavoirEtre).slice(0, 4)
+  const accrocheRepliQualites = phraseQualites(qualitesAttestees)
+  const attesteesCourtes = couverture.attestees.filter((t) => t.split(/\s+/).length <= 3).slice(0, 4)
   const accrocheRepliOffre =
     attesteesCourtes.length > 0 ? `Je mets en avant mes compétences en ${attesteesCourtes.join(', ')}.` : ''
-  const accroche = accrocheFidele ? proposee : aEcarte ? accrocheRepliOffre : (profil.accroche ?? accrocheRepliOffre)
+  const accroche = accrocheFidele ? proposee : accrocheRepliQualites || accrocheRepliOffre
+
   const listees = prioriserCompetences(competencesGardees, termesOffre)
   // Compétences clés : celles que demande l'offre et que le profil atteste, avec la formulation de l'offre (c'est
   // elle que cherche un ATS). Retirées de la liste générale pour ne pas apparaître deux fois.
