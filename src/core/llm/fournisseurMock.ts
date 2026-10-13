@@ -72,7 +72,7 @@ export class FournisseurMock implements FournisseurLLM {
   }
 
   async genererAccroche(profil: Profil): Promise<string> {
-    return `Professionnel alliant ${profil.competences.slice(0, 3).join(', ')}.`
+    return `Je fais preuve de ${profil.competences.slice(0, 3).join(', ')}.`
   }
 
   async adapterCv(profil: Profil, _offre: Offre, _options?: OptionsAdaptation): Promise<CvAdapte> {
