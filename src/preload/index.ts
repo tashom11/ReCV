@@ -1,4 +1,4 @@
-import type { ApiReCV, ProgressionModele, ProgressionTache } from '@core/api'
+import type { ApiReCV, EtatMiseAJour, ProgressionModele, ProgressionTache } from '@core/api'
 import { CANAUX, encoderErreur, type ResultatIpc } from '@core/canaux'
 import { contextBridge, type IpcRendererEvent, ipcRenderer, webUtils } from 'electron'
 
@@ -33,6 +33,14 @@ const api: ApiReCV = {
   annulerTelechargement: () => appeler(CANAUX.annulerTelechargement),
   supprimerModele: (id) => appeler(CANAUX.supprimerModele, id),
   effacerDonnees: () => appeler(CANAUX.effacerDonnees),
+  lireEtatMiseAJour: () => appeler(CANAUX.lireEtatMiseAJour),
+  verifierMiseAJour: () => appeler(CANAUX.verifierMiseAJour),
+  installerMiseAJour: () => appeler(CANAUX.installerMiseAJour),
+  surMiseAJour: (rappel) => {
+    const ecouteur = (_e: IpcRendererEvent, etat: EtatMiseAJour) => rappel(etat)
+    ipcRenderer.on(CANAUX.etatMiseAJour, ecouteur)
+    return () => ipcRenderer.removeListener(CANAUX.etatMiseAJour, ecouteur)
+  },
   surProgressionTache: (rappel) => {
     const ecouteur = (_e: IpcRendererEvent, progression: ProgressionTache) => rappel(progression)
     ipcRenderer.on(CANAUX.progressionTache, ecouteur)
