@@ -154,6 +154,7 @@ export function EcranOffre({
               etape={progressionAdaptation?.etape ?? 'Préparation du modèle'}
               courant={progressionAdaptation?.courant}
               total={progressionAdaptation?.total}
+              calcul={progressionAdaptation?.calcul}
               note="Avec un modèle local, cela peut prendre plusieurs minutes. Ne ferme pas l’application."
             />
           )}

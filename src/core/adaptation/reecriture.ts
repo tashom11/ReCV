@@ -41,6 +41,31 @@ export function pointFidele(point: string, texteSource: string, termesAbsents: s
   return nombres(point).every((nombre) => nombresSource.has(nombre))
 }
 
+// Racines de mots (5 premières lettres, sans accents) : « ponçage »/« poncer » se rejoignent.
+function racinesMots(texte: string): string[] {
+  return (normaliser(texte).match(/[\p{L}\p{N}]{4,}/gu) ?? []).map((mot) => mot.slice(0, 5))
+}
+
+/**
+ * Sélection des puces SANS modèle : on garde les `max` puces d'origine les plus proches des termes de l'offre
+ * (recoupement de racines de mots), dans leur ordre d'origine. Instantané, et rien ne peut être inventé.
+ * C'est le mode par défaut ; la reformulation par le modèle (`reecrireExperience`) est optionnelle.
+ */
+export function selectionnerPoints(experience: Experience, termes: string[], max: number): string[] {
+  const origine = pointsOrigine(experience)
+  if (origine.length <= max) return origine
+  const racinesOffre = new Set(termes.flatMap(racinesMots))
+  const score = (point: string) => new Set(racinesMots(point).filter((r) => racinesOffre.has(r))).size
+  const retenus = new Set(
+    origine
+      .map((point, rang) => ({ point, rang, score: score(point) }))
+      .sort((a, b) => b.score - a.score || a.rang - b.rang)
+      .slice(0, max)
+      .map((e) => e.rang),
+  )
+  return origine.filter((_, rang) => retenus.has(rang))
+}
+
 // Étape 3 : réécriture d'UNE expérience (appelée expérience par expérience).
 export async function reecrireExperience(
   moteur: MoteurLLM,

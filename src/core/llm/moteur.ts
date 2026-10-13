@@ -16,4 +16,6 @@ export interface MoteurLLM {
   genererObjet<T>(requete: RequeteObjet<T>): Promise<T>
   /** Libère les ressources natives, si le moteur en détient. */
   liberer?(): Promise<void>
+  /** Où tourne le calcul (modèle embarqué uniquement) ; `null` tant que le modèle n'est pas chargé. */
+  modeCalcul?(): 'gpu' | 'cpu' | null
 }

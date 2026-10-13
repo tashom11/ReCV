@@ -3,7 +3,7 @@ import type { MoteurLLM } from '../llm/moteur'
 import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
 import { analyserOffre, restreindreAnalyse } from './motsCles'
 import { evaluerPertinence, indicesConserves } from './pertinence'
-import { pointFidele, pointsOrigine, reecrireExperience } from './reecriture'
+import { pointFidele, pointsOrigine, reecrireExperience, selectionnerPoints } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
 import { redigerAccroche } from './titreAccroche'
 
@@ -79,8 +79,13 @@ export async function adapterCv(
   options: OptionsAdaptation = {},
 ): Promise<CvAdapte> {
   const signaler = options.surEtape ?? (() => undefined)
-  signaler({ etape: 'Analyse de l’offre' })
-  const analyse = await analyserOffre(moteur, offre)
+  // L'analyse d'une offre ne dépend pas du profil : si elle est déjà connue (relance, autre profil), on la réutilise.
+  let analyse = options.analyse
+  if (!analyse) {
+    signaler({ etape: 'Analyse de l’offre' })
+    analyse = await analyserOffre(moteur, offre)
+    options.surAnalyse?.(analyse)
+  }
   signaler({ etape: 'Choix des éléments du profil à mettre en avant' })
   const pertinence = await evaluerPertinence(moteur, profil, analyse)
 
@@ -109,15 +114,30 @@ export async function adapterCv(
   for (const indice of indicesExperiences) {
     const experience = profil.experiences[indice]
     if (!experience) continue
-    signaler({ etape: 'Réécriture des expériences', courant: experiences.length + 1, total: indicesExperiences.length })
     const maxPoints = pertinence.experiences[indice] === 2 ? POINTS_PRIORITAIRES : POINTS_SECONDAIRES
+    let points: string[]
+    if (options.reformuler) {
+      signaler({
+        etape: 'Reformulation des expériences',
+        courant: experiences.length + 1,
+        total: indicesExperiences.length,
+      })
+      points = await reecrireExperience(moteur, experience, analyse, maxPoints)
+    } else {
+      // Mode rapide (défaut) : sélection des puces d'origine les plus proches de l'offre, sans appel au modèle.
+      points = selectionnerPoints(
+        experience,
+        [...analyse.motsCles, ...analyse.competencesRequises, analyse.titreCible],
+        maxPoints,
+      )
+    }
     experiences.push({
       indice,
       poste: experience.poste,
       entreprise: experience.entreprise,
       lieu: experience.lieu,
       periode: experience.periode,
-      points: await reecrireExperience(moteur, experience, analyse, maxPoints),
+      points,
     })
   }
 

@@ -20,12 +20,15 @@ export function Chargement({
   courant,
   total,
   note,
+  calcul,
 }: {
   titre: string
   etape?: string
   courant?: number
   total?: number
   note?: string
+  /** Où tourne le modèle embarqué (signalé par le process principal). */
+  calcul?: 'gpu' | 'cpu'
 }) {
   const secondes = useSecondesEcoulees(true)
   const determine = courant !== undefined && total !== undefined && total > 0
@@ -59,6 +62,13 @@ export function Chargement({
         )}
       </div>
       {note && <p className="text-xs text-indigo-700">{note}</p>}
+      {calcul === 'cpu' && (
+        <p className="rounded bg-amber-100 px-2 py-1 text-xs text-amber-900">
+          Calcul sur le processeur : c’est nettement plus lent. Ferme les applications qui utilisent la carte graphique
+          (Ollama, autre fenêtre Re:CV…) ou choisis un modèle plus petit dans les paramètres.
+        </p>
+      )}
+      {calcul === 'gpu' && <p className="text-xs text-indigo-700">Calcul sur la carte graphique.</p>}
     </div>
   )
 }

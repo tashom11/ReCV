@@ -137,6 +137,25 @@ export function EcranParametres() {
           </div>
         )}
 
+        <label className="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 p-3">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={etat.reformulerPuces}
+            onChange={(e) => maj({ reformulerPuces: e.target.checked })}
+          />
+          <span>
+            <span className="block text-sm font-medium text-slate-900">
+              Reformuler les puces avec le modèle (plus lent)
+            </span>
+            <span className="block text-xs text-slate-600">
+              Désactivé : Re:CV sélectionne dans tes expériences les puces les plus proches de l’offre, sans les
+              réécrire (instantané, rien n’est inventé). Activé : le modèle les reformule, ce qui ajoute plusieurs
+              minutes avec un modèle local.
+            </span>
+          </span>
+        </label>
+
         <Bouton onClick={enregistrer} enCours={occupe === 'enregistrer'} desactive={occupe !== null}>
           {occupe === 'enregistrer' ? 'Enregistrement…' : 'Enregistrer'}
         </Bouton>

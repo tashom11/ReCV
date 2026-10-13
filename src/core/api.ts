@@ -35,6 +35,8 @@ export const parametresSchema = z.object({
   urlOllama: urlService.default('http://localhost:11434/v1'),
   urlApi: urlApiSure.default('https://api.openai.com/v1'),
   modeleApi: z.string().max(200).default(''),
+  /** Reformuler les puces avec le modèle (plus lent). Par défaut : sélection des puces, sans modèle. */
+  reformulerPuces: z.boolean().default(false),
   cheminModeleLocal: z
     .string()
     .max(1024)
@@ -101,6 +103,8 @@ export interface ProgressionTache {
   etape: string
   courant?: number
   total?: number
+  /** Où tourne le modèle embarqué : sur le processeur, le calcul est bien plus lent. */
+  calcul?: 'gpu' | 'cpu'
 }
 
 /** Méthodes requête/réponse, implémentées par le service du process principal. */

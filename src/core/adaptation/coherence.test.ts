@@ -55,12 +55,7 @@ describe('adapterCv : titre, durées et compétences attestées', () => {
           { indice: 0, pertinence: 1 },
           { indice: 1, pertinence: 0 },
         ],
-        competences: [
-          { indice: 0, pertinence: 0 },
-          { indice: 1, pertinence: 0 },
-          { indice: 2, pertinence: 0 },
-          { indice: 3, pertinence: 1 },
-        ],
+        competencesUtiles: [3],
       },
       reecriture: { points: [] },
       accroche: { accroche },
@@ -181,12 +176,17 @@ describe('adapterCv : signalement des étapes', () => {
       accroche: { accroche: '' },
     })
     const etapes: { etape: string; courant?: number; total?: number }[] = []
-    await adapterCv(m, profil, { titrePoste: 'Dev', texteBrut: 'Offre' }, { surEtape: (e) => etapes.push(e) })
+    await adapterCv(
+      m,
+      profil,
+      { titrePoste: 'Dev', texteBrut: 'Offre' },
+      { reformuler: true, surEtape: (e) => etapes.push(e) },
+    )
     expect(etapes.map((e) => e.etape)).toEqual([
       'Analyse de l’offre',
       'Choix des éléments du profil à mettre en avant',
-      'Réécriture des expériences',
-      'Réécriture des expériences',
+      'Reformulation des expériences',
+      'Reformulation des expériences',
       'Rédaction de l’accroche',
     ])
     expect(etapes.filter((e) => e.courant !== undefined).map((e) => `${e.courant}/${e.total}`)).toEqual(['1/2', '2/2'])
@@ -217,11 +217,7 @@ describe('adapterCv : compétences composées', () => {
       motsCles: { titreCible: 'Carrossier peintre', motsCles: ['ponçage'] },
       pertinence: {
         experiences: [{ indice: 0, pertinence: 2 }],
-        competences: [
-          { indice: 0, pertinence: 0 },
-          { indice: 1, pertinence: 0 },
-          { indice: 2, pertinence: 1 },
-        ],
+        competencesUtiles: [2],
       },
       reecriture: { points: [] },
       accroche: { accroche: '' },

@@ -62,6 +62,7 @@ export function retirerNulls(valeur: unknown): unknown {
 // de jetons : la génération s'arrête alors en plein JSON (« Unexpected end of JSON input »).
 const CONTEXTE_CIBLE = 8192
 const CONTEXTE_MIN = 4096
+const DELAI_NOUVEL_ESSAI_GPU_MS = 60_000
 
 const MESSAGE_MEMOIRE =
   'Mémoire insuffisante pour le modèle embarqué. Ferme les applications qui utilisent la carte graphique ' +
@@ -72,11 +73,13 @@ const MESSAGE_MEMOIRE =
 export class MoteurLocal implements MoteurLLM {
   private chargement?: Promise<{ llama: Llama; modele: LlamaModel }>
   private surCpu = false
+  private dernierRepliCpu = 0
 
   constructor(private readonly cheminModele: string) {}
 
   private charger(surCpu = this.surCpu) {
-    this.chargement ??= (async () => {
+    if (this.chargement) return this.chargement
+    const chargement = (async () => {
       // Import dynamique : node-llama-cpp est ESM avec top-level await (incompatible avec require).
       const { getLlama } = await import('node-llama-cpp')
       const llama = await getLlama()
@@ -87,12 +90,28 @@ export class MoteurLocal implements MoteurLLM {
       })
       return { llama, modele }
     })()
-    return this.chargement
+    this.chargement = chargement
+    // Un chargement en échec ne doit pas rester en cache : sinon le repli CPU relirait l'échec.
+    chargement.catch(() => {
+      if (this.chargement === chargement) this.chargement = undefined
+    })
+    return chargement
   }
 
   // Si le contexte ne tient pas en VRAM (autre application, Ollama…), on recharge le modèle sur le processeur :
   // plus lent, mais le résultat est correct.
+  modeCalcul(): 'gpu' | 'cpu' | null {
+    if (!this.chargement) return null
+    return this.surCpu ? 'cpu' : 'gpu'
+  }
+
   private async creerContexte() {
+    // Le repli CPU n'est pas définitif : la VRAM a pu se libérer (autre application fermée). On retente le GPU
+    // si le dernier repli date de plus d'une minute.
+    if (this.surCpu && Date.now() - this.dernierRepliCpu > DELAI_NOUVEL_ESSAI_GPU_MS) {
+      await this.liberer()
+      this.surCpu = false
+    }
     const options = { contextSize: { min: CONTEXTE_MIN, max: CONTEXTE_CIBLE } }
     try {
       const { modele } = await this.charger()
@@ -101,6 +120,7 @@ export class MoteurLocal implements MoteurLLM {
       if (this.surCpu) throw new Error(MESSAGE_MEMOIRE, { cause: erreur })
       await this.liberer()
       this.surCpu = true
+      this.dernierRepliCpu = Date.now()
       try {
         const { modele } = await this.charger(true)
         return await modele.createContext(options)
@@ -136,10 +156,15 @@ export class MoteurLocal implements MoteurLLM {
   }
 
   async liberer(): Promise<void> {
-    if (!this.chargement) return
-    const { modele } = await this.chargement
-    await modele.dispose()
+    const chargement = this.chargement
     this.chargement = undefined
+    if (!chargement) return
+    try {
+      const { modele } = await chargement
+      await modele.dispose()
+    } catch {
+      // Chargement échoué : il n'y a rien à libérer.
+    }
   }
 }
 

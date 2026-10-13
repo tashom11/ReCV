@@ -97,7 +97,7 @@ describe('adapterCv', () => {
   })
 
   it('retire les puces vides et celles qui citent un terme de l’offre absent de l’expérience', async () => {
-    const cv = await adapterCv(moteurTricheur(), profilCanned, offre)
+    const cv = await adapterCv(moteurTricheur(), profilCanned, offre, { reformuler: true })
     expect(cv.experiences[0]?.points).toEqual(['Pilotage de la migration vers TypeScript'])
     // Agence Beta ne mentionne pas TypeScript : toutes les puces sont rejetées, repli sur les réalisations.
     expect(cv.experiences[1]?.points).toEqual(profilCanned.experiences[1]?.realisations)
@@ -135,14 +135,14 @@ describe('adapterCv', () => {
       reecriture: { points: ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot'] },
       accroche: { accroche: '' },
     })
-    const cv = await adapterCv(moteur, profil, offre)
+    const cv = await adapterCv(moteur, profil, offre, { reformuler: true })
     expect(moteur.requetes.filter((requete) => requete.nom === 'reecriture')).toHaveLength(3)
     expect(cv.experiences.map((experience) => experience.points.length)).toEqual([5, 3, 5])
   })
 
   it('injecte les règles anti-invention dans chaque prompt et délimite les données', async () => {
     const moteur = moteurTricheur()
-    await adapterCv(moteur, profilCanned, offre)
+    await adapterCv(moteur, profilCanned, offre, { reformuler: true })
     expect(moteur.requetes.map((requete) => requete.nom)).toEqual([
       'motsCles',
       'pertinence',
