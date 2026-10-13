@@ -53,7 +53,8 @@ export function EcranProfil({
   onSuivant: () => void
 }) {
   const [brouillon, setBrouillon] = useState<Profil | null>(profil)
-  const [occupe, setOccupe] = useState<'import' | 'enregistrement' | null>(null)
+  const [occupe, setOccupe] = useState<'import' | 'enregistrement' | 'accroche' | null>(null)
+  const progressionAccroche = useProgressionTache('accroche', occupe === 'accroche')
   const progressionImport = useProgressionTache('import', occupe === 'import')
   const [erreur, setErreur] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -94,6 +95,31 @@ export function EcranProfil({
       onProfil(enregistre)
       setMessage('Profil enregistré.')
       if (puisContinuer) onSuivant()
+    } catch (e) {
+      setErreur(messageErreur(e))
+    } finally {
+      setOccupe(null)
+    }
+  }
+
+  // Accroche générique, fondée sur les compétences transversales : valable quelle que soit l'offre visée.
+  const genererAccroche = async () => {
+    if (!brouillon) return
+    if (
+      (brouillon.accroche ?? '').trim() !== '' &&
+      !window.confirm(
+        'Remplacer l’accroche actuelle par une accroche générée à partir de tes compétences transversales ?',
+      )
+    ) {
+      return
+    }
+    setOccupe('accroche')
+    setErreur(null)
+    setMessage(null)
+    try {
+      const accroche = await window.api.genererAccroche(nettoyerProfil(brouillon))
+      setBrouillon((p) => (p ? { ...p, accroche } : p))
+      setMessage('Accroche générée à partir de tes compétences transversales : relis-la et ajuste-la si besoin.')
     } catch (e) {
       setErreur(messageErreur(e))
     } finally {
@@ -162,7 +188,27 @@ export function EcranProfil({
               multiligne
               valeur={brouillon.accroche ?? ''}
               onChange={(v) => maj({ accroche: v })}
+              action={
+                <Bouton
+                  variante="secondaire"
+                  onClick={genererAccroche}
+                  enCours={occupe === 'accroche'}
+                  desactive={occupe !== null}
+                >
+                  {occupe === 'accroche' ? 'Génération…' : 'Générer une accroche'}
+                </Bouton>
+              }
             />
+            <p className="text-xs text-slate-500">
+              L’accroche générée repose uniquement sur tes compétences transversales (rigueur, autonomie,
+              organisation…), pas sur ton métier : elle reste valable pour toutes les offres.
+            </p>
+            {occupe === 'accroche' && (
+              <Chargement
+                titre="Génération de l’accroche…"
+                etape={progressionAccroche?.etape ?? 'Repérage des compétences transversales'}
+              />
+            )}
           </Carte>
 
           <Carte titre="Expériences">

@@ -96,7 +96,7 @@ export interface EtatModeles {
 
 /** Étape en cours d'une tâche longue (import du CV, analyse d'offre, adaptation) : le renderer l'affiche. */
 export interface ProgressionTache {
-  tache: 'import' | 'offre' | 'adaptation'
+  tache: 'import' | 'offre' | 'adaptation' | 'accroche'
   /** Libellé lisible, ex. « Réécriture des expériences ». */
   etape: string
   courant?: number
@@ -117,6 +117,8 @@ export interface ApiService {
   enregistrerParametres(parametres: Parametres): Promise<EtatParametres>
   /** Enregistre le CV validé (coordonnées du profil actif) via un sélecteur de fichier. Chemin écrit, ou `null` si annulé. */
   exporterCv(cv: CvAdapte, format: FormatExport): Promise<string | null>
+  /** Accroche générique fondée sur les compétences transversales du profil fourni (même non enregistré). */
+  genererAccroche(profil: Profil): Promise<string>
   /** Chaîne vide : supprime la clé. */
   definirCleApi(cle: string): Promise<EtatParametres>
   lireEtatModeles(): Promise<EtatModeles>

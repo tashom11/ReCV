@@ -1,3 +1,4 @@
+import { genererAccrocheProfil } from '../adaptation/accrocheProfil'
 import { adapterCv } from '../adaptation/pipeline'
 import type { CvAdapte, Offre, Profil } from '../schemas'
 import { extraireOffre, extraireProfil } from './extraction'
@@ -18,6 +19,10 @@ export class FournisseurStructure implements FournisseurLLM {
 
   adapterCv(profil: Profil, offre: Offre, options?: OptionsAdaptation): Promise<CvAdapte> {
     return adapterCv(this.moteur, profil, offre, options)
+  }
+
+  genererAccroche(profil: Profil): Promise<string> {
+    return genererAccrocheProfil(this.moteur, profil)
   }
 
   async liberer(): Promise<void> {

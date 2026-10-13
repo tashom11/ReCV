@@ -90,6 +90,7 @@ describe('service : cycle de vie du fournisseur et données', () => {
           extraireProfil: (t) => mock.extraireProfil(t),
           extraireOffre: (t) => mock.extraireOffre(t),
           adapterCv: (pr, o) => mock.adapterCv(pr, o),
+          genererAccroche: (pr) => mock.genererAccroche(pr),
           liberer: async () => void liberes++,
         }
         return fournisseur
