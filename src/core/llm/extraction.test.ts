@@ -12,11 +12,11 @@ describe('encadrer', () => {
 describe('extraction', () => {
   it('extrait un profil avec les règles anti-invention et le CV délimité', async () => {
     const moteur = new MoteurMock({ extraireProfil: { nom: 'Claire', competences: ['React'] } })
-    const profil = await extraireProfil(moteur, 'CV de Claire')
+    const profil = await extraireProfil(moteur, 'CV de Claire — Compétences : React')
     expect(profil.competences).toEqual(['React'])
     expect(profil.experiences).toEqual([])
     expect(moteur.requetes[0]?.systeme).toContain(REGLES_ANTI_INVENTION)
-    expect(moteur.requetes[0]?.utilisateur).toBe('<cv>\nCV de Claire\n</cv>')
+    expect(moteur.requetes[0]?.utilisateur).toBe('<cv>\nCV de Claire — Compétences : React\n</cv>')
   })
 
   it("recopie le texte brut de l'offre en code, sans le faire régénérer", async () => {
