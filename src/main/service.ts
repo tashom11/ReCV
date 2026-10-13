@@ -34,6 +34,7 @@ import {
   enregistrerProfil,
   obtenirProfilActif,
 } from './bdd/depots'
+import type { GestionnaireMiseAJour } from './miseAJour'
 import type { GestionnaireModeles } from './modeles/gestionnaire'
 import type { StockageParametres } from './parametres'
 
@@ -49,6 +50,7 @@ export interface DependancesService {
   /** User-Agent de navigateur utilisé pour récupérer les offres. */
   userAgent?: string
   modeles: GestionnaireModeles
+  misesAJour: Pick<GestionnaireMiseAJour, 'etat' | 'verifier' | 'installer'>
   /** Signale l'étape en cours d'une tâche longue au renderer. */
   emettreTache?: (progression: ProgressionTache) => void
   /** Sélecteur d'enregistrement : chemin choisi, ou `null` si annulé. */
@@ -266,6 +268,10 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       analyses.clear()
       await parametres.definirCle('')
     },
+
+    lireEtatMiseAJour: async () => deps.misesAJour.etat(),
+    verifierMiseAJour: () => deps.misesAJour.verifier(),
+    installerMiseAJour: async () => deps.misesAJour.installer(),
 
     liberer: () => liberer(courant),
 

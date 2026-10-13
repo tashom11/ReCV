@@ -127,6 +127,24 @@ export interface EtatModeles {
   telechargement: ProgressionModele | null
 }
 
+/** Où en est la mise à jour de l'application (releases GitHub). */
+export interface EtatMiseAJour {
+  /** Version en cours d'exécution. */
+  version: string
+  /**
+   * `indisponible` : application non installée (développement). `prete` : téléchargée, installée à la fermeture.
+   * `erreur` : vérification impossible (hors ligne, dépôt inaccessible).
+   */
+  etat: 'indisponible' | 'inactif' | 'verification' | 'a-jour' | 'telechargement' | 'prete' | 'erreur'
+  nouvelleVersion?: string
+  /** Avancement du téléchargement, de 0 à 100. */
+  pourcentage?: number
+  /** Message technique de la dernière erreur. */
+  message?: string
+  /** Horodatage (ms) de la dernière vérification aboutie. */
+  verifieLe?: number
+}
+
 /** Étape en cours d'une tâche longue (import du CV, analyse d'offre, adaptation) : le renderer l'affiche. */
 export interface ProgressionTache {
   tache: 'import' | 'offre' | 'adaptation' | 'accroche'
@@ -177,6 +195,11 @@ export interface ApiService {
   supprimerModele(id: string): Promise<void>
   /** Supprime profil, offres, CV générés et clé API. Les paramètres et modèles sont conservés. */
   effacerDonnees(): Promise<void>
+  lireEtatMiseAJour(): Promise<EtatMiseAJour>
+  /** Vérifie maintenant ; résout avec l'état obtenu (le téléchargement éventuel continue ensuite). */
+  verifierMiseAJour(): Promise<EtatMiseAJour>
+  /** Ferme l'application et installe la version déjà téléchargée. */
+  installerMiseAJour(): Promise<void>
 }
 
 /** API complète vue par le renderer. */
@@ -186,6 +209,8 @@ export interface ApiReCV extends Omit<ApiService, 'importerCvDepose'> {
   surProgressionModele(rappel: (progression: ProgressionModele) => void): () => void
   /** Étapes des tâches longues (adaptation…). Retourne la fonction de désabonnement. */
   surProgressionTache(rappel: (progression: ProgressionTache) => void): () => void
+  /** Changements d'état de la mise à jour. Retourne la fonction de désabonnement. */
+  surMiseAJour(rappel: (etat: EtatMiseAJour) => void): () => void
 }
 
 // Bornes de taille : le renderer n'est pas fiable (les schémas métier eux-mêmes ne sont pas bornés,

@@ -66,5 +66,8 @@ export function enregistrerHandlers(
   gerer(CANAUX.annulerTelechargement, () => api.annulerTelechargement())
   gerer(CANAUX.supprimerModele, (id) => api.supprimerModele(analyser(entreesIpc.idModele, id)))
   gerer(CANAUX.effacerDonnees, () => api.effacerDonnees())
+  gerer(CANAUX.lireEtatMiseAJour, () => api.lireEtatMiseAJour())
+  gerer(CANAUX.verifierMiseAJour, () => api.verifierMiseAJour())
+  gerer(CANAUX.installerMiseAJour, () => api.installerMiseAJour())
   gerer(CANAUX.definirCleApi, (cle) => api.definirCleApi(analyser(entreesIpc.cle, cle)))
 }

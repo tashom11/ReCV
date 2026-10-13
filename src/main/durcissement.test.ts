@@ -81,6 +81,11 @@ describe('service : cycle de vie du fournisseur et données', () => {
         emettre: () => undefined,
       }),
       choisirEtLireCv: async () => ({ texte: 'cv', nom: 'mon-cv.pdf' }),
+      misesAJour: {
+        etat: () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        verifier: async () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        installer: () => undefined,
+      },
       lireCv: async () => 'cv',
       ouvrirChemin: async () => undefined,
       montrerChemin: () => undefined,

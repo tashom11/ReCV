@@ -6,6 +6,7 @@ import logo from './assets/logo.png'
 import { EcranAccueil } from './ecrans/Accueil'
 import { type AnnonceLue, EcranAnnonce } from './ecrans/Annonce'
 import { EcranCreation } from './ecrans/Creation'
+import { useMiseAJour } from './ecrans/MisesAJour'
 import { EcranMonCv } from './ecrans/MonCv'
 import { EcranNouveauCv } from './ecrans/NouveauCv'
 import { EcranPreparation } from './ecrans/Preparation'
@@ -49,6 +50,8 @@ export default function App() {
   const [miseEnPage, setMiseEnPage] = useState(false)
   const [estimation, setEstimation] = useState(() => lireEstimation(localStorage))
   const [moteur, setMoteur] = useState<{ pret: boolean; enLigne: boolean }>({ pret: true, enLigne: false })
+
+  const miseAJour = useMiseAJour()
 
   const verifierMoteur = useCallback(
     () =>
@@ -185,6 +188,17 @@ export default function App() {
             <BoutonLien icone="fleche-gauche" onClick={() => aller(retour.current)}>
               Revenir où j’en étais
             </BoutonLien>
+          )}
+          {/* Une version téléchargée se signale partout où les réglages sont accessibles. */}
+          {entete.reglages && miseAJour?.etat === 'prete' && (
+            <button
+              type="button"
+              onClick={() => aller('reglages')}
+              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-accent bg-accent-pale px-4 font-bold text-encre hover:brightness-95"
+            >
+              <Icone nom="telecharger" taille={18} />
+              Mise à jour prête
+            </button>
           )}
           {entete.reglages && (
             <button

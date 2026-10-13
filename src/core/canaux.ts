@@ -26,6 +26,10 @@ export const CANAUX = {
   progressionModele: 'modeles:progression',
   progressionTache: 'taches:progression',
   effacerDonnees: 'donnees:effacer',
+  lireEtatMiseAJour: 'mise-a-jour:etat',
+  verifierMiseAJour: 'mise-a-jour:verifier',
+  installerMiseAJour: 'mise-a-jour:installer',
+  etatMiseAJour: 'mise-a-jour:changement',
 } as const
 
 /** Enveloppe sérialisable : les erreurs traversent l'IPC avec un message lisible. */

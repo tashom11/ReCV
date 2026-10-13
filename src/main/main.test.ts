@@ -75,6 +75,11 @@ describe('service', () => {
         emettre: () => undefined,
       }),
       choisirEtLireCv: async () => ({ texte: 'texte du cv', nom: 'mon-cv.pdf' }),
+      misesAJour: {
+        etat: () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        verifier: async () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        installer: () => undefined,
+      },
       lireCv: async (chemin) => `texte de ${chemin}`,
       ouvrirChemin: async (chemin) => void ouverts.push(`ouvrir:${chemin}`),
       montrerChemin: (chemin) => void ouverts.push(`montrer:${chemin}`),
@@ -206,6 +211,11 @@ describe('service', () => {
         emettre: () => undefined,
       }),
       choisirEtLireCv: async () => ({ texte: 'cv', nom: 'mon-cv.pdf' }),
+      misesAJour: {
+        etat: () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        verifier: async () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        installer: () => undefined,
+      },
       lireCv: async () => 'cv',
       ouvrirChemin: async () => undefined,
       montrerChemin: () => undefined,

@@ -15,6 +15,7 @@ import {
   Selection,
   Titre,
 } from '../ui'
+import { CarteMisesAJour } from './MisesAJour'
 
 // Les trois modèles embarqués, nommés par ce qu'ils changent pour l'utilisateur.
 const NIVEAUX: Record<string, { nom: string; detail: string }> = {
@@ -487,6 +488,8 @@ export function EcranReglages({
           </div>
         </details>
       </Carte>
+
+      <CarteMisesAJour />
 
       <Carte
         titre="Mes données"

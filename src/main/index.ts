@@ -2,12 +2,13 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { CANAUX } from '@core/canaux'
 import { app, BrowserWindow, ipcMain, safeStorage, session, shell } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import { ouvrirBdd } from './bdd/connexion'
 import { choisirEtLireCv } from './cv'
 import { choisirDestination, genererPdf } from './export'
 import { enregistrerHandlers } from './ipc'
 import { lireCv } from './lectureCv'
-import { verifierMisesAJour } from './miseAJour'
+import { GestionnaireMiseAJour } from './miseAJour'
 import { GestionnaireModeles } from './modeles/gestionnaire'
 import { detecterRessources } from './modeles/ressources'
 import { rendreHtml, userAgentNavigateur } from './offre/rendu'
@@ -87,10 +88,22 @@ app.whenReady().then(() => {
       await parametres.enregistrer({ ...(await parametres.lire()), cheminModeleLocal: chemin })
     },
   })
+  // Mises à jour (releases GitHub) : uniquement dans l'application installée.
+  const misesAJour = new GestionnaireMiseAJour({
+    version: app.getVersion(),
+    installee: app.isPackaged,
+    moteur: () => autoUpdater,
+    emettre: (etat) => {
+      for (const fenetre of BrowserWindow.getAllWindows()) {
+        fenetre.webContents.send(CANAUX.etatMiseAJour, etat)
+      }
+    },
+  })
   const service = creerService({
     bdd,
     parametres,
     modeles,
+    misesAJour,
     emettreTache: (progression) => {
       for (const fenetre of BrowserWindow.getAllWindows()) {
         fenetre.webContents.send(CANAUX.progressionTache, progression)
@@ -120,7 +133,7 @@ app.whenReady().then(() => {
   })
 
   creerFenetre()
-  verifierMisesAJour()
+  misesAJour.demarrer()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) creerFenetre()
   })

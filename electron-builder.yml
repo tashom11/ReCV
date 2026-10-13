@@ -24,7 +24,7 @@ win:
     - target: nsis
       arch: [x64]
   artifactName: ReCV-Setup-${version}.${ext}
-  # Signature : voir le workflow .github/workflows/release.yml (étape SignPath commentée).
+  # Signature : faite par le workflow .github/workflows/release.yml (SignPath) dès que le dépôt est configuré.
   # Une fois un certificat obtenu, renseigner ici `signtoolOptions` ou signer via SignPath.
 
 nsis:

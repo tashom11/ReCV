@@ -37,27 +37,53 @@ jobs:
       - run: npm test
       - run: npx electron-vite build
 
-      # --- Signature (désactivée pour l'instant) ---------------------------------------------
-      # Quand le projet sera accepté sur SignPath (https://signpath.org, gratuit pour l'open source) :
-      #   1. Publier l'installeur non signé comme artefact de workflow :
-      #        - run: npx electron-builder --win --publish never
-      #        - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-      #          id: installeur
-      #          with: { name: installeur, path: release/*.exe }
-      #   2. Le faire signer :
-      #        - uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # v1
-      #          with:
-      #            api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
-      #            organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-      #            project-slug: recv
-      #            signing-policy-slug: release-signing
-      #            github-artifact-id: ${{ steps.installeur.outputs.artifact-id }}
-      #            wait-for-completion: true
-      #            output-artifact-directory: release-signe
-      #   3. Publier le fichier signé (et son latest.yml régénéré) sur la release.
-      # ---------------------------------------------------------------------------------------
-
-      - name: Packager et publier
+      # --- Sans signature (par défaut) ---------------------------------------------------------
+      # Tant que la variable de dépôt SIGNPATH_ORGANIZATION_ID n'existe pas, l'installeur est publié tel quel :
+      # Windows SmartScreen affiche un avertissement à la première installation.
+      - name: Packager et publier (non signé)
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID == '' }}
         run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Avec signature (SignPath, gratuit pour l'open source : https://signpath.org) ----------
+      # S'active dès que le projet est accepté par SignPath et que le dépôt contient :
+      #   - la variable SIGNPATH_ORGANIZATION_ID ;
+      #   - le secret SIGNPATH_API_TOKEN ;
+      #   - côté SignPath, le projet « recv » et la politique de signature « release-signing ».
+      - name: Packager (à signer)
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        run: npx electron-builder --win --publish never
+
+      - name: Déposer l'installeur à signer
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        id: installeur
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: installeur
+          path: release/*.exe
+          if-no-files-found: error
+
+      - name: Signer l'installeur
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        uses: signpath/github-action-submit-signing-request@ced31329c0317e779dad2eec2a7c3bb46ea1343e # v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: recv
+          signing-policy-slug: release-signing
+          github-artifact-id: ${{ steps.installeur.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: release-signe
+
+      # La signature change le fichier : latest.yml (lu par la mise à jour automatique) est recalculé sur le fichier signé.
+      - name: Publier l'installeur signé
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID != '' }}
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          node scripts/latest-yml.mjs "release-signe/ReCV-Setup-$version.exe" "$version"
+          gh release create "$GITHUB_REF_NAME" "release-signe/ReCV-Setup-$version.exe" release-signe/latest.yml \
+            --title "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
