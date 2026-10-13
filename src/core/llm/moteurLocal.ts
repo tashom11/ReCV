@@ -131,14 +131,21 @@ export class MoteurLocal implements MoteurLLM {
     }
   }
 
-  async genererObjet<T>({ schema, systeme, utilisateur, temperature }: RequeteObjet<T>): Promise<T> {
+  async genererObjet<T>({ schema, systeme, utilisateur, temperature, signal }: RequeteObjet<T>): Promise<T> {
+    signal?.throwIfAborted()
     const contexte = await this.creerContexte()
     const { llama } = await this.charger()
     const grammaire = await llama.createGrammarForJsonSchema(versSchemaGrammaire(schema))
     const { LlamaChatSession } = await import('node-llama-cpp')
     try {
       const session = new LlamaChatSession({ contextSequence: contexte.getSequence(), systemPrompt: systeme })
-      const meta = await session.promptWithMeta(utilisateur, { grammar: grammaire, temperature: temperature ?? 0.2 })
+      const meta = await session.promptWithMeta(utilisateur, {
+        grammar: grammaire,
+        temperature: temperature ?? 0.2,
+        signal,
+      })
+      // Une génération interrompue rend un texte partiel : ce n'est pas une réponse.
+      signal?.throwIfAborted()
       const reponse = texteReponse(meta.response)
       let objet: unknown
       try {

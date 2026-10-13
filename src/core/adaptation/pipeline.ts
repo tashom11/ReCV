@@ -87,27 +87,40 @@ export function borneAccroche(accroche: string): string {
 // Enchaîne les étapes : mots-clés → pertinence (tri) → réécriture expérience par expérience → titre + accroche.
 // Les faits (postes, entreprises, dates, formations, langues, compétences) sont recopiés du profil, jamais générés.
 // Ce qui n'a aucun rapport avec l'offre est écarté du CV (et listé dans `ecartes` pour que l'utilisateur décide).
+// Une compétence est un terme court : les phrases décrivant des tâches (souvent issues d'un CV mal structuré)
+// n'ont pas leur place dans la section Compétences et ne sont jamais traitées comme telles.
+export function preparerProfil(profil: Profil): Profil {
+  return { ...profil, competences: eclaterCompetences(profil.competences).filter(estCompetenceCourte) }
+}
+
+// Annulation : chaque appel au modèle vérifie le signal avant de partir et le transmet au moteur.
+function avecSignal(moteur: MoteurLLM, signal: AbortSignal | undefined): MoteurLLM {
+  if (!signal) return moteur
+  return {
+    genererObjet: (requete) => {
+      signal.throwIfAborted()
+      return moteur.genererObjet({ ...requete, signal })
+    },
+  }
+}
+
 export async function adapterCv(
-  moteur: MoteurLLM,
+  moteurBrut: MoteurLLM,
   profilBrut: Profil,
   offre: Offre,
   options: OptionsAdaptation = {},
 ): Promise<CvAdapte> {
   const signaler = options.surEtape ?? (() => undefined)
-  // Une compétence est un terme court : les phrases décrivant des tâches (souvent issues d'un CV mal structuré)
-  // n'ont pas leur place dans la section Compétences et ne sont jamais traitées comme telles.
-  const profil: Profil = {
-    ...profilBrut,
-    competences: eclaterCompetences(profilBrut.competences).filter(estCompetenceCourte),
-  }
+  const moteur = avecSignal(moteurBrut, options.signal)
+  const profil = preparerProfil(profilBrut)
   // L'analyse d'une offre ne dépend pas du profil : si elle est déjà connue (relance, autre profil), on la réutilise.
   let analyse = options.analyse
   if (!analyse) {
-    signaler({ etape: 'Analyse de l’offre' })
+    signaler({ cle: 'analyse', etape: 'Analyse de l’offre' })
     analyse = await analyserOffre(moteur, offre)
     options.surAnalyse?.(analyse)
   }
-  signaler({ etape: 'Choix des éléments du profil à mettre en avant' })
+  signaler({ cle: 'selection', etape: 'Choix des éléments du profil à mettre en avant' })
   const pertinence = await evaluerPertinence(moteur, profil, analyse)
 
   const termesOffre = [...analyse.motsCles, ...analyse.competencesRequises, offre.texteBrut]
@@ -140,6 +153,7 @@ export async function adapterCv(
     let points: string[]
     if (options.reformuler) {
       signaler({
+        cle: 'reformulation',
         etape: 'Reformulation des expériences',
         courant: experiences.length + 1,
         total: indicesExperiences.length,
@@ -200,7 +214,7 @@ export async function adapterCv(
       profil.experiences[i] ? pointsProchesOffre(profil.experiences[i], termesProches, 3) : [],
     ),
   }
-  signaler({ etape: 'Rédaction de l’accroche' })
+  signaler({ cle: 'accroche', etape: 'Rédaction de l’accroche' })
   const redige = await redigerAccroche(moteur, contenuAccroche, analyse)
 
   // Garde-fou en code (le prompt seul ne suffit pas, notamment face à une offre piégée) : un titre ou une

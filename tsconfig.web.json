@@ -9,7 +9,9 @@
     "src/core/adaptation/competences.ts",
     "src/core/export/modeles.ts",
     "src/core/adaptation/texte.ts",
-    "src/core/canaux.ts"
+    "src/core/canaux.ts",
+    "src/core/erreurs.ts",
+    "src/core/etapes.ts"
   ],
   "exclude": ["src/**/*.test.ts"],
   "compilerOptions": {

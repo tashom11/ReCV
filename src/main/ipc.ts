@@ -1,4 +1,5 @@
 import { type ApiService, CANAUX, entreesIpc, type ResultatIpc } from '@core/api'
+import { ErreurCodee } from '@core/erreurs'
 import { ErreurRecuperationOffre } from '@core/offre'
 import type { IpcMain } from 'electron'
 import type { ZodType } from 'zod'
@@ -10,7 +11,8 @@ function analyser<T>(schema: ZodType<T>, valeur: unknown): T {
 }
 
 function enveloppe(erreur: unknown): ResultatIpc<never> {
-  if (erreur instanceof ErreurRecuperationOffre) return { ok: false, message: erreur.message, code: erreur.code }
+  if (erreur instanceof ErreurRecuperationOffre || erreur instanceof ErreurCodee)
+    return { ok: false, message: erreur.message, code: erreur.code }
   return { ok: false, message: erreur instanceof Error ? erreur.message : String(erreur) }
 }
 
@@ -36,11 +38,16 @@ export function enregistrerHandlers(
   }
 
   gerer(CANAUX.importerCv, () => api.importerCv())
+  gerer(CANAUX.importerCvDepose, (chemin) => api.importerCvDepose(analyser(entreesIpc.chemin, chemin)))
   gerer(CANAUX.obtenirProfil, () => api.obtenirProfil())
   gerer(CANAUX.enregistrerProfil, (profil) => api.enregistrerProfil(analyser(entreesIpc.profil, profil)))
   gerer(CANAUX.recupererOffre, (url) => api.recupererOffre(analyser(entreesIpc.url, url)))
   gerer(CANAUX.analyserTexteOffre, (texte) => api.analyserTexteOffre(analyser(entreesIpc.texte, texte)))
+  gerer(CANAUX.analyserAnnonce, (offre) => api.analyserAnnonce(analyser(entreesIpc.offre, offre)))
   gerer(CANAUX.adapterCv, (offre) => api.adapterCv(analyser(entreesIpc.offre, offre)))
+  gerer(CANAUX.annulerAdaptation, () => api.annulerAdaptation())
+  gerer(CANAUX.ouvrirFichier, (chemin) => api.ouvrirFichier(analyser(entreesIpc.chemin, chemin)))
+  gerer(CANAUX.montrerDansDossier, (chemin) => api.montrerDansDossier(analyser(entreesIpc.chemin, chemin)))
   gerer(CANAUX.lireParametres, () => api.lireParametres())
   gerer(CANAUX.enregistrerParametres, (p) => api.enregistrerParametres(analyser(entreesIpc.parametres, p)))
   gerer(CANAUX.genererAccroche, (profil) => api.genererAccroche(analyser(entreesIpc.profil, profil)))

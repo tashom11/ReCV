@@ -36,6 +36,9 @@ function creer() {
       emettre: () => undefined,
     }),
     choisirEtLireCv: async () => 'cv',
+    lireCv: async () => 'cv',
+    ouvrirChemin: async () => undefined,
+    montrerChemin: () => undefined,
     rendreHtml: async () => '',
     choisirDestination: async (nom, extension) => join(dossier, nom.replace(/\.\w+$/, `.${extension}`)),
     genererPdf: async (html) => {

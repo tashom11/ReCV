@@ -26,7 +26,7 @@ export class MoteurAiSdk implements MoteurLLM {
     private readonly options: OptionsMoteurAiSdk = {},
   ) {}
 
-  async genererObjet<T>({ nom, schema, systeme, utilisateur, temperature }: RequeteObjet<T>): Promise<T> {
+  async genererObjet<T>({ nom, schema, systeme, utilisateur, temperature, signal }: RequeteObjet<T>): Promise<T> {
     const tentatives = this.options.tentatives ?? 2
     let derniereErreur: unknown
     for (let tentative = 0; tentative < tentatives; tentative++) {
@@ -39,10 +39,12 @@ export class MoteurAiSdk implements MoteurLLM {
           temperature: temperature ?? 0.2,
           ...(temperature === 0 ? { seed: 42 } : {}),
           providerOptions: this.options.optionsFournisseur,
+          abortSignal: signal,
         })
         // Validation Zod systématique : le JSON Schema seul ne garantit pas les types côté modèle.
         return schema.parse(output)
       } catch (erreur) {
+        if (signal?.aborted) throw erreur
         // Seules les sorties invalides justifient une relance ; les erreurs réseau/API remontent telles quelles.
         if (!NoObjectGeneratedError.isInstance(erreur) && !(erreur instanceof z.ZodError)) throw erreur
         derniereErreur = erreur

@@ -200,3 +200,15 @@ describe('pointFidele', () => {
     expect(pointFidele('Optimisation des pages avec Kubernetes', source, ['Kubernetes'])).toBe(false)
   })
 })
+
+describe('adapterCv : annulation', () => {
+  it('s’arrête dès que le signal est levé, sans appeler le modèle', async () => {
+    const moteur = new MoteurMock({})
+    const annulation = new AbortController()
+    annulation.abort()
+    await expect(
+      adapterCv(moteur, profilCanned, { titrePoste: 'Dev', texteBrut: 'x' }, { signal: annulation.signal }),
+    ).rejects.toThrow()
+    expect(moteur.requetes).toHaveLength(0)
+  })
+})

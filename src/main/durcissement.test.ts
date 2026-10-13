@@ -2,6 +2,7 @@ import { mkdtemp, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { CANAUX, parametresSchema, type ResultatIpc } from '@core/api'
+import { ErreurCodee } from '@core/erreurs'
 import { type FournisseurLLM, FournisseurMock } from '@core/llm'
 import type { IpcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -80,6 +81,9 @@ describe('service : cycle de vie du fournisseur et données', () => {
         emettre: () => undefined,
       }),
       choisirEtLireCv: async () => 'cv',
+      lireCv: async () => 'cv',
+      ouvrirChemin: async () => undefined,
+      montrerChemin: () => undefined,
       rendreHtml: async () => '',
       choisirDestination: async () => null,
       genererPdf: async () => Buffer.alloc(0),
@@ -89,6 +93,7 @@ describe('service : cycle de vie du fournisseur et données', () => {
         const fournisseur: FournisseurLLM = {
           extraireProfil: (t) => mock.extraireProfil(t),
           extraireOffre: (t) => mock.extraireOffre(t),
+          analyserOffre: (o) => mock.analyserOffre(o),
           adapterCv: (pr, o) => mock.adapterCv(pr, o),
           genererAccroche: (pr) => mock.genererAccroche(pr),
           liberer: async () => void liberes++,
@@ -173,6 +178,30 @@ describe('handlers IPC', () => {
     const { handlers, appelees } = branche(() => true)
     const resultat = await handlers.get(CANAUX.enregistrerParametres)?.({}, { urlApi: 'http://attaquant.example' })
     expect(resultat?.ok).toBe(false)
+    expect(appelees).toHaveLength(0)
+  })
+
+  it('transmet le code des erreurs que l’interface distingue', async () => {
+    const handlers = new Map<string, Handler>()
+    const ipcMain = { handle: (canal: string, h: Handler) => void handlers.set(canal, h) } as unknown as IpcMain
+    const api = {
+      annulerAdaptation: async () => {
+        throw new ErreurCodee('annule', 'Création annulée.')
+      },
+    }
+    enregistrerHandlers(ipcMain, api as never)
+    expect(await handlers.get(CANAUX.annulerAdaptation)?.({})).toEqual({
+      ok: false,
+      message: 'Création annulée.',
+      code: 'annule',
+    })
+  })
+
+  it('refuse un chemin de fichier vide ou démesuré', async () => {
+    const { handlers, appelees } = branche(() => true)
+    expect((await handlers.get(CANAUX.ouvrirFichier)?.({}, ''))?.ok).toBe(false)
+    expect((await handlers.get(CANAUX.importerCvDepose)?.({}, 'x'.repeat(5_000)))?.ok).toBe(false)
+    expect((await handlers.get(CANAUX.montrerDansDossier)?.({}, { chemin: 'objet' }))?.ok).toBe(false)
     expect(appelees).toHaveLength(0)
   })
 

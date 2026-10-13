@@ -1,8 +1,10 @@
 import type { AnalyseOffre } from '../adaptation/motsCles'
+import type { CleEtape } from '../etapes'
 import type { CvAdapte, Offre, Profil } from '../schemas'
 
 /** Étape d'un traitement long, pour l'affichage de la progression. */
 export interface EtapeAdaptation {
+  cle?: CleEtape
   etape: string
   courant?: number
   total?: number
@@ -16,11 +18,15 @@ export interface OptionsAdaptation {
   analyse?: AnalyseOffre
   /** Reçoit l'analyse calculée, pour la mémoriser. */
   surAnalyse?: (analyse: AnalyseOffre) => void
+  /** Annulation : vérifiée entre les étapes et transmise au moteur. */
+  signal?: AbortSignal
 }
 
 export interface FournisseurLLM {
   extraireProfil(texteCv: string): Promise<Profil>
   extraireOffre(texteOffre: string): Promise<Offre>
+  /** Exigences de l'offre (compétences, qualités, prérequis) : première étape de l'adaptation, réutilisable. */
+  analyserOffre(offre: Offre): Promise<AnalyseOffre>
   adapterCv(profil: Profil, offre: Offre, options?: OptionsAdaptation): Promise<CvAdapte>
   /** Accroche générique du profil, fondée sur ses seules compétences transversales (savoir-être). */
   genererAccroche(profil: Profil): Promise<string>
@@ -29,3 +35,5 @@ export interface FournisseurLLM {
   /** Libère les ressources natives (modèle local) ; absent pour les fournisseurs distants. */
   liberer?(): Promise<void>
 }
+
+export type { CleEtape } from '../etapes'

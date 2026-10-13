@@ -8,6 +8,8 @@ export interface RequeteObjet<T> {
   utilisateur: string
   /** Température d'échantillonnage (défaut 0,2). 0 pour les étapes de jugement, qui doivent être reproductibles. */
   temperature?: number
+  /** Interrompt la génération (annulation par l'utilisateur). */
+  signal?: AbortSignal
 }
 
 // Primitive commune à tous les backends : produire un objet validé par un schéma Zod.

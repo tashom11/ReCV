@@ -9,6 +9,7 @@ export class MoteurMock implements MoteurLLM {
   constructor(private readonly reponses: Record<string, Reponse>) {}
 
   async genererObjet<T>(requete: RequeteObjet<T>): Promise<T> {
+    requete.signal?.throwIfAborted()
     this.requetes.push(requete as RequeteObjet<unknown>)
     const reponse = this.reponses[requete.nom]
     if (reponse === undefined) {

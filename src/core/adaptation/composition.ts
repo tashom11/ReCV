@@ -86,7 +86,8 @@ export function choixInitial(adapte: CvAdapte): ChoixComposition {
       competences: adapte.ecartes.competences.map(() => false),
       formations: adapte.ecartes.formations.map(() => false),
     },
-    // Cochées par défaut pour que le CV colle à l'offre ; l'utilisateur décoche ce qu'il ne maîtrise pas.
-    ajouterDemandees: adapte.demandees.manquantes.map(() => true),
+    // Décochées par défaut : l'utilisateur coche seulement ce qu'il sait vraiment faire (il devra le défendre
+    // en entretien). Rien d'absent du profil n'entre dans le CV sans son accord.
+    ajouterDemandees: adapte.demandees.manquantes.map(() => false),
   }
 }
