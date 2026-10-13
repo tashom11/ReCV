@@ -49,4 +49,5 @@ publish:
   provider: github
   owner: tashom11
   repo: ReCV
-  releaseType: release
+  # Brouillon : le workflow crée la release, y fait envoyer les fichiers, puis la publie une fois complète.
+  releaseType: draft

@@ -40,11 +40,35 @@ jobs:
       # --- Sans signature (par défaut) ---------------------------------------------------------
       # Tant que la variable de dépôt SIGNPATH_ORGANIZATION_ID n'existe pas, l'installeur est publié tel quel :
       # Windows SmartScreen affiche un avertissement à la première installation.
-      - name: Packager et publier (non signé)
+      # La release est créée une seule fois, en brouillon, avant l'envoi : electron-builder envoie ses fichiers en
+      # parallèle et, sans release existante, en crée parfois deux pour le même tag (v0.2.0 : l'installeur et
+      # latest.yml d'un côté, le .blockmap de l'autre, et des liens de téléchargement en 404).
+      - name: Créer la release en brouillon
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID == '' }}
+        shell: bash
+        run: gh release create "$GITHUB_REF_NAME" --draft --title "${GITHUB_REF_NAME#v}" --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+      - name: Packager et envoyer (non signé)
         if: ${{ vars.SIGNPATH_ORGANIZATION_ID == '' }}
         run: npx electron-builder --win --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publier la release
+        if: ${{ vars.SIGNPATH_ORGANIZATION_ID == '' }}
+        shell: bash
+        run: |
+          fichiers="$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets[].name')"
+          echo "$fichiers"
+          echo "$fichiers" | grep -qx 'latest.yml' || { echo "latest.yml absent de la release" >&2; exit 1; }
+          echo "$fichiers" | grep -q '\.exe$' || { echo "Installeur absent de la release" >&2; exit 1; }
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
       # --- Avec signature (SignPath, gratuit pour l'open source : https://signpath.org) ----------
       # S'active dès que le projet est accepté par SignPath et que le dépôt contient :
