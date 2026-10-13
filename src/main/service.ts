@@ -132,6 +132,11 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       return { id: enregistrerCv(bdd, actif.id, offreId, cv), offreId, cv }
     },
 
+    async genererAccroche(profil: Profil) {
+      signaler({ tache: 'accroche', etape: 'Repérage des compétences transversales' })
+      return (await fournisseur()).genererAccroche(profil)
+    },
+
     async exporterCv(cv, format) {
       const actif = obtenirProfilActif(bdd)
       if (!actif) throw new Error('Aucun profil : importe d’abord ton CV.')

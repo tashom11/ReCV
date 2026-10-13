@@ -74,6 +74,7 @@ export function Champ({
   lignes = 3,
   type = 'text',
   placeholder,
+  action,
 }: {
   etiquette: string
   valeur: string
@@ -82,19 +83,24 @@ export function Champ({
   lignes?: number
   type?: 'text' | 'password' | 'url'
   placeholder?: string
+  /** Bouton affiché en bas à droite, à l'intérieur de la zone de texte (champs multilignes). */
+  action?: ReactNode
 }) {
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: le champ est imbriqué dans le label (conditionnel)
     <label className="block space-y-1">
       <span className="text-xs font-medium text-slate-600">{etiquette}</span>
       {multiligne ? (
-        <textarea
-          className={BASE_CHAMP}
-          rows={lignes}
-          value={valeur}
-          placeholder={placeholder}
-          onChange={(e) => onChange(e.target.value)}
-        />
+        <div className="relative">
+          <textarea
+            className={`${BASE_CHAMP}${action ? ' pb-12' : ''}`}
+            rows={lignes}
+            value={valeur}
+            placeholder={placeholder}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          {action && <div className="absolute bottom-2 right-2">{action}</div>}
+        </div>
       ) : (
         <input
           className={BASE_CHAMP}

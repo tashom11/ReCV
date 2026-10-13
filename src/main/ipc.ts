@@ -43,6 +43,7 @@ export function enregistrerHandlers(
   gerer(CANAUX.adapterCv, (offre) => api.adapterCv(analyser(entreesIpc.offre, offre)))
   gerer(CANAUX.lireParametres, () => api.lireParametres())
   gerer(CANAUX.enregistrerParametres, (p) => api.enregistrerParametres(analyser(entreesIpc.parametres, p)))
+  gerer(CANAUX.genererAccroche, (profil) => api.genererAccroche(analyser(entreesIpc.profil, profil)))
   gerer(CANAUX.exporterCv, (cv, format) =>
     api.exporterCv(analyser(entreesIpc.cv, cv), analyser(entreesIpc.format, format)),
   )

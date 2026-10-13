@@ -1,3 +1,4 @@
+export * from './accrocheProfil'
 export * from './composition'
 export * from './motsCles'
 export * from './pertinence'

@@ -20,6 +20,7 @@ const api: ApiReCV = {
   enregistrerParametres: (parametres) => appeler(CANAUX.enregistrerParametres, parametres),
   definirCleApi: (cle) => appeler(CANAUX.definirCleApi, cle),
   exporterCv: (cv, format) => appeler(CANAUX.exporterCv, cv, format),
+  genererAccroche: (profil) => appeler(CANAUX.genererAccroche, profil),
   lireEtatModeles: () => appeler(CANAUX.lireEtatModeles),
   telechargerModele: (id) => appeler(CANAUX.telechargerModele, id),
   annulerTelechargement: () => appeler(CANAUX.annulerTelechargement),
