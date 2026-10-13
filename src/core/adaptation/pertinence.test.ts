@@ -67,7 +67,8 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
     )
     expect(cv.experiences.map((e) => e.entreprise)).toEqual(['Carrosserie Dupont'])
     expect(cv.experiences[0]?.indice).toBe(1)
-    expect(cv.competences).toEqual(['Rigueur', 'Sens du détail'])
+    expect(cv.competences.slice(0, 2)).toEqual(['Rigueur', 'Sens du détail'])
+    expect(cv.competences).not.toContain('WordPress / CMS')
     expect(cv.formations.map((f) => f.diplome)).toEqual(['BAC PRO'])
     expect(cv.ecartes.experiences.map((e) => e.entreprise)).toEqual(['Webagence'])
     expect(cv.ecartes.experiences[0]?.points).toEqual(profil.experiences[0]?.realisations)
@@ -88,7 +89,9 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
   it('remplace une accroche qui réintroduit le domaine écarté (jamais celle du profil d’origine) ; le titre vient du profil', async () => {
     const cv = await adapterCv(moteur({ accroche: 'Carrossier peintre et expert HTML / CSS.' }), profil, offre)
     expect(cv.titre).toBe('Carrossier peintre')
-    expect(cv.accroche).toBe('')
+    // Rejetée : repli sur une phrase composée des compétences demandées que le profil atteste (jamais l'ancienne accroche).
+    expect(cv.accroche).toMatch(/^Je mets en avant mes compétences en /)
+    expect(cv.accroche).not.toMatch(/HTML|WordPress/)
   })
 
   it('garde une compétence citée mot pour mot dans l’offre, même jugée sans rapport', async () => {

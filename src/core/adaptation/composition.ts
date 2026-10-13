@@ -10,6 +10,8 @@ export interface ChoixComposition {
   experiences: boolean[]
   /** Éléments écartés que l'utilisateur réintègre (même ordre que `adapte.ecartes`). */
   reintegrer: { experiences: boolean[]; competences: boolean[]; formations: boolean[] }
+  /** Compétences demandées par l'offre que l'utilisateur déclare maîtriser (même ordre que `adapte.demandees.manquantes`). */
+  ajouterDemandees: boolean[]
 }
 
 const nettoyer = (valeurs: string[]) => valeurs.map((v) => v.trim()).filter(Boolean)
@@ -36,6 +38,10 @@ export function composerCv(profil: Profil, adapte: CvAdapte, choix: ChoixComposi
   const competences = [
     ...base,
     ...adapte.ecartes.competences.filter((c, i) => choix.reintegrer.competences[i] && !base.includes(c)),
+    // Déclarées par l'utilisateur : c'est lui qui atteste, pas le modèle.
+    ...adapte.demandees.manquantes.filter(
+      (c, i) => choix.ajouterDemandees[i] && !base.some((b) => b.toLowerCase() === c.toLowerCase()),
+    ),
   ]
 
   const rang = (diplome: string, etablissement: string) => {
@@ -55,6 +61,7 @@ export function composerCv(profil: Profil, adapte: CvAdapte, choix: ChoixComposi
     experiences,
     formations,
     ecartes: { experiences: [], competences: [], formations: [] },
+    demandees: { attestees: [], manquantes: [] },
   }
 }
 
@@ -70,5 +77,6 @@ export function choixInitial(adapte: CvAdapte): ChoixComposition {
       competences: adapte.ecartes.competences.map(() => false),
       formations: adapte.ecartes.formations.map(() => false),
     },
+    ajouterDemandees: adapte.demandees.manquantes.map(() => false),
   }
 }
