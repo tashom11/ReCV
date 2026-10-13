@@ -199,7 +199,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex flex-1 flex-col">
+      <main className="ecrans flex flex-1 flex-col">
         {moteurManquant && (
           <div className="mx-auto w-full max-w-4xl px-6 pt-8">
             <Alerte

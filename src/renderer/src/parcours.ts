@@ -118,10 +118,10 @@ export function compter(nombre: number, singulier: string, pluriel: string): { n
   return { nombre, nom: nombre > 1 ? pluriel : singulier }
 }
 
-/** Intitulé du poste sans la mention « (H/F) » : pour le citer dans une phrase. */
+/** Intitulé du poste sans la mention « H/F », avec ou sans parenthèses : pour le citer dans une phrase. */
 export function titreSansMention(titre: string): string {
   const sans = titre
-    .replace(/\s*[([]\s*[hfx]\s*\/\s*[hfx](\s*\/\s*[hfx])?\s*[)\]]/gi, '')
+    .replace(/\s*[-–—]?\s*[([]?\s*\b[hfx]\s*\/\s*[hfx](\s*\/\s*[hfx])?\b\s*[)\]]?/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim()
   return sans || titre

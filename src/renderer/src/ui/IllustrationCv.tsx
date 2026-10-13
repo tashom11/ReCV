@@ -1,7 +1,25 @@
+import type { CSSProperties } from 'react'
 import { Icone } from './icones'
 
+// Lignes animées : chacune démarre un peu après la précédente, comme un texte qui s'écrit.
+const ecrite = (anime: boolean, rang: number) =>
+  anime ? { className: 'ligne-ecrite', style: { '--rang': rang } as CSSProperties } : { className: '' }
+
 /** Page de CV stylisée, légèrement penchée : illustration de l'accueil et de l'écran de création. */
-export function IllustrationCv({ avecFond = false, coche = false }: { avecFond?: boolean; coche?: boolean }) {
+export function IllustrationCv({
+  avecFond = false,
+  coche = false,
+  anime = false,
+}: {
+  avecFond?: boolean
+  coche?: boolean
+  /** Les pastilles et les lignes s'écrivent en boucle (écran d'attente). */
+  anime?: boolean
+}) {
+  const ligne = (rang: number, classes: string) => {
+    const { className, style } = ecrite(anime, rang)
+    return { className: `${classes} ${className}`, style }
+  }
   return (
     <div className="relative mx-auto w-[300px]" aria-hidden="true">
       {avecFond && (
@@ -24,19 +42,19 @@ export function IllustrationCv({ avecFond = false, coche = false }: { avecFond?:
           </span>
         </div>
         <div className="mt-8 flex gap-2">
-          <span className="h-5 w-[72px] rounded-full bg-accent" />
-          <span className="h-5 w-14 rounded-full bg-accent" />
-          <span className={`h-5 w-[88px] rounded-full ${avecFond ? 'bg-accent' : 'bg-creux'}`} />
+          <span {...ligne(0, 'h-5 w-[72px] rounded-full bg-accent')} />
+          <span {...ligne(1, 'h-5 w-14 rounded-full bg-accent')} />
+          <span {...ligne(2, `h-5 w-[88px] rounded-full ${avecFond ? 'bg-accent' : 'bg-creux'}`)} />
         </div>
         <div className="mt-7 space-y-3">
           {['w-full', 'w-11/12', 'w-full', 'w-3/5'].map((largeur, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: lignes décoratives fixes
-            <div key={i} className={`h-2 rounded-full bg-marque/20 ${largeur}`} />
+            <div key={i} {...ligne(3 + i, `h-2 rounded-full bg-marque/20 ${largeur}`)} />
           ))}
         </div>
         <div className="mt-8 space-y-3">
-          <div className="h-2 w-full rounded-full bg-creux" />
-          <div className="h-2 w-4/5 rounded-full bg-creux" />
+          <div {...ligne(7, 'h-2 w-full rounded-full bg-creux')} />
+          <div {...ligne(8, 'h-2 w-4/5 rounded-full bg-creux')} />
         </div>
       </div>
       {coche && (

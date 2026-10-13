@@ -147,6 +147,66 @@
   animation: coche-trait 400ms 300ms var(--ease-courbe) both;
 }
 
+/* Illustration de la création : les lignes du CV s'écrivent l'une après l'autre, en boucle. */
+@keyframes ligne-ecrite {
+  0% {
+    transform: scaleX(0);
+    opacity: 0.3;
+  }
+  30%,
+  82% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 0;
+  }
+}
+
+.ligne-ecrite {
+  transform-origin: left center;
+  animation: ligne-ecrite 4.6s var(--ease-courbe) infinite both;
+  animation-delay: calc(var(--rang, 0) * 170ms);
+}
+
+/* Changement d'écran : le nouveau contenu monte légèrement en apparaissant. */
+@keyframes entree-ecran {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.ecrans > * {
+  animation: entree-ecran 320ms var(--ease-courbe) backwards;
+}
+
+/* Création : l'étape qui commence glisse en place, la coche de l'étape finie surgit. */
+@keyframes etape-commence {
+  from {
+    opacity: 0.4;
+    transform: translateX(-10px);
+  }
+}
+
+@keyframes etape-finie {
+  0% {
+    transform: scale(0.4);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+}
+
+.etape-commence {
+  animation: etape-commence 380ms var(--ease-courbe) backwards;
+}
+
+.etape-finie {
+  animation: etape-finie 420ms var(--ease-courbe) backwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duree-rapide: 0ms;
@@ -155,7 +215,11 @@
   }
 
   .coche-succes,
-  .coche-succes path {
+  .coche-succes path,
+  .ligne-ecrite,
+  .ecrans > *,
+  .etape-commence,
+  .etape-finie {
     animation: none;
   }
 

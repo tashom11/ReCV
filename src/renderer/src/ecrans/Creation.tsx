@@ -43,7 +43,7 @@ export function EcranCreation({
   return (
     <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-12 lg:grid-cols-[360px_1fr]">
       <div className="hidden lg:block">
-        <IllustrationCv />
+        <IllustrationCv anime />
       </div>
 
       <div className="max-w-2xl space-y-6">
@@ -65,12 +65,12 @@ export function EcranCreation({
                 key={etape}
                 className={`flex min-h-[52px] items-center gap-4 rounded-bouton px-3 ${
                   etat === 'en-cours'
-                    ? 'border border-trait bg-surface font-bold shadow-carte'
+                    ? 'etape-commence border border-trait bg-surface font-bold shadow-carte'
                     : 'border border-transparent'
                 }`}
               >
                 {etat === 'fait' ? (
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-marque text-white">
+                  <span className="etape-finie flex size-8 shrink-0 items-center justify-center rounded-full bg-marque text-white">
                     <Icone nom="coche" taille={18} epaisseur={3} />
                   </span>
                 ) : etat === 'en-cours' ? (
