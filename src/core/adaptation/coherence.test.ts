@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { MoteurMock } from '../llm/moteurMock'
 import type { Offre, Profil } from '../schemas'
 import { harmoniserExperiences } from './pertinence'
-import { adapterCv } from './pipeline'
+import { adapterCv, borneAccroche } from './pipeline'
+import { nettoyerPoint } from './reecriture'
 
 describe('harmoniserExperiences', () => {
   const postes = [{ poste: 'Développeur web front' }, { poste: 'Développeur Web Front' }, { poste: 'Carrossier' }]
@@ -139,5 +140,24 @@ describe('adapterCv : aucune expérience jugée pertinente', () => {
     })
     const cv = await adapterCv(m, profil, offre)
     expect(cv.experiences).toHaveLength(2)
+  })
+})
+
+describe('nettoyerPoint / borneAccroche (sorties négligées d’un petit modèle)', () => {
+  it('retire la ponctuation parasite et abandonne les puces sans mot', () => {
+    expect(nettoyerPoint(',Collaboration avec les équipes design')).toBe('Collaboration avec les équipes design')
+    expect(nettoyerPoint('"Optimisation des performances",')).toBe('Optimisation des performances')
+    expect(nettoyerPoint('],')).toBe('')
+    expect(nettoyerPoint('  ')).toBe('')
+  })
+
+  it('coupe une accroche trop longue à la dernière phrase complète', () => {
+    const phrase = 'Développeur web attentif au SEO et à l’accessibilité des interfaces. '
+    const longue = phrase.repeat(10)
+    const bornee = borneAccroche(longue)
+    expect(bornee.length).toBeLessThanOrEqual(450)
+    expect(bornee.endsWith('.')).toBe(true)
+    expect(borneAccroche('Courte accroche.')).toBe('Courte accroche.')
+    expect(borneAccroche('x'.repeat(600))).toBe('')
   })
 })

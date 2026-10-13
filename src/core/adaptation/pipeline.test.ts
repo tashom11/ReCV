@@ -132,7 +132,7 @@ describe('adapterCv', () => {
           { indice: 2, pertinence: 2 },
         ],
       },
-      reecriture: { points: ['a', 'b', 'c', 'd', 'e', 'f'] },
+      reecriture: { points: ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot'] },
       accroche: { accroche: '' },
     })
     const cv = await adapterCv(moteur, profil, offre)
