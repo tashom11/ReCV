@@ -1,11 +1,11 @@
 import type { ApiReCV, ProgressionModele, ProgressionTache } from '@core/api'
-import { CANAUX, type ResultatIpc } from '@core/canaux'
+import { CANAUX, encoderErreur, type ResultatIpc } from '@core/canaux'
 import { contextBridge, type IpcRendererEvent, ipcRenderer, webUtils } from 'electron'
 
 // API typée exposée au renderer : uniquement ces méthodes, jamais ipcRenderer lui-même.
 async function appeler<T>(canal: string, ...args: unknown[]): Promise<T> {
   const resultat = (await ipcRenderer.invoke(canal, ...args)) as ResultatIpc<T>
-  if (!resultat.ok) throw Object.assign(new Error(resultat.message), { code: resultat.code })
+  if (!resultat.ok) throw new Error(encoderErreur(resultat.message, resultat.code))
   return resultat.valeur
 }
 

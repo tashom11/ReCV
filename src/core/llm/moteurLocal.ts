@@ -65,8 +65,8 @@ const CONTEXTE_MIN = 4096
 const DELAI_NOUVEL_ESSAI_GPU_MS = 60_000
 
 const MESSAGE_MEMOIRE =
-  'Mémoire insuffisante pour le modèle embarqué. Ferme les applications qui utilisent la carte graphique ' +
-  '(Ollama, jeux, autre fenêtre de Re:CV…) ou télécharge un modèle plus petit dans les paramètres.'
+  'Mémoire insuffisante pour le modèle embarqué. Fermez les applications qui utilisent la carte graphique ' +
+  '(Ollama, jeux, autre fenêtre de Re:CV…) ou choisissez « Rapide » dans les réglages.'
 
 // Modèle embarqué (.gguf) : la sortie est contrainte par une grammaire dérivée du schéma Zod.
 // Fichier volontairement non exporté par `llm/index.ts` : node-llama-cpp est natif, réservé au process Node.
@@ -153,7 +153,7 @@ export class MoteurLocal implements MoteurLLM {
       } catch (erreur) {
         throw new Error(
           'Réponse du modèle incomplète (texte trop long pour le contexte, ou mémoire insuffisante). ' +
-            'Raccourcis le texte ou choisis un autre modèle.',
+            'Raccourcissez le texte ou choisissez un autre modèle.',
           { cause: erreur },
         )
       }

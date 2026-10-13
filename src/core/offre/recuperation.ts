@@ -15,7 +15,7 @@ function erreurSiteProtege(hote: string): ErreurRecuperationOffre | null {
   if (!site) return null
   return new ErreurRecuperationOffre(
     'site-protege',
-    `${site.nom} protège ses pages contre les accès automatiques : ouvre l’offre dans ton navigateur, copie son texte, puis colle-le ici.`,
+    `${site.nom} protège ses pages contre les accès automatiques : ouvrez l’annonce dans votre navigateur, copiez son texte, puis collez-le ici.`,
   )
 }
 
@@ -40,7 +40,7 @@ export interface OptionsRecuperation {
   userAgent?: string
 }
 
-const MESSAGE_COLLER = 'Impossible de récupérer cette offre automatiquement. Colle le texte de l’offre à la place.'
+const MESSAGE_COLLER = 'Impossible de récupérer cette offre automatiquement. Collez le texte de l’annonce à la place.'
 
 function validerUrl(brute: string): URL {
   try {

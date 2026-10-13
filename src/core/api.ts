@@ -72,6 +72,8 @@ export interface EtatParametres extends Parametres {
 export interface ProfilEnregistre {
   id: number
   profil: Profil
+  /** Nom du fichier d'origine, connu seulement au moment de l'import. */
+  nomFichier?: string
 }
 
 export type FormatExport = 'pdf' | 'docx'

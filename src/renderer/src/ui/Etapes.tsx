@@ -1,6 +1,5 @@
+import type { NumeroEtape } from '../parcours'
 import { Icone } from './icones'
-
-export type NumeroEtape = 1 | 2 | 3
 
 const NOMS: Record<NumeroEtape, string> = { 1: 'Mon CV', 2: 'L’annonce', 3: 'Mon nouveau CV' }
 const NUMEROS: NumeroEtape[] = [1, 2, 3]
@@ -15,6 +14,8 @@ export function Etapes({
   onAller,
   etatCourante = 'en cours',
   verrouille = false,
+  accessibles = [],
+  etats = {},
 }: {
   courante: NumeroEtape | null
   faites: readonly NumeroEtape[]
@@ -23,6 +24,10 @@ export function Etapes({
   etatCourante?: string
   /** Aucune étape n'est cliquable (création en cours). */
   verrouille?: boolean
+  /** Étapes où l'on peut revenir sans qu'elles soient terminées (un CV créé mais pas encore téléchargé). */
+  accessibles?: readonly NumeroEtape[]
+  /** État écrit propre à une étape, à la place de « faite » ou « à venir ». */
+  etats?: Partial<Record<NumeroEtape, string>>
 }) {
   return (
     <nav aria-label="Étapes" className="min-w-0 flex-1">
@@ -30,8 +35,9 @@ export function Etapes({
         {NUMEROS.map((numero) => {
           const estCourante = numero === courante
           const faite = faites.includes(numero) && !estCourante
-          const etat = estCourante ? etatCourante : faite ? 'faite' : 'à venir'
-          const cliquable = faite && !verrouille
+          const accessible = !estCourante && accessibles.includes(numero)
+          const etat = estCourante ? etatCourante : (etats[numero] ?? (faite ? 'faite' : 'à venir'))
+          const cliquable = (faite || accessible) && !verrouille
           const contenu = (
             <>
               <span
@@ -50,7 +56,7 @@ export function Etapes({
                   Étape {numero} · {etat}
                 </span>
                 <span
-                  className={`block truncate font-bold ${estCourante || faite ? 'text-encre' : 'text-encre-douce'} ${
+                  className={`block truncate font-bold ${estCourante || faite || accessible ? 'text-encre' : 'text-encre-douce'} ${
                     cliquable ? 'underline underline-offset-4' : ''
                   }`}
                 >
