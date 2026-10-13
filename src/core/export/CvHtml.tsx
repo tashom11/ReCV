@@ -1,21 +1,9 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { Bloc, CvModele } from './modele'
+import { type IdModele, trouverModele } from './modeles'
 
-// Mise en page ATS : une seule colonne, texte réel, pas de tableau, d'image ni d'icône,
-// titres de section standards, police système.
-const STYLE = `
-  @page { size: A4; margin: 0; }
-  * { box-sizing: border-box; }
-  body { font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.4; color: #111; margin: 0; }
-  h1 { font-size: 20pt; margin: 0; }
-  .titre-poste { font-size: 12pt; margin: 2pt 0 0; }
-  .contact { margin: 4pt 0 0; color: #333; }
-  h2 { font-size: 11.5pt; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #111; margin: 14pt 0 6pt; padding-bottom: 2pt; }
-  h3 { font-size: 10.5pt; margin: 8pt 0 0; }
-  .meta { color: #333; margin: 0; }
-  ul { margin: 3pt 0 0; padding-left: 16pt; }
-  p { margin: 0; }
-`
+// Mise en page ATS : une seule colonne, texte réel, pas de tableau ni d'icône, titres de section standards.
+// Le style vient du modèle choisi (voir modeles.ts) ; la structure est identique pour tous.
 
 function BlocHtml({ bloc }: { bloc: Bloc }) {
   switch (bloc.type) {
@@ -50,19 +38,23 @@ function BlocHtml({ bloc }: { bloc: Bloc }) {
   }
 }
 
-export function CvHtml({ modele }: { modele: CvModele }) {
+export function CvHtml({ modele, idModele }: { modele: CvModele; idModele?: IdModele }) {
+  const style = trouverModele(idModele)
   return (
     <html lang="fr">
       <head>
         <meta charSet="utf-8" />
         <title>{modele.nom ? `CV - ${modele.nom}` : 'CV'}</title>
-        <style>{STYLE}</style>
+        <style>{style.css}</style>
       </head>
-      <body>
-        <header>
-          {modele.nom && <h1>{modele.nom}</h1>}
-          {modele.titre && <p className="titre-poste">{modele.titre}</p>}
-          {modele.contact.length > 0 && <p className="contact">{modele.contact.join(' | ')}</p>}
+      <body data-modele={style.id}>
+        <header className="entete">
+          <div className="identite">
+            {modele.nom && <h1>{modele.nom}</h1>}
+            {modele.titre && <p className="titre-poste">{modele.titre}</p>}
+            {modele.contact.length > 0 && <p className="contact">{modele.contact.join(' | ')}</p>}
+          </div>
+          {modele.photo && <img className="photo" src={modele.photo} alt="" />}
         </header>
         {modele.sections.map((section) => (
           <section key={section.titre}>
@@ -78,6 +70,6 @@ export function CvHtml({ modele }: { modele: CvModele }) {
   )
 }
 
-export function genererHtmlCv(modele: CvModele): string {
-  return `<!doctype html>${renderToStaticMarkup(<CvHtml modele={modele} />)}`
+export function genererHtmlCv(modele: CvModele, idModele?: IdModele): string {
+  return `<!doctype html>${renderToStaticMarkup(<CvHtml modele={modele} idModele={idModele} />)}`
 }

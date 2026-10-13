@@ -37,6 +37,8 @@ export const parametresSchema = z.object({
   modeleApi: z.string().max(200).default(''),
   /** Reformuler les puces avec le modèle (plus lent). Par défaut : sélection des puces, sans modèle. */
   reformulerPuces: z.boolean().default(false),
+  /** Modèle de mise en page du CV exporté (voir `core/export/modeles.ts`). */
+  modeleCv: z.enum(['classique', 'moderne', 'elegant', 'bandeau']).default('classique'),
   cheminModeleLocal: z
     .string()
     .max(1024)
@@ -120,7 +122,9 @@ export interface ApiService {
   lireParametres(): Promise<EtatParametres>
   enregistrerParametres(parametres: Parametres): Promise<EtatParametres>
   /** Enregistre le CV validé (coordonnées du profil actif) via un sélecteur de fichier. Chemin écrit, ou `null` si annulé. */
-  exporterCv(cv: CvAdapte, format: FormatExport): Promise<string | null>
+  exporterCv(cv: CvAdapte, format: FormatExport, modeleId?: string): Promise<string | null>
+  /** HTML complet du CV mis en page avec un modèle (photo comprise), à afficher dans un cadre isolé. */
+  htmlModeleCv(cv: CvAdapte, modeleId: string): Promise<string>
   /** Accroche générique fondée sur les compétences transversales du profil fourni (même non enregistré). */
   genererAccroche(profil: Profil): Promise<string>
   /** Chaîne vide : supprime la clé. */
@@ -151,6 +155,7 @@ const borne = <T extends z.ZodType>(schema: T) =>
 export const entreesIpc = {
   cv: borne(cvAdapteSchema),
   format: z.enum(['pdf', 'docx']),
+  idModeleCv: z.enum(['classique', 'moderne', 'elegant', 'bandeau']),
   profil: borne(profilSchema),
   offre: borne(offreSchema),
   parametres: parametresSchema,

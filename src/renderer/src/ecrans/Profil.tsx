@@ -1,5 +1,6 @@
 import type { Experience, Formation, Langue, Profil } from '@core/schemas'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { reduirePhoto } from '../photo'
 import { useProgressionTache } from '../progression'
 import { Alerte, Bouton, Carte, Champ, Chargement, messageErreur, Selection, Titre } from '../ui'
 
@@ -55,6 +56,7 @@ export function EcranProfil({
   const [brouillon, setBrouillon] = useState<Profil | null>(profil)
   const [occupe, setOccupe] = useState<'import' | 'enregistrement' | 'accroche' | null>(null)
   const progressionAccroche = useProgressionTache('accroche', occupe === 'accroche')
+  const champPhoto = useRef<HTMLInputElement>(null)
   // Retour affiché sous le champ : le bandeau global est en haut de page, hors de vue quand on est au milieu du formulaire.
   const [retourAccroche, setRetourAccroche] = useState<{ type: 'erreur' | 'succes'; texte: string } | null>(null)
   const progressionImport = useProgressionTache('import', occupe === 'import')
@@ -158,8 +160,60 @@ export function EcranProfil({
 
       {brouillon && (
         <>
+          <Carte titre="Photo (facultative)">
+            <div className="flex items-center gap-4">
+              {brouillon.photo ? (
+                <img
+                  src={brouillon.photo}
+                  alt="Portrait choisi"
+                  className="h-24 w-24 rounded-full border border-slate-200 object-cover"
+                />
+              ) : (
+                <div
+                  className="flex h-24 w-24 items-center justify-center rounded-full border border-dashed border-slate-300 text-xs text-slate-400"
+                  aria-hidden="true"
+                >
+                  Aucune
+                </div>
+              )}
+              <div className="space-y-2">
+                <input
+                  ref={champPhoto}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const fichier = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!fichier) return
+                    try {
+                      maj({ photo: await reduirePhoto(fichier) })
+                      setErreur(null)
+                    } catch (erreurPhoto) {
+                      setErreur(messageErreur(erreurPhoto))
+                    }
+                  }}
+                />
+                <div className="flex gap-2">
+                  <Bouton variante="secondaire" onClick={() => champPhoto.current?.click()}>
+                    {brouillon.photo ? 'Changer la photo' : 'Ajouter une photo'}
+                  </Bouton>
+                  {brouillon.photo && (
+                    <Bouton variante="danger" onClick={() => maj({ photo: undefined })}>
+                      Retirer
+                    </Bouton>
+                  )}
+                </div>
+                <p className="text-xs text-slate-600">
+                  Facultative : elle apparaît dans les modèles qui en comportent et reste sur ton ordinateur (jamais
+                  envoyée au modèle de langage). Recadrée en carré. Pense à enregistrer le profil.
+                </p>
+              </div>
+            </div>
+          </Carte>
+
           <Carte titre="Identité">
-            {(brouillon.nom ?? '').trim() !== '' && !/s/.test((brouillon.nom ?? '').trim()) && (
+            {(brouillon.nom ?? '').trim() !== '' && !/\s/.test((brouillon.nom ?? '').trim()) && (
               <Alerte type="avertissement">
                 Un seul mot dans « Nom et prénom » : il manque peut-être ton prénom (il apparaît en tête du CV exporté).
               </Alerte>
