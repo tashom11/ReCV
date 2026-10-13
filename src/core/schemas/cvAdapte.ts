@@ -23,9 +23,28 @@ export type Ecartes = z.infer<typeof ecartesSchema>
 
 // Compétences demandées par l'offre, rapprochées du profil. `manquantes` n'est JAMAIS ajouté au CV automatiquement :
 // l'utilisateur coche celles qu'il maîtrise réellement.
+// Prérequis cités par l'offre (formation, expérience), comparés au profil : information pour l'utilisateur.
+export const prerequisSchema = z.object({
+  formation: z
+    .object({
+      exigee: z.string(),
+      statut: z.enum(['ok', 'insuffisante', 'inconnue']),
+      profil: z.string().optional(),
+    })
+    .optional(),
+  experience: z
+    .object({
+      exigee: z.string(),
+      statut: z.enum(['retrouvee', 'non-retrouvee']),
+    })
+    .optional(),
+})
+export type Prerequis = z.infer<typeof prerequisSchema>
+
 export const demandeesSchema = z.object({
   attestees: z.array(z.string()).default([]),
   manquantes: z.array(z.string()).default([]),
+  prerequis: prerequisSchema.default({}),
 })
 export type Demandees = z.infer<typeof demandeesSchema>
 
@@ -39,6 +58,6 @@ export const cvAdapteSchema = z.object({
   formations: z.array(formationSchema).default([]),
   langues: z.array(langueSchema).default([]),
   ecartes: ecartesSchema.default({ experiences: [], competences: [], formations: [] }),
-  demandees: demandeesSchema.default({ attestees: [], manquantes: [] }),
+  demandees: demandeesSchema.default({ attestees: [], manquantes: [], prerequis: {} }),
 })
 export type CvAdapte = z.infer<typeof cvAdapteSchema>

@@ -1,12 +1,13 @@
 import { z } from 'zod'
 import type { MoteurLLM } from '../llm/moteur'
 import { assainirLigne, encadrer, REGLES_ANTI_INVENTION } from '../llm/prompts'
-import { preparerTexteOffre } from '../offre/texte'
+import { preparerTexteAnalyse } from '../offre/sections'
 import type { Offre } from '../schemas'
 import { contientMot, normaliser } from './texte'
 
-const MAX_MOTS_CLES = 10
+const MAX_MOTS_CLES = 8
 const MAX_COMPETENCES = 8
+const MAX_QUALITES = 8
 
 // Sur CPU, le coût d'une étape est surtout la longueur de la RÉPONSE (quelques jetons par seconde) : on borne
 // le nombre ET la longueur des termes dans le schéma lui-même (grammaire du modèle embarqué comprise).
@@ -22,35 +23,47 @@ function listeBornee(maxElements: number, maxCaracteres: number) {
 }
 
 export const analyseOffreSchema = z.object({
-  motsCles: listeBornee(MAX_MOTS_CLES, 40).default([]),
   competencesRequises: listeBornee(MAX_COMPETENCES, 50).default([]),
+  qualites: listeBornee(MAX_QUALITES, 40).default([]),
+  motsCles: listeBornee(MAX_MOTS_CLES, 40).default([]),
+  formationRequise: z.string().max(80).default(''),
+  experienceRequise: z.string().max(100).default(''),
 })
 
 export interface AnalyseOffre {
   /** Intitulé du poste visé : celui de l'offre (modifiable par l'utilisateur), pas régénéré par le modèle. */
   titreCible: string
-  motsCles: string[]
+  /** Outils, techniques et savoir-faire demandés. */
   competencesRequises: string[]
+  /** Savoir-être et qualités demandés (« orienté résultats », « sens du conseil », « autonomie »…). */
+  qualites: string[]
+  motsCles: string[]
+  /** Prérequis cités par l'offre, tels quels (« Bac +3 à Bac +5 », « 2 ans minimum en recrutement »). */
+  formationRequise: string
+  experienceRequise: string
 }
 
 const SYSTEME = `Tu es un expert en recrutement et en optimisation de CV pour les logiciels ATS.
-Analyse l'offre d'emploi fournie et extrais, de façon CONCISE :
-- "motsCles" : au plus ${MAX_MOTS_CLES} termes (1 à 3 mots chacun) qu'un ATS rechercherait, recopiés de l'offre ;
-- "competencesRequises" : au plus ${MAX_COMPETENCES} compétences techniques ou comportementales demandées (1 à 4 mots chacune), recopiées de l'offre.
-Pas de phrases : uniquement des termes courts.
+Analyse l'offre d'emploi fournie. Elle peut contenir une rubrique « PROFIL RECHERCHÉ » : appuie-toi d'abord sur elle, c'est là que l'employeur liste ce qu'il attend du candidat. Réponds de façon CONCISE (termes courts, pas de phrases) :
+- "competencesRequises" : au plus ${MAX_COMPETENCES} outils, techniques ou savoir-faire demandés (1 à 4 mots chacun : « LinkedIn Recruiter », « CRM candidats », « Approche directe ») ;
+- "qualites" : au plus ${MAX_QUALITES} savoir-être demandés (1 à 4 mots : « Autonomie », « Orienté résultats », « Sens du conseil », « Travail en équipe »), tels que formulés dans le profil recherché ;
+- "motsCles" : au plus ${MAX_MOTS_CLES} autres termes métier qu'un ATS rechercherait ;
+- "formationRequise" : le niveau de formation exigé tel qu'écrit (« Bac +3 à Bac +5 »), sinon vide ;
+- "experienceRequise" : l'expérience exigée telle qu'écrite (« 2 ans minimum en recrutement »), sinon vide.
+Ne cite JAMAIS l'intitulé du poste, le type de contrat, le lieu ni le contexte (remplacement, CDI, secteur de l'employeur) comme compétence.
 
 ${REGLES_ANTI_INVENTION}`
 
-// Étape 1 : mots-clés de l'offre.
-// Le texte est nettoyé et plafonné avant d'être lu ; titre et termes sont assainis (ils sont réinjectés dans les
-// prompts suivants : injection de second ordre).
+// Étape 1 : exigences de l'offre.
+// Le texte est nettoyé et organisé (profil recherché en premier) avant d'être lu ; titre et termes sont assainis
+// (ils sont réinjectés dans les prompts suivants : injection de second ordre).
 export async function analyserOffre(moteur: MoteurLLM, offre: Offre): Promise<AnalyseOffre> {
   const titreCible = assainirLigne(offre.titrePoste, 100)
   const analyse = await moteur.genererObjet({
     nom: 'motsCles',
     schema: analyseOffreSchema,
     systeme: SYSTEME,
-    utilisateur: `${encadrer('titre', titreCible)}\n${encadrer('offre', preparerTexteOffre(offre.texteBrut))}`,
+    utilisateur: `${encadrer('titre', titreCible)}\n${encadrer('offre', preparerTexteAnalyse(offre.texteBrut))}`,
   })
   const termes = (valeurs: string[], max: number) =>
     valeurs
@@ -59,8 +72,11 @@ export async function analyserOffre(moteur: MoteurLLM, offre: Offre): Promise<An
       .slice(0, max)
   return {
     titreCible,
-    motsCles: termes(analyse.motsCles, MAX_MOTS_CLES),
     competencesRequises: termes(analyse.competencesRequises, MAX_COMPETENCES),
+    qualites: termes(analyse.qualites, MAX_QUALITES),
+    motsCles: termes(analyse.motsCles, MAX_MOTS_CLES),
+    formationRequise: assainirLigne(analyse.formationRequise, 80),
+    experienceRequise: assainirLigne(analyse.experienceRequise, 100),
   }
 }
 
@@ -70,8 +86,9 @@ export function restreindreAnalyse(analyse: AnalyseOffre, texteSource: string): 
   const texte = normaliser(texteSource)
   const presents = (termes: string[]) => termes.filter((terme) => contientMot(texte, normaliser(terme)))
   return {
-    titreCible: analyse.titreCible,
+    ...analyse,
     motsCles: presents(analyse.motsCles),
     competencesRequises: presents(analyse.competencesRequises),
+    qualites: presents(analyse.qualites),
   }
 }

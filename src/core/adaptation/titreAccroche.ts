@@ -11,7 +11,7 @@ export type Accroche = z.infer<typeof accrocheSchema>
 const SYSTEME = `Tu es un expert en rédaction de CV optimisés pour les ATS.
 Rédige l'"accroche" du profil fourni : 2 à 3 phrases (400 caractères maximum), à la première personne du singulier (« Je … »).
 - Évite les adjectifs qui s'accordent au genre : préfère « je fais preuve de rigueur » à « je suis rigoureux ».
-- Mets en avant EN PRIORITÉ les qualités et compétences transversales du profil qui correspondent à celles demandées par l'offre (mots-clés fournis), puis ce que les expériences apportent à ces exigences.
+- Mets en avant EN PRIORITÉ les qualités et compétences transversales du profil qui correspondent aux « qualités demandées par l'offre » fournies, puis les outils et savoir-faire demandés, puis ce que les expériences apportent à ces exigences.
 - N'affirme jamais exercer ou avoir exercé le poste visé s'il n'apparaît pas dans les expériences. N'indique aucune durée d'expérience ni aucun chiffre qui ne figure pas tel quel dans les données.
 - Les mots-clés de l'offre servent uniquement à choisir quoi mettre en avant : ne reprends jamais une mission, une qualité ou une responsabilité de l'offre qui n'apparaît pas dans le profil.
 

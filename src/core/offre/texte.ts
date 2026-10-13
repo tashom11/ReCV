@@ -113,13 +113,16 @@ const LIGNES_BRUIT =
 const sansSymboles = (ligne: string) => ligne.trim().replace(/^[^\p{L}\p{N}]+/u, '')
 
 // Une ligne « titre de rubrique » : courte, sans ponctuation finale.
-function estTitre(ligne: string): boolean {
+export function estTitre(ligne: string, autoriserDeuxPoints = false): boolean {
   const brute = ligne.trim()
   // Une puce n'est jamais un titre ; une ligne avec parenthèses ou chiffres (« Entretien final (~30 min) »)
   // est un contenu ; un titre tient en quelques mots.
   if (/^[-•*–—]\s/.test(brute) || /[()\d]/.test(brute)) return false
   const l = sansSymboles(brute)
-  return l.length > 0 && l.length <= 70 && l.split(/\s+/).length <= 8 && !/[.!?;,:]$/.test(l) && /^\p{Lu}/u.test(l)
+  const ponctuationFinale = autoriserDeuxPoints ? /[.!?;,]$/ : /[.!?;,:]$/
+  return (
+    l.length > 0 && l.length <= 70 && l.split(/\s+/).length <= 8 && !ponctuationFinale.test(l) && /^\p{Lu}/u.test(l)
+  )
 }
 
 /** Retire les rubriques de bruit et les lignes de mentions standard ; conserve missions, profil, compétences. */

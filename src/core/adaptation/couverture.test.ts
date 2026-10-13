@@ -23,6 +23,9 @@ const profil: Profil = {
 }
 
 const analyse = {
+  qualites: [] as string[],
+  formationRequise: '',
+  experienceRequise: '',
   titreCible: 'Consultant SEO',
   motsCles: ['Google Search Console', 'Ahrefs', 'Matomo'],
   competencesRequises: ['Maîtrise de WordPress', 'Rigueur', 'Sens de la pédagogie', 'Consultant SEO'],
@@ -40,6 +43,9 @@ describe('analyserCouverture', () => {
   it('garde le terme le plus précis quand un terme générique y est inclus', () => {
     const c = analyserCouverture(profil, {
       titreCible: 'X',
+      qualites: [],
+      formationRequise: '',
+      experienceRequise: '',
       motsCles: ['audit', 'audit sémantique', 'analyse', 'analyse technique'],
       competencesRequises: [],
     })
@@ -89,19 +95,21 @@ describe('adapterCv : compétences demandées', () => {
     const choix = choixInitial(cv)
     expect(choix.ajouterDemandees.every(Boolean)).toBe(true)
     const colle = composerCv(profil, cv, choix, points)
-    expect(colle.competencesCles).toEqual(expect.arrayContaining(['Ahrefs', 'Sens de la pédagogie']))
-    expect(colle.demandees).toEqual({ attestees: [], manquantes: [] })
+    // Outil → compétences clés ; qualité → ligne Savoir-être.
+    expect(colle.competencesCles).toContain('Ahrefs')
+    expect(colle.competences).toContain('Sens de la pédagogie')
+    expect(colle.demandees).toEqual({ attestees: [], manquantes: [], prerequis: {} })
 
     // L'utilisateur décoche ce qu'il ne maîtrise pas.
     choix.ajouterDemandees = cv.demandees.manquantes.map((t) => t === 'Ahrefs')
     const final = composerCv(profil, cv, choix, points)
     expect(final.competencesCles).toContain('Ahrefs')
-    expect(final.competencesCles).not.toContain('Sens de la pédagogie')
+    expect(final.competences).not.toContain('Sens de la pédagogie')
   })
 
   it('le schéma accepte un CV ancien sans « demandees »', () => {
     const ancien = cvAdapteSchema.parse({ titre: 'Dev', accroche: '' })
-    expect(ancien.demandees).toEqual({ attestees: [], manquantes: [] })
+    expect(ancien.demandees).toEqual({ attestees: [], manquantes: [], prerequis: {} })
   })
 })
 

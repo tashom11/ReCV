@@ -58,6 +58,26 @@ const RACINES_SAVOIR_ETRE = [
   'negociation',
   'charisme',
   'bienveillan',
+  'oriente',
+  'assertiv',
+  'assertif',
+  'aisance',
+  'relation',
+  'proactiv',
+  'engagement',
+  'exigence',
+  'capacite d',
+  'goût',
+  'gout',
+  'conseil',
+  'confiance',
+  'ouverture',
+  'flexibilit',
+  'sociabl',
+  'optimis',
+  'discretion',
+  'integrit',
+  'responsabilit',
 ]
 
 /** Vrai pour une qualité transversale (rigueur, autonomie, travail en équipe…). */
@@ -94,5 +114,25 @@ export function eclaterCompetences(competences: string[]): string[] {
       .filter(Boolean)
     const courtes = parties.length > 1 && parties.every((p) => p.split(/\s+/).length <= 3)
     return courtes ? parties : [c]
+  })
+}
+
+/**
+ * Clé de dédoublonnage : un mot seul est ramené à sa racine (« Adaptable » = « Adaptabilité »), une expression est
+ * conservée entière (« Sens du détail » ≠ « Sens du conseil »).
+ */
+export function cleCompetence(competence: string): string {
+  const n = normaliser(competence).replace(/['’]/g, ' ').trim()
+  return /s/.test(n) ? n : n.slice(0, 5)
+}
+
+/** Retire les doublons (même clé), en conservant la première occurrence. */
+export function sansDoublons(liste: string[]): string[] {
+  const vues = new Set<string>()
+  return liste.filter((c) => {
+    const cle = cleCompetence(c)
+    if (vues.has(cle)) return false
+    vues.add(cle)
+    return true
   })
 }

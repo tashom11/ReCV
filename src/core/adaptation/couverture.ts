@@ -1,5 +1,5 @@
 import { nettoyerTitreOffre } from '../offre/texte'
-import type { Profil } from '../schemas'
+import type { Prerequis, Profil } from '../schemas'
 import type { AnalyseOffre } from './motsCles'
 import { contientMot, normaliser, texteExperience } from './texte'
 
@@ -12,6 +12,7 @@ import { contientMot, normaliser, texteExperience } from './texte'
 export interface CouvertureOffre {
   attestees: string[]
   manquantes: string[]
+  prerequis: Prerequis
 }
 
 // Mots d'introduction qui ne désignent pas la compétence elle-même (« Maîtrise de WordPress » → « WordPress »).
@@ -70,10 +71,20 @@ export function analyserCouverture(profil: Profil, analyse: AnalyseOffre): Couve
   // L'intitulé du poste n'est pas une compétence à cocher (avec ou sans « (H/F) »).
   const titres = new Set([normaliser(analyse.titreCible), normaliser(nettoyerTitreOffre(analyse.titreCible))])
 
+  // Ni l'intitulé du poste (ou un morceau : « Chargé de sourcing » pour « Chargé de sourcing et de recrutement »),
+  // ni le contexte du contrat : ce ne sont pas des compétences.
+  const titreComplet = normaliser(nettoyerTitreOffre(analyse.titreCible))
+  const estContexte = (t: string) => {
+    const n = normaliser(t)
+    return titres.has(n) || (n.length >= 6 && titreComplet.includes(n)) || CONTEXTE_CONTRAT.test(n)
+  }
+
   const vus = new Set<string>()
-  const termes = [...analyse.competencesRequises, ...analyse.motsCles]
+  // Qualités et outils demandés dans le « profil recherché » d'abord : ce sont les exigences explicites.
+  const explicites = new Set([...analyse.competencesRequises, ...analyse.qualites].map((t) => normaliser(t.trim())))
+  const termes = [...analyse.competencesRequises, ...analyse.qualites, ...analyse.motsCles]
     .map((t) => t.trim())
-    .filter((t) => t.length >= 3 && !titres.has(normaliser(t)))
+    .filter((t) => t.length >= 3 && !estContexte(t))
     .filter((t) => {
       const cle = normaliser(t)
       if (vus.has(cle)) return false
@@ -88,7 +99,17 @@ export function analyserCouverture(profil: Profil, analyse: AnalyseOffre): Couve
     const couvert =
       contientMot(source, normaliser(terme)) ||
       (mots.length > 0 && mots.filter((m) => racinesSource.has(racine(m))).length / mots.length >= 0.75)
-    ;(couvert ? attestees : manquantes).push(terme)
+    if (couvert) {
+      attestees.push(terme)
+      continue
+    }
+    // Un mot-clé isolé non attesté (« stratégie », « entretien », « commercial ») est trop vague pour être proposé
+    // comme compétence à ajouter ; seuls les outils et qualités explicitement demandés le sont.
+    const motIsole = terme.split(/\s+/).length === 1
+    // (Un nom d'outil s'écrit avec une majuscule ou des chiffres : « Ahrefs », « GA4 », « n8n » ne sont pas écartés.)
+    const ressembleNomCommun = terme === terme.toLowerCase() && !/\d/.test(terme)
+    if (motIsole && !explicites.has(normaliser(terme)) && ressembleNomCommun) continue
+    manquantes.push(terme)
   }
   // Un terme générique inclus dans un terme plus précis de la liste (« audit » dans « audit sémantique ») n'apporte
   // rien : on garde le plus précis.
@@ -97,7 +118,54 @@ export function analyserCouverture(profil: Profil, analyse: AnalyseOffre): Couve
   return {
     attestees: sansRedondance(attestees).slice(0, MAX_ATTESTEES),
     manquantes: sansRedondance(manquantes).slice(0, MAX_MANQUANTES),
+    prerequis: evaluerPrerequis(profil, analyse, source),
   }
+}
+
+// Mots de contexte (contrat, remplacement…) que le modèle range parfois parmi les « mots-clés ».
+const CONTEXTE_CONTRAT =
+  /^(remplacement|cdi|cdd|interim|intérim|stage|alternance|temps (plein|partiel)|teletravail|télétravail|poste (a|à) pourvoir|poste base|deplacements?|déplacements?|reseaux? commerciaux?|secteur [\p{L} ]+)$/iu
+
+/** Niveau d'études « équivalent Bac + N » d'un texte (« Bac +3 à Bac +5 » → 3, « Master » → 5), sinon null. */
+export function niveauEtudes(texte: string): number | null {
+  const t = normaliser(texte)
+  const bac = t.match(/bac\s*\+\s*(\d)/)
+  if (bac?.[1]) return Number(bac[1])
+  if (/\b(master|ingenieur|m2|doctorat)\b/.test(t)) return 5
+  if (/\b(licence|bachelor|l3|but)\b/.test(t)) return 3
+  if (/\b(bts|dut|deust|l2)\b/.test(t)) return 2
+  if (/\bbac\b/.test(t)) return 0
+  return null
+}
+
+function evaluerPrerequis(profil: Profil, analyse: AnalyseOffre, source: string): Prerequis {
+  const resultat: Prerequis = {}
+
+  if (analyse.formationRequise.trim() !== '') {
+    const exige = niveauEtudes(analyse.formationRequise)
+    const niveaux = profil.formations.map((f) => niveauEtudes(f.diplome)).filter((n): n is number => n !== null)
+    const meilleur = niveaux.length > 0 ? Math.max(...niveaux) : null
+    const diplome =
+      meilleur === null ? undefined : profil.formations.find((f) => niveauEtudes(f.diplome) === meilleur)?.diplome
+    resultat.formation = {
+      exigee: analyse.formationRequise,
+      statut: exige === null || meilleur === null ? 'inconnue' : meilleur >= exige ? 'ok' : 'insuffisante',
+      profil: diplome,
+    }
+  }
+
+  if (analyse.experienceRequise.trim() !== '') {
+    // Domaine de l'expérience demandée : on retire durée et mots d'introduction, il reste « recrutement, sourcing… ».
+    const domaine = motsSignificatifs(analyse.experienceRequise).filter(
+      (m) => m.length >= 5 && !/^(minimum|annees?|ans?|experience|environnement|idealement|poste|similaire)$/.test(m),
+    )
+    const racinesSource = new Set((source.match(/[\p{L}\p{N}]{3,}/gu) ?? []).map(racine))
+    resultat.experience = {
+      exigee: analyse.experienceRequise,
+      statut: domaine.some((m) => racinesSource.has(racine(m))) ? 'retrouvee' : 'non-retrouvee',
+    }
+  }
+  return resultat
 }
 
 /** Vrai si `terme` est déjà représenté par l'une des compétences listées (inclusion dans un sens ou l'autre). */

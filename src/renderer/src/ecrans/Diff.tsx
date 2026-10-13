@@ -212,6 +212,45 @@ export function EcranDiff({
             </p>
           </div>
 
+          {(adapte.demandees.prerequis.formation || adapte.demandees.prerequis.experience) && (
+            <div className="space-y-1 rounded-md border border-slate-200 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Prérequis de l’offre</p>
+              {adapte.demandees.prerequis.formation && (
+                <p className="text-sm text-slate-800">
+                  <span className="font-medium">Formation :</span> {adapte.demandees.prerequis.formation.exigee}
+                  {' — '}
+                  {adapte.demandees.prerequis.formation.statut === 'ok' && (
+                    <span className="text-emerald-700">
+                      ton profil correspond ({adapte.demandees.prerequis.formation.profil})
+                    </span>
+                  )}
+                  {adapte.demandees.prerequis.formation.statut === 'insuffisante' && (
+                    <span className="text-amber-800">
+                      en dessous de l’exigence (ton plus haut diplôme : {adapte.demandees.prerequis.formation.profil})
+                    </span>
+                  )}
+                  {adapte.demandees.prerequis.formation.statut === 'inconnue' && (
+                    <span className="text-slate-600">à vérifier</span>
+                  )}
+                </p>
+              )}
+              {adapte.demandees.prerequis.experience && (
+                <p className="text-sm text-slate-800">
+                  <span className="font-medium">Expérience :</span> {adapte.demandees.prerequis.experience.exigee}
+                  {' — '}
+                  {adapte.demandees.prerequis.experience.statut === 'retrouvee' ? (
+                    <span className="text-emerald-700">domaine retrouvé dans tes expériences</span>
+                  ) : (
+                    <span className="text-amber-800">domaine non retrouvé dans tes expériences</span>
+                  )}
+                </p>
+              )}
+              <p className="text-xs text-slate-500">
+                Information seulement : ces critères ne sont pas modifiables, mais tu sais où tu te situes.
+              </p>
+            </div>
+          )}
+
           {adapte.demandees.attestees.length > 0 && (
             <div className="space-y-1">
               <p className="text-xs font-medium text-emerald-700">

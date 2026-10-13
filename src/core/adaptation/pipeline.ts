@@ -2,7 +2,7 @@ import type { OptionsAdaptation } from '../llm/fournisseur'
 import type { MoteurLLM } from '../llm/moteur'
 import { nettoyerTitreOffre } from '../offre/texte'
 import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
-import { eclaterCompetences, estCompetenceCourte, estSavoirEtre, formaterCompetence } from './competences'
+import { eclaterCompetences, estCompetenceCourte, estSavoirEtre, formaterCompetence, sansDoublons } from './competences'
 import { analyserCouverture, dejaListee } from './couverture'
 import { analyserOffre, restreindreAnalyse } from './motsCles'
 import { evaluerPertinence, indicesConserves } from './pertinence'
@@ -227,14 +227,16 @@ export async function adapterCv(
   const listees = prioriserCompetences(competencesGardees, termesOffre)
   // Compétences clés : celles que demande l'offre et que le profil atteste, avec la formulation de l'offre (c'est
   // elle que cherche un ATS). Retirées de la liste générale pour ne pas apparaître deux fois.
-  const competencesCles = couverture.attestees
-    .filter(estCompetenceCourte)
-    .map(formaterCompetence)
+  const demandesCourtes = couverture.attestees.filter(estCompetenceCourte).map(formaterCompetence)
+  // Les qualités demandées (« autonomie », « sens du conseil ») vont dans la ligne Savoir-être, pas parmi les outils.
+  const competencesCles = demandesCourtes
+    .filter((t) => !estSavoirEtre(t))
     .filter((t, i, tous) => tous.findIndex((u) => u.toLowerCase() === t.toLowerCase()) === i)
     .slice(0, MAX_COMPETENCES_CLES)
   const generales = listees.filter((c) => !dejaListee(c, competencesCles) || estSavoirEtre(c))
   // Lisibilité : savoir-être d'abord, puis outils et techniques, plafonnés.
-  const savoirEtre = generales.filter(estSavoirEtre).slice(0, MAX_SAVOIR_ETRE)
+  const qualitesDemandees = demandesCourtes.filter(estSavoirEtre)
+  const savoirEtre = sansDoublons([...qualitesDemandees, ...generales.filter(estSavoirEtre)]).slice(0, MAX_SAVOIR_ETRE)
   const techniques = generales.filter((c) => !estSavoirEtre(c)).slice(0, MAX_TECHNIQUES)
 
   return cvAdapteSchema.parse({
