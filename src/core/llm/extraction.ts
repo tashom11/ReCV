@@ -1,9 +1,12 @@
+import { preparerTexteOffre } from '../offre/texte'
 import { type Offre, offreSchema, type Profil, profilSchema } from '../schemas'
 import { assainirProfil } from './assainissement'
 import type { MoteurLLM } from './moteur'
 import { encadrer, PROMPT_EXTRACTION_OFFRE, PROMPT_EXTRACTION_PROFIL } from './prompts'
 
 // Le texte brut est recopié en code : inutile (et risqué) de le faire régénérer par le LLM.
+const LONGUEUR_ENTETE_OFFRE = 1500
+
 const offreExtraiteSchema = offreSchema.omit({ texteBrut: true })
 
 export async function extraireProfil(moteur: MoteurLLM, texteCv: string): Promise<Profil> {
@@ -22,7 +25,8 @@ export async function extraireOffre(moteur: MoteurLLM, texteOffre: string): Prom
     nom: 'extraireOffre',
     schema: offreExtraiteSchema,
     systeme: PROMPT_EXTRACTION_OFFRE,
-    utilisateur: encadrer('offre', texteOffre),
+    // Intitulé, entreprise et lieu figurent en tête d'annonce : inutile de faire lire (lentement) tout le texte.
+    utilisateur: encadrer('offre', preparerTexteOffre(texteOffre, LONGUEUR_ENTETE_OFFRE)),
   })
   return offreSchema.parse({ ...extraite, texteBrut: texteOffre })
 }

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
+import type { AnalyseOffre } from '@core/adaptation'
 import type {
   ApiService,
   CvGenere,
@@ -66,6 +67,7 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
   const { bdd, parametres, modeles, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf } = deps
   const creer = deps.creerFournisseur ?? fournisseurParDefaut
   const signaler = (progression: ProgressionTache) => deps.emettreTache?.(progression)
+  const analyses = new Map<string, AnalyseOffre>()
 
   // Un seul fournisseur vivant, réutilisé tant que les paramètres (et la clé) ne changent pas :
   // le modèle local pèse plusieurs Go et ne doit être chargé qu'une fois, puis libéré.
@@ -125,8 +127,18 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       const actif = obtenirProfilActif(bdd)
       if (!actif) throw new Error('Aucun profil : importe d’abord ton CV.')
       signaler({ tache: 'adaptation', etape: 'Préparation du modèle' })
-      const cv = await (await fournisseur()).adapterCv(actif.profil, offre, {
-        surEtape: (e) => signaler({ tache: 'adaptation', ...e }),
+      const [params, llm] = await Promise.all([parametres.lire(), fournisseur()])
+      // L'analyse d'une offre ne dépend pas du profil : mémorisée, elle évite le plus gros appel au modèle
+      // quand on relance après avoir corrigé son profil.
+      const cleOffre = createHash('sha256').update(`${offre.titrePoste}\n${offre.texteBrut}`).digest('hex')
+      const cv = await llm.adapterCv(actif.profil, offre, {
+        reformuler: params.reformulerPuces,
+        analyse: analyses.get(cleOffre),
+        surAnalyse: (analyse) => {
+          analyses.set(cleOffre, analyse)
+          if (analyses.size > 20) analyses.delete(analyses.keys().next().value as string)
+        },
+        surEtape: (e) => signaler({ tache: 'adaptation', ...e, calcul: llm.modeCalcul?.() ?? undefined }),
       })
       const offreId = enregistrerOffre(bdd, offre)
       return { id: enregistrerCv(bdd, actif.id, offreId, cv), offreId, cv }

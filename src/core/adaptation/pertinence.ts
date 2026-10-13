@@ -5,19 +5,19 @@ import type { Experience, Profil } from '../schemas'
 import type { AnalyseOffre } from './motsCles'
 import { normaliser } from './texte'
 
-// L'ordre des champs compte : le modèle nomme le domaine, puis l'exigence de l'offre servie ("raison"),
-// puis seulement note. Ces deux champs ne sont pas conservés.
+// Réponse volontairement COMPACTE (sur CPU, le temps d'une étape est celui de la réponse). Pour les expériences
+// et formations : un domaine de 2 à 4 mots, puis une note ; pour les compétences : la seule liste des indices utiles
+// (au lieu d'un objet par compétence, ~15 fois plus long).
 const noteSchema = z.object({
   indice: z.number(),
-  domaine: z.string().default(''),
-  raison: z.string().default(''),
+  domaine: z.string().max(40).default(''),
   pertinence: z.number(),
 })
 
 export const pertinenceSchema = z.object({
   experiences: z.array(noteSchema).default([]),
   formations: z.array(noteSchema).default([]),
-  competences: z.array(noteSchema).default([]),
+  competencesUtiles: z.array(z.number()).default([]),
 })
 
 /** 0 = sans rapport avec le poste visé, 1 = transférable / général, 2 = directement lié. */
@@ -30,15 +30,14 @@ export interface Pertinence {
 }
 
 const SYSTEME = `Tu es un expert en recrutement. Tu aides un candidat à présenter honnêtement son parcours pour un poste précis.
-Pour chaque élément du profil (expériences, formations, compétences, identifiés par leur "indice") :
-1. "domaine" : le domaine d'activité de l'élément en 2 à 4 mots (ex. « développement web », « carrosserie automobile », « comptabilité »). Deux expériences du même domaine reçoivent le même libellé.
-2. "raison" : en une phrase courte, ce que l'élément apporte aux activités ou exigences de l'offre (ou « aucun lien »).
-3. "pertinence" :
-- 2 : sert directement une activité ou une exigence de l'offre (même métier, mêmes outils, mêmes techniques) ;
-- 1 : domaine voisin ou activités en partie communes avec l'offre (ex. gestion de site web, analyse de trafic ou rédaction web pour un poste de communication numérique), qualité professionnelle utile au poste, ou diplôme dont la spécialité n'est pas précisée ;
-- 0 : domaine sans aucun lien avec l'offre (ex. mécanique, artisanat ou bâtiment pour un poste de communication numérique).
+Évalue les éléments du profil par rapport au poste visé et à ses exigences.
+
+1. "experiences" et "formations" (identifiées par leur "indice") : pour chaque élément, un objet {"indice", "domaine", "pertinence"} :
+- "domaine" : son domaine d'activité en 2 à 4 mots (ex. « développement web », « carrosserie automobile »). Deux expériences du même domaine reçoivent le même libellé ;
+- "pertinence" : 2 = sert directement une activité ou une exigence de l'offre (même métier, mêmes outils) ; 1 = domaine voisin ou activités en partie communes, ou diplôme dont la spécialité n'est pas précisée ; 0 = domaine sans aucun lien avec l'offre (ex. mécanique ou artisanat pour un poste de communication numérique).
+2. "competencesUtiles" : la liste des indices des compétences qui servent le poste visé (savoir-faire en lien avec l'offre et qualités professionnelles utiles dans ce poste). Les autres sont omises.
+
 Juge uniquement d'après les données fournies.
-Réponds avec "experiences", "formations" et "competences" : pour chacune, la liste d'objets {"indice", "domaine", "raison", "pertinence"}, un par élément fourni (le "domaine" peut rester vide pour une compétence).
 
 ${REGLES_ANTI_INVENTION}`
 
@@ -52,8 +51,15 @@ export function normaliserNiveaux(notes: { indice: number; pertinence: number }[
   return niveaux
 }
 
-// Garde-fou de cohérence : deux expériences du même domaine (ou au même intitulé de poste) ne peuvent pas
-// être pertinentes d'un côté et pas de l'autre (Webagence / Agence Pixel : « Développeur web front »).
+/** Indices utiles → niveaux ; une liste vide ou entièrement invalide ne retire rien (niveau neutre partout). */
+export function niveauxCompetences(utiles: number[], taille: number): Niveau[] {
+  const valides = new Set(utiles.filter((i) => Number.isInteger(i) && i >= 0 && i < taille))
+  if (valides.size === 0) return Array.from({ length: taille }, () => 1)
+  return Array.from({ length: taille }, (_, i) => (valides.has(i) ? 1 : 0))
+}
+
+// Garde-fou de cohérence : deux expériences du même domaine (ou au même intitulé de poste) ne peuvent pas être
+// pertinentes d'un côté et pas de l'autre (Webagence / Agence Pixel : « Développeur web front »).
 // Chaque groupe prend la note la plus haute.
 export function harmoniserExperiences(
   niveaux: Niveau[],
@@ -65,7 +71,7 @@ export function harmoniserExperiences(
       experiences[i] ? `poste:${normaliser(experiences[i].poste)}` : '',
       domaines[i] ? `domaine:${normaliser(domaines[i])}` : '',
     ].filter(Boolean)
-  // Union-find simplifiée : on propage le maximum entre éléments partageant une clé, jusqu'à stabilité.
+  // On propage le maximum entre éléments partageant une clé, jusqu'à stabilité.
   const resultat = [...niveaux]
   for (let changement = true; changement; ) {
     changement = false
@@ -117,21 +123,25 @@ async function domaineLePlusProche(
   return Number.isInteger(choix) ? (distincts[choix] ?? null) : null
 }
 
+const MAX_REALISATIONS_ENVOYEES = 4
+const MAX_CARACTERES_REALISATION = 140
+
 // Étape 2 : pertinence de chaque élément du profil par rapport au poste visé (une seule requête).
 export async function evaluerPertinence(moteur: MoteurLLM, profil: Profil, analyse: AnalyseOffre): Promise<Pertinence> {
   const { experiences, formations, competences } = profil
   if (experiences.length + formations.length + competences.length === 0) {
     return { experiences: [], formations: [], competences: [] }
   }
+  // Entrée allégée : le jugement s'appuie sur l'intitulé et les premières réalisations, pas sur tout le CV.
   const contenu = {
     experiences: experiences.map((e, indice) => ({
       indice,
       poste: e.poste,
-      entreprise: e.entreprise,
-      description: e.description,
-      realisations: e.realisations,
+      realisations: e.realisations
+        .slice(0, MAX_REALISATIONS_ENVOYEES)
+        .map((r) => r.slice(0, MAX_CARACTERES_REALISATION)),
     })),
-    formations: formations.map((f, indice) => ({ indice, diplome: f.diplome, etablissement: f.etablissement })),
+    formations: formations.map((f, indice) => ({ indice, diplome: f.diplome })),
     competences: competences.map((nom, indice) => ({ indice, nom })),
   }
   const exigences = [...analyse.competencesRequises, ...analyse.motsCles]
@@ -140,7 +150,7 @@ export async function evaluerPertinence(moteur: MoteurLLM, profil: Profil, analy
     schema: pertinenceSchema,
     systeme: SYSTEME,
     temperature: 0,
-    utilisateur: `Poste visé : ${analyse.titreCible}\nActivités et exigences de l'offre :\n${exigences.map((e) => `- ${e}`).join('\n')}\n${encadrer('profil', JSON.stringify(contenu, null, 2))}`,
+    utilisateur: `Poste visé : ${analyse.titreCible}\nActivités et exigences de l'offre :\n${exigences.map((e) => `- ${e}`).join('\n')}\n${encadrer('profil', JSON.stringify(contenu))}`,
   })
   const domaines = experiences.map((_, i) => reponse.experiences.find((n) => n.indice === i)?.domaine ?? '')
   const niveauxExperiences: Niveau[] = harmoniserExperiences(
@@ -160,7 +170,7 @@ export async function evaluerPertinence(moteur: MoteurLLM, profil: Profil, analy
   return {
     experiences: niveauxExperiences,
     formations: normaliserNiveaux(reponse.formations, formations.length),
-    competences: normaliserNiveaux(reponse.competences, competences.length),
+    competences: niveauxCompetences(reponse.competencesUtiles, competences.length),
   }
 }
 

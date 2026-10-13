@@ -25,6 +25,10 @@ export class FournisseurStructure implements FournisseurLLM {
     return genererAccrocheProfil(this.moteur, profil)
   }
 
+  modeCalcul(): 'gpu' | 'cpu' | null {
+    return this.moteur.modeCalcul?.() ?? null
+  }
+
   async liberer(): Promise<void> {
     await this.moteur.liberer?.()
   }

@@ -51,7 +51,7 @@ function moteur(accroche: { accroche: string }, competences = [0, 0, 1, 1]) {
         { indice: 0, pertinence: 0 },
         { indice: 1, pertinence: 1 },
       ],
-      competences: competences.map((pertinence, indice) => ({ indice, pertinence })),
+      competencesUtiles: competences.flatMap((pertinence, indice) => (pertinence > 0 ? [indice] : [])),
     },
     reecriture: { points: ['Ponçage et préparation des surfaces', 'Application de peinture et vernis'] },
     accroche,

@@ -14,8 +14,10 @@ describe('proposerModele', () => {
   it('choisit le plus gros modèle supporté par la RAM ou la VRAM', () => {
     expect(proposerModele({ ramGo: 4, vramGo: 0 }).id).toBe('qwen3.5-2b')
     expect(proposerModele({ ramGo: 8, vramGo: 0 }).id).toBe('qwen3.5-4b')
-    expect(proposerModele({ ramGo: 16, vramGo: 0 }).id).toBe('qwen3.5-9b')
-    expect(proposerModele({ ramGo: 8, vramGo: 8 }).id).toBe('qwen3.5-9b')
+    // Le 9B n'est recommandé qu'avec une vraie carte graphique (≥ 10 Go) : sur CPU il est trop lent.
+    expect(proposerModele({ ramGo: 32, vramGo: 0 }).id).toBe('qwen3.5-4b')
+    expect(proposerModele({ ramGo: 32, vramGo: 8 }).id).toBe('qwen3.5-4b')
+    expect(proposerModele({ ramGo: 32, vramGo: 12 }).id).toBe('qwen3.5-9b')
   })
 
   it('retombe sur le plus petit si la machine est sous tous les seuils', () => {

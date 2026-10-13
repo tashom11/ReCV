@@ -9,7 +9,10 @@ export interface ModeleEmbarque {
   url: string
   tailleOctets: number
   sha256: string
-  /** Mémoire minimale conseillée : RAM système (CPU) ou VRAM (GPU), en Go. */
+  /**
+   * Mémoire à partir de laquelle le modèle est confortable : VRAM (GPU, poids + contexte) ou RAM système (CPU).
+   * Sur CPU un modèle de 9B génère quelques jetons par seconde : seul le GPU le rend utilisable.
+   */
   ramMinGo: number
   vramMinGo: number
 }
@@ -27,7 +30,7 @@ export const MODELES_EMBARQUES: readonly ModeleEmbarque[] = [
     tailleOctets: 1_280_835_840,
     sha256: 'aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223',
     ramMinGo: 4,
-    vramMinGo: 2.5,
+    vramMinGo: 3,
   },
   {
     id: 'qwen3.5-4b',
@@ -38,7 +41,7 @@ export const MODELES_EMBARQUES: readonly ModeleEmbarque[] = [
     tailleOctets: 2_740_937_888,
     sha256: '00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4',
     ramMinGo: 8,
-    vramMinGo: 4,
+    vramMinGo: 5,
   },
   {
     id: 'qwen3.5-9b',
@@ -48,8 +51,8 @@ export const MODELES_EMBARQUES: readonly ModeleEmbarque[] = [
     url: depot('9B', 'Qwen3.5-9B-Q4_K_M.gguf'),
     tailleOctets: 5_680_522_464,
     sha256: '03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8',
-    ramMinGo: 16,
-    vramMinGo: 7.5,
+    ramMinGo: 64,
+    vramMinGo: 10,
   },
 ]
 

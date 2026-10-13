@@ -96,7 +96,10 @@ export function GestionModeles({ onChange }: { onChange: () => void }) {
                   </p>
                   <p className="text-xs text-slate-600">{m.description}</p>
                   {!m.compatible && (
-                    <p className="text-xs text-amber-700">Probablement trop lourd pour la mémoire de cet ordinateur.</p>
+                    <p className="text-xs text-amber-700">
+                      Lent sur cet ordinateur : la carte graphique n’a pas assez de mémoire, le calcul se fera sur le
+                      processeur.
+                    </p>
                   )}
                 </div>
                 <div className="flex gap-2">
