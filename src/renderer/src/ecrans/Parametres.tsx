@@ -26,6 +26,8 @@ export function EcranParametres() {
   const [cle, setCle] = useState('')
   const [erreur, setErreur] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  /** Action en cours (identifiant du bouton) : sert à afficher la pastille animée sur le bon bouton. */
+  const [occupe, setOccupe] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.lireParametres().then(setEtat, (e) => setErreur(messageErreur(e)))
@@ -42,17 +44,21 @@ export function EcranParametres() {
   const maj = (partiel: Partial<Parametres>) => setEtat({ ...etat, ...partiel })
 
   const executer = async (
+    id: string,
     action: () => Promise<EtatParametres>,
     confirmation: string | ((etat: EtatParametres) => string),
   ) => {
     setErreur(null)
     setMessage(null)
+    setOccupe(id)
     try {
       const resultat = await action()
       setEtat(resultat)
       setMessage(typeof confirmation === 'function' ? confirmation(resultat) : confirmation)
     } catch (e) {
       setErreur(messageErreur(e))
+    } finally {
+      setOccupe(null)
     }
   }
 
@@ -60,6 +66,7 @@ export function EcranParametres() {
     const { cleApiDefinie: _ignore, ...parametres } = etat
     const avaitUneCle = etat.cleApiDefinie
     return executer(
+      'enregistrer',
       () => window.api.enregistrerParametres(parametres),
       (apres) =>
         avaitUneCle && !apres.cleApiDefinie
@@ -130,7 +137,9 @@ export function EcranParametres() {
           </div>
         )}
 
-        <Bouton onClick={enregistrer}>Enregistrer</Bouton>
+        <Bouton onClick={enregistrer} enCours={occupe === 'enregistrer'} desactive={occupe !== null}>
+          {occupe === 'enregistrer' ? 'Enregistrement…' : 'Enregistrer'}
+        </Bouton>
       </Carte>
 
       {etat.fournisseur === 'local' && <GestionModeles onChange={surModeleInstalle} />}
@@ -145,18 +154,20 @@ export function EcranParametres() {
           <Champ etiquette="Nouvelle clé" type="password" valeur={cle} onChange={setCle} />
           <div className="flex gap-3">
             <Bouton
-              desactive={!cle.trim()}
+              desactive={!cle.trim() || occupe !== null}
+              enCours={occupe === 'cle'}
               onClick={async () => {
-                await executer(() => window.api.definirCleApi(cle.trim()), 'Clé enregistrée.')
+                await executer('cle', () => window.api.definirCleApi(cle.trim()), 'Clé enregistrée.')
                 setCle('')
               }}
             >
-              Enregistrer la clé
+              {occupe === 'cle' ? 'Chiffrement…' : 'Enregistrer la clé'}
             </Bouton>
             <Bouton
               variante="danger"
-              desactive={!etat.cleApiDefinie}
-              onClick={() => executer(() => window.api.definirCleApi(''), 'Clé supprimée.')}
+              desactive={!etat.cleApiDefinie || occupe !== null}
+              enCours={occupe === 'cle-suppression'}
+              onClick={() => executer('cle-suppression', () => window.api.definirCleApi(''), 'Clé supprimée.')}
             >
               Supprimer la clé
             </Bouton>
@@ -171,15 +182,21 @@ export function EcranParametres() {
         </p>
         <Bouton
           variante="danger"
+          enCours={occupe === 'effacer'}
+          desactive={occupe !== null}
           onClick={() => {
             if (!window.confirm('Effacer définitivement ton profil, tes offres, tes CV générés et ta clé API ?')) return
-            executer(async () => {
-              await window.api.effacerDonnees()
-              return window.api.lireParametres()
-            }, 'Toutes tes données ont été effacées. Recharge l’application pour repartir de zéro.')
+            executer(
+              'effacer',
+              async () => {
+                await window.api.effacerDonnees()
+                return window.api.lireParametres()
+              },
+              'Toutes tes données ont été effacées. Recharge l’application pour repartir de zéro.',
+            )
           }}
         >
-          Effacer toutes mes données
+          {occupe === 'effacer' ? 'Effacement…' : 'Effacer toutes mes données'}
         </Bouton>
       </Carte>
     </div>

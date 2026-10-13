@@ -1,5 +1,5 @@
 import type { CvAdapte, Offre, Profil } from '../schemas'
-import type { FournisseurLLM } from './fournisseur'
+import type { FournisseurLLM, OptionsAdaptation } from './fournisseur'
 
 export const profilCanned: Profil = {
   nom: 'Claire Dubois',
@@ -71,7 +71,7 @@ export class FournisseurMock implements FournisseurLLM {
     }
   }
 
-  async adapterCv(profil: Profil, _offre: Offre): Promise<CvAdapte> {
+  async adapterCv(profil: Profil, _offre: Offre, _options?: OptionsAdaptation): Promise<CvAdapte> {
     return {
       titre: profil.titrePoste ?? 'CV adapté',
       accroche: profil.accroche ?? '',

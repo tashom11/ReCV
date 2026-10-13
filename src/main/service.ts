@@ -1,6 +1,14 @@
 import { createHash } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
-import type { ApiService, CvGenere, EtatModeles, EtatParametres, Parametres, ProfilEnregistre } from '@core/api'
+import type {
+  ApiService,
+  CvGenere,
+  EtatModeles,
+  EtatParametres,
+  Parametres,
+  ProfilEnregistre,
+  ProgressionTache,
+} from '@core/api'
 import { construireModele, genererDocxCv, genererHtmlCv, nomFichierCv } from '@core/export'
 import { creerFournisseurApi, creerFournisseurOllama, type FournisseurLLM } from '@core/llm'
 import { recupererOffre } from '@core/offre'
@@ -27,6 +35,8 @@ export interface DependancesService {
   /** User-Agent de navigateur utilisé pour récupérer les offres. */
   userAgent?: string
   modeles: GestionnaireModeles
+  /** Signale l'étape en cours d'une tâche longue au renderer. */
+  emettreTache?: (progression: ProgressionTache) => void
   /** Sélecteur d'enregistrement : chemin choisi, ou `null` si annulé. */
   choisirDestination: (nomParDefaut: string, extension: 'pdf' | 'docx') => Promise<string | null>
   /** Rend le HTML en PDF (fenêtre cachée côté Electron). */
@@ -55,6 +65,7 @@ async function fournisseurParDefaut(parametres: Parametres, cleApi: string | nul
 export function creerService(deps: DependancesService): ApiService & { liberer(): Promise<void> } {
   const { bdd, parametres, modeles, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf } = deps
   const creer = deps.creerFournisseur ?? fournisseurParDefaut
+  const signaler = (progression: ProgressionTache) => deps.emettreTache?.(progression)
 
   // Un seul fournisseur vivant, réutilisé tant que les paramètres (et la clé) ne changent pas :
   // le modèle local pèse plusieurs Go et ne doit être chargé qu'une fois, puis libéré.
@@ -90,6 +101,7 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
     async importerCv(): Promise<ProfilEnregistre | null> {
       const texte = await choisirEtLireCv()
       if (texte === null) return null
+      signaler({ tache: 'import', etape: 'Analyse du CV par le modèle' })
       const profil = await (await fournisseur()).extraireProfil(texte)
       return creerProfil(bdd, profil)
     },
@@ -105,13 +117,17 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
     recupererOffre: (url: string) => recupererOffre(url, { rendreHtml, userAgent: deps.userAgent }),
 
     async analyserTexteOffre(texte: string): Promise<Offre> {
+      signaler({ tache: 'offre', etape: 'Analyse de l’offre par le modèle' })
       return (await fournisseur()).extraireOffre(texte)
     },
 
     async adapterCv(offre: Offre): Promise<CvGenere> {
       const actif = obtenirProfilActif(bdd)
       if (!actif) throw new Error('Aucun profil : importe d’abord ton CV.')
-      const cv = await (await fournisseur()).adapterCv(actif.profil, offre)
+      signaler({ tache: 'adaptation', etape: 'Préparation du modèle' })
+      const cv = await (await fournisseur()).adapterCv(actif.profil, offre, {
+        surEtape: (e) => signaler({ tache: 'adaptation', ...e }),
+      })
       const offreId = enregistrerOffre(bdd, offre)
       return { id: enregistrerCv(bdd, actif.id, offreId, cv), offreId, cv }
     },

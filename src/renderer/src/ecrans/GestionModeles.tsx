@@ -1,6 +1,6 @@
 import type { EtatModeles, ProgressionModele } from '@core/api'
 import { useCallback, useEffect, useState } from 'react'
-import { Alerte, Bouton, Carte, messageErreur } from '../ui'
+import { Alerte, Bouton, Carte, messageErreur, Spinner } from '../ui'
 
 const formaterTaille = (octets: number) =>
   octets >= 1024 ** 3 ? `${(octets / 1024 ** 3).toFixed(1)} Go` : `${Math.round(octets / 1024 ** 2)} Mo`
@@ -9,6 +9,9 @@ export function GestionModeles({ onChange }: { onChange: () => void }) {
   const [etat, setEtat] = useState<EtatModeles | null>(null)
   const [progression, setProgression] = useState<ProgressionModele | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
+  /** Modèle dont le téléchargement vient d'être demandé (avant le premier événement de progression). */
+  const [demarrage, setDemarrage] = useState<string | null>(null)
+  const [suppression, setSuppression] = useState<string | null>(null)
 
   const rafraichir = useCallback(() => {
     window.api.lireEtatModeles().then(
@@ -24,6 +27,7 @@ export function GestionModeles({ onChange }: { onChange: () => void }) {
     rafraichir()
     return window.api.surProgressionModele((p) => {
       setProgression(p)
+      setDemarrage(null)
       if (p.etat === 'termine') {
         rafraichir()
         onChange()
@@ -36,20 +40,26 @@ export function GestionModeles({ onChange }: { onChange: () => void }) {
 
   const lancer = async (id: string) => {
     setErreur(null)
+    setDemarrage(id)
     try {
       await window.api.telechargerModele(id)
     } catch (e) {
       setErreur(messageErreur(e))
+    } finally {
+      setDemarrage(null)
     }
   }
 
   const supprimer = async (id: string) => {
     setErreur(null)
+    setSuppression(id)
     try {
       await window.api.supprimerModele(id)
       rafraichir()
     } catch (e) {
       setErreur(messageErreur(e))
+    } finally {
+      setSuppression(null)
     }
   }
 
@@ -91,16 +101,25 @@ export function GestionModeles({ onChange }: { onChange: () => void }) {
                 </div>
                 <div className="flex gap-2">
                   {m.installe ? (
-                    <Bouton variante="danger" desactive={enCours} onClick={() => supprimer(m.id)}>
-                      Supprimer
+                    <Bouton
+                      variante="danger"
+                      desactive={enCours || suppression !== null}
+                      enCours={suppression === m.id}
+                      onClick={() => supprimer(m.id)}
+                    >
+                      {suppression === m.id ? 'Suppression…' : 'Supprimer'}
                     </Bouton>
                   ) : actif ? (
                     <Bouton variante="secondaire" onClick={() => window.api.annulerTelechargement()}>
                       Annuler
                     </Bouton>
                   ) : (
-                    <Bouton desactive={enCours} onClick={() => lancer(m.id)}>
-                      Télécharger
+                    <Bouton
+                      desactive={enCours || demarrage !== null}
+                      enCours={demarrage === m.id}
+                      onClick={() => lancer(m.id)}
+                    >
+                      {demarrage === m.id ? 'Démarrage…' : 'Télécharger'}
                     </Bouton>
                   )}
                 </div>
@@ -108,12 +127,17 @@ export function GestionModeles({ onChange }: { onChange: () => void }) {
               {actif && progression && (
                 <div className="space-y-1">
                   <div className="h-2 overflow-hidden rounded bg-slate-100">
-                    <div className="h-full bg-indigo-600 transition-all" style={{ width: `${pct}%` }} />
+                    {progression.etat === 'verification' ? (
+                      <div className="barre-indeterminee h-full w-1/4 rounded bg-indigo-600" />
+                    ) : (
+                      <div className="h-full bg-indigo-600 transition-all" style={{ width: `${pct}%` }} />
+                    )}
                   </div>
-                  <p className="text-xs text-slate-600">
+                  <p role="status" className="flex items-center gap-2 text-xs text-slate-600">
+                    <Spinner taille={12} />
                     {progression.etat === 'verification'
-                      ? 'Vérification du fichier…'
-                      : `${formaterTaille(progression.recuOctets)} / ${formaterTaille(progression.totalOctets)} (${Math.round(pct)} %)`}
+                      ? 'Vérification de l’intégrité du fichier… (quelques secondes)'
+                      : `Téléchargement : ${formaterTaille(progression.recuOctets)} / ${formaterTaille(progression.totalOctets)} (${Math.round(pct)} %)`}
                   </p>
                 </div>
               )}

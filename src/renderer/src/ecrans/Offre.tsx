@@ -1,9 +1,11 @@
 import type { CvGenere } from '@core/api'
 import type { Offre } from '@core/schemas'
 import { useState } from 'react'
-import { Alerte, Bouton, Carte, Champ, messageErreur, Titre } from '../ui'
+import { useProgressionTache } from '../progression'
+import { Alerte, Bouton, Carte, Champ, Chargement, messageErreur, Titre } from '../ui'
 
 type Mode = 'url' | 'texte'
+type Tache = 'recuperation' | 'analyse' | 'adaptation'
 
 export function EcranOffre({
   profilPresent,
@@ -16,8 +18,11 @@ export function EcranOffre({
   const [url, setUrl] = useState('')
   const [texte, setTexte] = useState('')
   const [offre, setOffre] = useState<Offre | null>(null)
-  const [occupe, setOccupe] = useState<null | 'recuperation' | 'adaptation'>(null)
+  const [occupe, setOccupe] = useState<Tache | null>(null)
   const [erreur, setErreur] = useState<string | null>(null)
+
+  const progressionOffre = useProgressionTache('offre', occupe === 'analyse')
+  const progressionAdaptation = useProgressionTache('adaptation', occupe === 'adaptation')
 
   const recuperer = async () => {
     setOccupe('recuperation')
@@ -34,7 +39,7 @@ export function EcranOffre({
   }
 
   const analyser = async () => {
-    setOccupe('recuperation')
+    setOccupe('analyse')
     setErreur(null)
     try {
       setOffre(await window.api.analyserTexteOffre(texte))
@@ -59,6 +64,7 @@ export function EcranOffre({
   }
 
   const majOffre = (partiel: Partial<Offre>) => setOffre((o) => (o ? { ...o, ...partiel } : o))
+  const occupeAilleurs = occupe !== null
 
   return (
     <div className="space-y-5">
@@ -70,10 +76,18 @@ export function EcranOffre({
 
       <Carte>
         <div className="flex gap-2">
-          <Bouton variante={mode === 'url' ? 'principal' : 'secondaire'} onClick={() => setMode('url')}>
+          <Bouton
+            variante={mode === 'url' ? 'principal' : 'secondaire'}
+            desactive={occupeAilleurs}
+            onClick={() => setMode('url')}
+          >
             Depuis un lien
           </Bouton>
-          <Bouton variante={mode === 'texte' ? 'principal' : 'secondaire'} onClick={() => setMode('texte')}>
+          <Bouton
+            variante={mode === 'texte' ? 'principal' : 'secondaire'}
+            desactive={occupeAilleurs}
+            onClick={() => setMode('texte')}
+          >
             Coller le texte
           </Bouton>
         </div>
@@ -81,17 +95,32 @@ export function EcranOffre({
         {mode === 'url' ? (
           <div className="space-y-3">
             <Champ etiquette="Adresse de l’offre" type="url" valeur={url} onChange={setUrl} placeholder="https://…" />
-            <Bouton onClick={recuperer} desactive={!url.trim() || occupe !== null}>
-              {occupe === 'recuperation' ? 'Récupération…' : 'Récupérer l’offre'}
+            <Bouton onClick={recuperer} enCours={occupe === 'recuperation'} desactive={!url.trim() || occupeAilleurs}>
+              {occupe === 'recuperation' ? 'Récupération en cours…' : 'Récupérer l’offre'}
             </Bouton>
           </div>
         ) : (
           <div className="space-y-3">
             <Champ etiquette="Texte de l’offre" multiligne lignes={10} valeur={texte} onChange={setTexte} />
-            <Bouton onClick={analyser} desactive={!texte.trim() || occupe !== null}>
-              {occupe === 'recuperation' ? 'Analyse…' : 'Analyser l’offre'}
+            <Bouton onClick={analyser} enCours={occupe === 'analyse'} desactive={!texte.trim() || occupeAilleurs}>
+              {occupe === 'analyse' ? 'Analyse en cours…' : 'Analyser l’offre'}
             </Bouton>
           </div>
+        )}
+
+        {occupe === 'recuperation' && (
+          <Chargement
+            titre="Récupération de l’offre…"
+            etape="Téléchargement de la page puis extraction du texte"
+            note="Les pages qui s’affichent par script peuvent demander quelques secondes de plus."
+          />
+        )}
+        {occupe === 'analyse' && (
+          <Chargement
+            titre="Analyse de l’offre par le modèle…"
+            etape={progressionOffre?.etape ?? 'Lecture de l’annonce'}
+            note="Le modèle repère l’intitulé du poste, l’entreprise et le lieu."
+          />
         )}
       </Carte>
 
@@ -116,15 +145,18 @@ export function EcranOffre({
             valeur={offre.texteBrut}
             onChange={(v) => majOffre({ texteBrut: v })}
           />
-          {occupe === 'adaptation' && (
-            <Alerte type="info">
-              Adaptation en cours : avec un modèle local, cela peut prendre plusieurs minutes. Ne ferme pas
-              l’application.
-            </Alerte>
-          )}
-          <Bouton onClick={adapter} desactive={!profilPresent || occupe !== null}>
-            {occupe === 'adaptation' ? 'Adaptation…' : 'Adapter mon CV'}
+          <Bouton onClick={adapter} enCours={occupe === 'adaptation'} desactive={!profilPresent || occupeAilleurs}>
+            {occupe === 'adaptation' ? 'Adaptation en cours…' : 'Adapter mon CV'}
           </Bouton>
+          {occupe === 'adaptation' && (
+            <Chargement
+              titre="Adaptation de ton CV en cours…"
+              etape={progressionAdaptation?.etape ?? 'Préparation du modèle'}
+              courant={progressionAdaptation?.courant}
+              total={progressionAdaptation?.total}
+              note="Avec un modèle local, cela peut prendre plusieurs minutes. Ne ferme pas l’application."
+            />
+          )}
         </Carte>
       )}
     </div>

@@ -1,6 +1,7 @@
 import type { Experience, Formation, Langue, Profil } from '@core/schemas'
 import { useEffect, useState } from 'react'
-import { Alerte, Bouton, Carte, Champ, messageErreur, Selection, Titre } from '../ui'
+import { useProgressionTache } from '../progression'
+import { Alerte, Bouton, Carte, Champ, Chargement, messageErreur, Selection, Titre } from '../ui'
 
 const lignes = (texte: string) => texte.split('\n')
 const nettoyer = (valeurs: string[]) => valeurs.map((v) => v.trim()).filter(Boolean)
@@ -52,7 +53,8 @@ export function EcranProfil({
   onSuivant: () => void
 }) {
   const [brouillon, setBrouillon] = useState<Profil | null>(profil)
-  const [occupe, setOccupe] = useState(false)
+  const [occupe, setOccupe] = useState<'import' | 'enregistrement' | null>(null)
+  const progressionImport = useProgressionTache('import', occupe === 'import')
   const [erreur, setErreur] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -67,7 +69,7 @@ export function EcranProfil({
     ) {
       return
     }
-    setOccupe(true)
+    setOccupe('import')
     setErreur(null)
     setMessage(null)
     try {
@@ -79,13 +81,13 @@ export function EcranProfil({
     } catch (e) {
       setErreur(messageErreur(e))
     } finally {
-      setOccupe(false)
+      setOccupe(null)
     }
   }
 
   const enregistrer = async (puisContinuer = false) => {
     if (!brouillon) return
-    setOccupe(true)
+    setOccupe('enregistrement')
     setErreur(null)
     try {
       const { profil: enregistre } = await window.api.enregistrerProfil(nettoyerProfil(brouillon))
@@ -95,7 +97,7 @@ export function EcranProfil({
     } catch (e) {
       setErreur(messageErreur(e))
     } finally {
-      setOccupe(false)
+      setOccupe(null)
     }
   }
 
@@ -112,10 +114,17 @@ export function EcranProfil({
       {message && <Alerte type="succes">{message}</Alerte>}
 
       <div className="flex gap-3">
-        <Bouton onClick={importer} desactive={occupe}>
-          {occupe ? 'Analyse en cours…' : brouillon ? 'Importer un autre CV' : 'Importer un CV'}
+        <Bouton onClick={importer} enCours={occupe === 'import'} desactive={occupe !== null}>
+          {occupe === 'import' ? 'Analyse du CV en cours…' : brouillon ? 'Importer un autre CV' : 'Importer un CV'}
         </Bouton>
       </div>
+      {occupe === 'import' && (
+        <Chargement
+          titre="Analyse de ton CV par le modèle…"
+          etape={progressionImport?.etape ?? 'Lecture du fichier'}
+          note="Le modèle structure ton CV (expériences, compétences, formations). Cela peut prendre une à plusieurs minutes avec un modèle local."
+        />
+      )}
 
       {brouillon && (
         <>
@@ -270,10 +279,10 @@ export function EcranProfil({
           </Carte>
 
           <div className="flex gap-3">
-            <Bouton onClick={() => enregistrer()} desactive={occupe}>
-              Enregistrer le profil
+            <Bouton onClick={() => enregistrer()} enCours={occupe === 'enregistrement'} desactive={occupe !== null}>
+              {occupe === 'enregistrement' ? 'Enregistrement…' : 'Enregistrer le profil'}
             </Bouton>
-            <Bouton variante="secondaire" onClick={() => enregistrer(true)} desactive={occupe}>
+            <Bouton variante="secondaire" onClick={() => enregistrer(true)} desactive={occupe !== null}>
               Enregistrer et continuer vers l’offre
             </Bouton>
           </div>

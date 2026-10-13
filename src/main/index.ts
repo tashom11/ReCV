@@ -84,6 +84,11 @@ app.whenReady().then(() => {
     bdd,
     parametres,
     modeles,
+    emettreTache: (progression) => {
+      for (const fenetre of BrowserWindow.getAllWindows()) {
+        fenetre.webContents.send(CANAUX.progressionTache, progression)
+      }
+    },
     choisirEtLireCv,
     rendreHtml,
     userAgent: userAgentNavigateur(session.defaultSession.getUserAgent()),

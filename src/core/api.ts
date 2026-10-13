@@ -94,6 +94,15 @@ export interface EtatModeles {
   telechargement: ProgressionModele | null
 }
 
+/** Étape en cours d'une tâche longue (import du CV, analyse d'offre, adaptation) : le renderer l'affiche. */
+export interface ProgressionTache {
+  tache: 'import' | 'offre' | 'adaptation'
+  /** Libellé lisible, ex. « Réécriture des expériences ». */
+  etape: string
+  courant?: number
+  total?: number
+}
+
 /** Méthodes requête/réponse, implémentées par le service du process principal. */
 export interface ApiService {
   /** Ouvre le sélecteur de fichier (PDF/DOCX), extrait le profil et l'enregistre. `null` si annulé. */
@@ -123,6 +132,8 @@ export interface ApiService {
 export interface ApiReCV extends ApiService {
   /** Retourne la fonction de désabonnement. */
   surProgressionModele(rappel: (progression: ProgressionModele) => void): () => void
+  /** Étapes des tâches longues (adaptation…). Retourne la fonction de désabonnement. */
+  surProgressionTache(rappel: (progression: ProgressionTache) => void): () => void
 }
 
 // Bornes de taille : le renderer n'est pas fiable (les schémas métier eux-mêmes ne sont pas bornés,

@@ -161,3 +161,34 @@ describe('nettoyerPoint / borneAccroche (sorties négligées d’un petit modèl
     expect(borneAccroche('x'.repeat(600))).toBe('')
   })
 })
+
+describe('adapterCv : signalement des étapes', () => {
+  it('signale chaque étape, avec la progression expérience par expérience', async () => {
+    const profil: Profil = {
+      liensProfessionnels: [],
+      experiences: [
+        { poste: 'A', entreprise: 'X', realisations: ['Réalisation une'] },
+        { poste: 'B', entreprise: 'Y', realisations: ['Réalisation deux'] },
+      ],
+      competences: [],
+      formations: [],
+      langues: [],
+    }
+    const m = new MoteurMock({
+      motsCles: { titreCible: 'Dev', motsCles: [] },
+      pertinence: {},
+      reecriture: { points: [] },
+      accroche: { accroche: '' },
+    })
+    const etapes: { etape: string; courant?: number; total?: number }[] = []
+    await adapterCv(m, profil, { titrePoste: 'Dev', texteBrut: 'Offre' }, { surEtape: (e) => etapes.push(e) })
+    expect(etapes.map((e) => e.etape)).toEqual([
+      'Analyse de l’offre',
+      'Choix des éléments du profil à mettre en avant',
+      'Réécriture des expériences',
+      'Réécriture des expériences',
+      'Rédaction de l’accroche',
+    ])
+    expect(etapes.filter((e) => e.courant !== undefined).map((e) => `${e.courant}/${e.total}`)).toEqual(['1/2', '2/2'])
+  })
+})

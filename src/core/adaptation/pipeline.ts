@@ -1,3 +1,4 @@
+import type { OptionsAdaptation } from '../llm/fournisseur'
 import type { MoteurLLM } from '../llm/moteur'
 import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
 import { analyserOffre, restreindreAnalyse } from './motsCles'
@@ -70,8 +71,16 @@ export function borneAccroche(accroche: string): string {
 // Enchaîne les étapes : mots-clés → pertinence (tri) → réécriture expérience par expérience → titre + accroche.
 // Les faits (postes, entreprises, dates, formations, langues, compétences) sont recopiés du profil, jamais générés.
 // Ce qui n'a aucun rapport avec l'offre est écarté du CV (et listé dans `ecartes` pour que l'utilisateur décide).
-export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre): Promise<CvAdapte> {
+export async function adapterCv(
+  moteur: MoteurLLM,
+  profil: Profil,
+  offre: Offre,
+  options: OptionsAdaptation = {},
+): Promise<CvAdapte> {
+  const signaler = options.surEtape ?? (() => undefined)
+  signaler({ etape: 'Analyse de l’offre' })
   const analyse = await analyserOffre(moteur, offre)
+  signaler({ etape: 'Choix des éléments du profil à mettre en avant' })
   const pertinence = await evaluerPertinence(moteur, profil, analyse)
 
   const termesOffre = [...analyse.motsCles, ...analyse.competencesRequises, offre.texteBrut]
@@ -99,6 +108,7 @@ export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre)
   for (const indice of indicesExperiences) {
     const experience = profil.experiences[indice]
     if (!experience) continue
+    signaler({ etape: 'Réécriture des expériences', courant: experiences.length + 1, total: indicesExperiences.length })
     const maxPoints = pertinence.experiences[indice] === 2 ? POINTS_PRIORITAIRES : POINTS_SECONDAIRES
     experiences.push({
       indice,
@@ -140,6 +150,7 @@ export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre)
     competences: competencesGardees,
     formations: formationsGardees,
   }
+  signaler({ etape: 'Rédaction de l’accroche' })
   const redige = await redigerAccroche(
     moteur,
     profilRetenu,

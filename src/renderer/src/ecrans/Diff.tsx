@@ -52,6 +52,7 @@ export function EcranDiff({
   const [valide, setValide] = useState(false)
   const [erreur, setErreur] = useState<string | null>(null)
   const [fichier, setFichier] = useState<string | null>(null)
+  const [export_, setExport] = useState<FormatExport | null>(null)
 
   const cvFinal = useMemo(
     () => composerCv(profil, { ...adapte, titre: titre.trim(), accroche: accroche.trim() }, choix, points),
@@ -63,11 +64,15 @@ export function EcranDiff({
 
   const exporter = async (format: FormatExport) => {
     setErreur(null)
+    setFichier(null)
+    setExport(format)
     try {
       const chemin = await window.api.exporterCv(cvFinal, format)
       if (chemin) setFichier(chemin)
     } catch (e) {
       setErreur(messageErreur(e))
+    } finally {
+      setExport(null)
     }
   }
 
@@ -222,9 +227,16 @@ export function EcranDiff({
             Mise en page sobre sur une colonne, avec du vrai texte : lisible par les logiciels de recrutement (ATS).
           </p>
           <div className="flex gap-3">
-            <Bouton onClick={() => exporter('pdf')}>Exporter en PDF</Bouton>
-            <Bouton variante="secondaire" onClick={() => exporter('docx')}>
-              Exporter en DOCX
+            <Bouton onClick={() => exporter('pdf')} enCours={export_ === 'pdf'} desactive={export_ !== null}>
+              {export_ === 'pdf' ? 'Génération du PDF…' : 'Exporter en PDF'}
+            </Bouton>
+            <Bouton
+              variante="secondaire"
+              onClick={() => exporter('docx')}
+              enCours={export_ === 'docx'}
+              desactive={export_ !== null}
+            >
+              {export_ === 'docx' ? 'Génération du DOCX…' : 'Exporter en DOCX'}
             </Bouton>
           </div>
         </Carte>
