@@ -85,9 +85,11 @@ describe('adapterCv', () => {
 
   it("n'ajoute aucune compétence absente du profil", async () => {
     const cv = await adapterCv(moteurTricheur(), profilCanned, offre)
-    expect([...cv.competences].sort()).toEqual([...profilCanned.competences].sort())
-    expect(cv.competences).not.toContain('Kubernetes')
-    expect(cv.competences.slice(0, 3)).toEqual(['TypeScript', 'React', 'Tests automatisés'])
+    // Compétences clés (formulation de l'offre, attestées par le profil) + autres compétences = le profil, rien de plus.
+    const toutes = [...cv.competencesCles, ...cv.competences].map((c) => c.toLowerCase()).sort()
+    expect(toutes).toEqual([...profilCanned.competences].map((c) => c.toLowerCase()).sort())
+    expect([...cv.competencesCles, ...cv.competences]).not.toContain('Kubernetes')
+    expect(cv.competencesCles.map((c) => c.toLowerCase())).toEqual(expect.arrayContaining(['react', 'typescript']))
   })
 
   it('recopie formations et langues telles quelles', async () => {

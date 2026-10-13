@@ -81,16 +81,22 @@ describe('adapterCv : compétences demandées', () => {
     expect([...cv.demandees.manquantes].sort()).toEqual(['Ahrefs', 'Sens de la pédagogie'])
   })
 
-  it('les compétences absentes n’entrent dans le CV que si l’utilisateur les déclare', async () => {
+  it('les compétences demandées absentes sont proposées cochées, et ne restent que si l’utilisateur les garde', async () => {
     const cv = await adapterCv(moteur(), profil, offre)
-    const choix = choixInitial(cv)
-    expect(composerCv(profil, cv, choix, [cv.experiences[0]?.points ?? []]).competences).not.toContain('Ahrefs')
+    const points = [cv.experiences[0]?.points ?? []]
 
+    // Par défaut le CV colle à l'offre : tout est coché, formulé comme l'offre.
+    const choix = choixInitial(cv)
+    expect(choix.ajouterDemandees.every(Boolean)).toBe(true)
+    const colle = composerCv(profil, cv, choix, points)
+    expect(colle.competencesCles).toEqual(expect.arrayContaining(['Ahrefs', 'Sens de la pédagogie']))
+    expect(colle.demandees).toEqual({ attestees: [], manquantes: [] })
+
+    // L'utilisateur décoche ce qu'il ne maîtrise pas.
     choix.ajouterDemandees = cv.demandees.manquantes.map((t) => t === 'Ahrefs')
-    const final = composerCv(profil, cv, choix, [cv.experiences[0]?.points ?? []])
-    expect(final.competences).toContain('Ahrefs')
-    expect(final.competences).not.toContain('Sens de la pédagogie')
-    expect(final.demandees).toEqual({ attestees: [], manquantes: [] })
+    const final = composerCv(profil, cv, choix, points)
+    expect(final.competencesCles).toContain('Ahrefs')
+    expect(final.competencesCles).not.toContain('Sens de la pédagogie')
   })
 
   it('le schéma accepte un CV ancien sans « demandees »', () => {

@@ -1,3 +1,4 @@
+import { eclaterCompetences, estCompetenceCourte } from '../adaptation/competences'
 import { type Profil, profilSchema } from '../schemas'
 
 // Un modèle qui extrait un CV peut inventer des entrées (une « expérience » faite d'une ligne « Permis B –
@@ -43,9 +44,9 @@ export function assainirProfil(profil: Profil, texteCv: string): Profil {
 
   // Doublons (casse et accents ignorés) : la première occurrence est conservée.
   const vues = new Set<string>()
-  const competences = profil.competences
-    .map((c) => c.trim())
-    .filter((c) => c !== '' && presentDansSource(c, source))
+  const competences = eclaterCompetences(profil.competences.map((c) => c.trim()))
+    // Une compétence est un terme court : les phrases décrivant des tâches n'en sont pas.
+    .filter((c) => c !== '' && estCompetenceCourte(c) && presentDansSource(c, source))
     .filter((c) => {
       const cle = simplifier(c)
       if (vues.has(cle)) return false

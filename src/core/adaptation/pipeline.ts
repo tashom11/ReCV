@@ -2,12 +2,17 @@ import type { OptionsAdaptation } from '../llm/fournisseur'
 import type { MoteurLLM } from '../llm/moteur'
 import { nettoyerTitreOffre } from '../offre/texte'
 import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
-import { analyserCouverture } from './couverture'
+import { eclaterCompetences, estCompetenceCourte, estSavoirEtre, formaterCompetence } from './competences'
+import { analyserCouverture, dejaListee } from './couverture'
 import { analyserOffre, restreindreAnalyse } from './motsCles'
 import { evaluerPertinence, indicesConserves } from './pertinence'
 import { pointFidele, pointsOrigine, reecrireExperience, selectionnerPoints } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
 import { redigerAccroche } from './titreAccroche'
+
+const MAX_COMPETENCES_CLES = 12
+const MAX_SAVOIR_ETRE = 8
+const MAX_TECHNIQUES = 12
 
 // Nombre de puces : plus détaillé pour ce qui est directement lié au poste visé.
 const POINTS_PRIORITAIRES = 5
@@ -76,11 +81,17 @@ export function borneAccroche(accroche: string): string {
 // Ce qui n'a aucun rapport avec l'offre est écarté du CV (et listé dans `ecartes` pour que l'utilisateur décide).
 export async function adapterCv(
   moteur: MoteurLLM,
-  profil: Profil,
+  profilBrut: Profil,
   offre: Offre,
   options: OptionsAdaptation = {},
 ): Promise<CvAdapte> {
   const signaler = options.surEtape ?? (() => undefined)
+  // Une compétence est un terme court : les phrases décrivant des tâches (souvent issues d'un CV mal structuré)
+  // n'ont pas leur place dans la section Compétences et ne sont jamais traitées comme telles.
+  const profil: Profil = {
+    ...profilBrut,
+    competences: eclaterCompetences(profilBrut.competences).filter(estCompetenceCourte),
+  }
   // L'analyse d'une offre ne dépend pas du profil : si elle est déjà connue (relance, autre profil), on la réutilise.
   let analyse = options.analyse
   if (!analyse) {
@@ -103,9 +114,10 @@ export async function adapterCv(
       .flatMap((i) => (profil.experiences[i] ? [texteExperience(profil.experiences[i])] : []))
       .join('\n'),
   )
+  // Les savoir-être (rigueur, autonomie, travail en équipe…) servent dans tous les métiers : toujours conservés.
   const citees = new Set(
     profil.competences.flatMap((c, i) =>
-      competenceCitee(c, termesNormalises) || competenceCitee(c, [texteConserve]) ? [i] : [],
+      estSavoirEtre(c) || competenceCitee(c, termesNormalises) || competenceCitee(c, [texteConserve]) ? [i] : [],
     ),
   )
   const indicesCompetences = indicesConserves(pertinence.competences, citees)
@@ -213,12 +225,24 @@ export async function adapterCv(
     attesteesCourtes.length > 0 ? `Je mets en avant mes compétences en ${attesteesCourtes.join(', ')}.` : ''
   const accroche = accrocheFidele ? proposee : aEcarte ? accrocheRepliOffre : (profil.accroche ?? accrocheRepliOffre)
   const listees = prioriserCompetences(competencesGardees, termesOffre)
+  // Compétences clés : celles que demande l'offre et que le profil atteste, avec la formulation de l'offre (c'est
+  // elle que cherche un ATS). Retirées de la liste générale pour ne pas apparaître deux fois.
+  const competencesCles = couverture.attestees
+    .filter(estCompetenceCourte)
+    .map(formaterCompetence)
+    .filter((t, i, tous) => tous.findIndex((u) => u.toLowerCase() === t.toLowerCase()) === i)
+    .slice(0, MAX_COMPETENCES_CLES)
+  const generales = listees.filter((c) => !dejaListee(c, competencesCles) || estSavoirEtre(c))
+  // Lisibilité : savoir-être d'abord, puis outils et techniques, plafonnés.
+  const savoirEtre = generales.filter(estSavoirEtre).slice(0, MAX_SAVOIR_ETRE)
+  const techniques = generales.filter((c) => !estSavoirEtre(c)).slice(0, MAX_TECHNIQUES)
 
   return cvAdapteSchema.parse({
     titre,
     accroche,
     experiences,
-    competences: listees,
+    competencesCles,
+    competences: [...savoirEtre, ...techniques],
     demandees: couverture,
     formations: formationsGardees,
     langues: profil.langues,
