@@ -16,7 +16,7 @@ export const accrocheProfilSchema = z.object({
 const SYSTEME = `Tu es un expert en rédaction de CV.
 À partir du profil fourni :
 1. "competencesTransversales" : les compétences transversales du candidat, c'est-à-dire les savoir-être et qualités professionnelles utiles dans n'importe quel métier (rigueur, autonomie, organisation, communication, travail en équipe, adaptabilité, sens du détail, respect des délais, relation client, gestion de projets…). Recopie-les telles qu'elles figurent dans le profil. Exclus toute compétence propre à un métier : outils, logiciels, langages, techniques, diplômes.
-2. "accroche" : 2 à 3 phrases (400 caractères maximum), sans sujet explicite (ni « je », ni « le candidat », ni « il » : par exemple « Rigoureux et autonome, sait organiser… »), qui présentent le candidat uniquement par ces compétences transversales, pour qu'elle reste valable quelle que soit l'offre visée. Ne cite aucun métier, intitulé de poste, outil, technologie, employeur, secteur d'activité, durée ni chiffre.
+2. "accroche" : 2 à 3 phrases (400 caractères maximum), écrites à la première personne du singulier (« Je … »), qui présentent le candidat uniquement par ces compétences transversales. Évite les adjectifs qui s'accordent au genre : préfère les noms (« Je fais preuve de rigueur et d'autonomie », « J'ai le sens de l'organisation ») à « je suis rigoureux ». Ne parle jamais de lui à la troisième personne (« il », « le candidat »), pour qu'elle reste valable quelle que soit l'offre visée. Ne cite aucun métier, intitulé de poste, outil, technologie, employeur, secteur d'activité, durée ni chiffre.
 
 ${REGLES_ANTI_INVENTION}`
 
@@ -75,6 +75,15 @@ const MOTS_NEUTRES = new Set([
   'equipes',
   'tache',
   'taches',
+  'preuve',
+  'faire',
+  'mettre',
+  'apporter',
+  'souhaite',
+  'disposant',
+  'dispose',
+  'veille',
+  'veiller',
   // Verbes et compléments courants d'une phrase de présentation (aucun ne décrit une qualité).
   'nouveaux',
   'nouvelles',
@@ -144,11 +153,16 @@ export function motsNonAttestes(accroche: string, source: string): string[] {
   return mots(accroche).filter((mot) => !MOTS_NEUTRES.has(mot) && !racinesSource.has(racine(mot)))
 }
 
-// « a, b et c »
-function enumerer(elements: string[]): string {
-  if (elements.length <= 1) return elements.join('')
-  return `${elements.slice(0, -1).join(', ')} et ${elements[elements.length - 1]}`
+// « de rigueur, d'autonomie et de sens du détail » (élision devant une voyelle ou un h)
+function enumererAvecDe(elements: string[]): string {
+  const avecDe = elements.map((e) => (/^[aeiouyàâäéèêëîïôöùûüh]/i.test(e) ? `d’${e}` : `de ${e}`))
+  if (avecDe.length <= 1) return avecDe.join('')
+  return `${avecDe.slice(0, -1).join(', ')} et ${avecDe[avecDe.length - 1]}`
 }
+
+// Première personne exigée ; toute désignation à la troisième personne est rejetée.
+const MOTIF_PREMIERE_PERSONNE = /(?:^|[^p{L}])(?:je|mon|ma|mes)(?![p{L}])|(?:^|[^p{L}])j['’]/iu
+const MOTIF_TROISIEME_PERSONNE = /(?:^|[^\p{L}])(?:il|elle|le candidat|la candidate|sa|son|ses)(?![\p{L}])/iu
 
 function texteSource(profil: Profil): string {
   return [
@@ -196,9 +210,12 @@ export async function genererAccrocheProfil(moteur: MoteurLLM, profil: Profil): 
   const proposee = borneAccroche(reponse.accroche)
   const valide =
     proposee !== '' &&
+    MOTIF_PREMIERE_PERSONNE.test(proposee) &&
+    !MOTIF_TROISIEME_PERSONNE.test(proposee) &&
     !/\d/.test(proposee) &&
     pointFidele(proposee, source, interdits) &&
     motsNonAttestes(proposee, source).length === 0
-  if (valide) return proposee
-  return `Professionnel alliant ${enumerer(retenues.slice(0, 5).map((c) => c.toLowerCase()))}.`
+  // Apostrophes typographiques, comme dans la phrase de repli.
+  if (valide) return proposee.replace(/'/g, '’')
+  return `Je fais preuve ${enumererAvecDe(retenues.slice(0, 5).map((c) => c.toLowerCase()))}.`
 }
