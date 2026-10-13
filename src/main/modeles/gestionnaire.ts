@@ -109,7 +109,7 @@ export class GestionnaireModeles {
 
   async supprimer(id: string): Promise<void> {
     const modele = this.trouver(id)
-    if (this.courant?.id === id) throw new Error('Téléchargement en cours : annule-le d’abord.')
+    if (this.courant?.id === id) throw new Error('Téléchargement en cours : mettez-le d’abord en pause.')
     await rm(this.cheminModele(modele), { force: true })
     await rm(`${this.cheminModele(modele)}.part`, { force: true })
   }

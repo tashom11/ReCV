@@ -1,7 +1,9 @@
+export { messageErreur } from '../erreurs'
 export { Alerte, Confirmation } from './Alerte'
+export { AlerteErreur } from './AlerteErreur'
 export { Bouton, BoutonLien } from './Bouton'
 export { CaseACocher, Champ, Selection } from './Champ'
-export { Etapes, type NumeroEtape } from './Etapes'
+export { Etapes } from './Etapes'
 export { IllustrationCv } from './IllustrationCv'
 export { Icone, type NomIcone, Spinner } from './icones'
 export {
@@ -16,7 +18,3 @@ export {
   VignetteModele,
 } from './structure'
 export { ZoneDepot } from './ZoneDepot'
-
-export function messageErreur(erreur: unknown): string {
-  return erreur instanceof Error ? erreur.message : String(erreur)
-}

@@ -22,7 +22,7 @@ const SYSTEME = `Tu es un expert en rédaction de CV.
 ${REGLES_ANTI_INVENTION}`
 
 export const MESSAGE_AUCUNE_COMPETENCE =
-  'Aucune compétence transversale repérée dans ton profil. Ajoute-en (rigueur, autonomie, organisation, communication…) dans « Compétences » ou dans les réalisations, puis réessaie.'
+  'Aucune qualité repérée dans votre CV. Ajoutez-en (rigueur, autonomie, organisation, communication…) dans « Compétences et qualités », puis réessayez.'
 
 // « de rigueur, d'autonomie et de sens du détail » (élision devant une voyelle ou un h)
 function enumererAvecDe(elements: string[]): string {

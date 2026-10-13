@@ -64,7 +64,7 @@ describe('recupererOffre', () => {
     const promesse = recupererOffre('https://exemple.test/offre', { fetchImpl, rendreHtml })
     await expect(promesse).rejects.toBeInstanceOf(ErreurRecuperationOffre)
     await expect(promesse).rejects.toMatchObject({ code: 'contenu-vide' })
-    await expect(promesse).rejects.toThrow(/Colle le texte/)
+    await expect(promesse).rejects.toThrow(/Collez le texte/)
   })
 
   it('signale une erreur HTTP et tente tout de même le repli', async () => {
@@ -84,7 +84,7 @@ describe('recupererOffre', () => {
     for (const url of ['https://fr.indeed.com/viewjob?jk=abc', 'https://www.linkedin.com/jobs/view/1']) {
       await expect(recupererOffre(url, { fetchImpl, rendreHtml })).rejects.toMatchObject({
         code: 'site-protege',
-        message: expect.stringMatching(/protège ses pages.*colle-le ici/),
+        message: expect.stringMatching(/protège ses pages.*collez-le ici/),
       })
     }
   })

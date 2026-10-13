@@ -192,6 +192,14 @@ Confirmation brève (« Vos corrections sont enregistrées. ») : `role="status"
 - « Enregistré sur votre Bureau » : le sélecteur d'enregistrement est conservé ; l'écran de succès nomme le
   dossier réellement choisi.
 - L'édition des phrases d'expérience n'est pas dans le panneau de l'étape ③ : elle vit dans « Voir ce qui a changé ».
+- Étape ③ créée mais pas encore téléchargée : quand on revient à une étape précédente, elle reste cliquable et
+  s'intitule « à télécharger » (la maquette ne prévoit pas ce cas).
+- Mode « service en ligne » : les phrases « rien n'est envoyé » de l'accueil, de l'étape ① et de la création sont
+  remplacées par une mention exacte de l'envoi au service choisi.
+- Le nom du fichier importé n'est connu qu'au moment de l'import : il est gardé côté interface ; à défaut, le
+  bandeau affiche « Votre CV enregistré ».
+- Le code d'une erreur voyage en tête de son message (`[[code]] …`) : le pont de contexte d'Electron ne transmet
+  pas les propriétés ajoutées à une erreur.
 
 ## 9. Tests
 

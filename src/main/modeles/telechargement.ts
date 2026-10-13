@@ -76,7 +76,7 @@ export async function telechargerFichier(options: OptionsTelechargement): Promis
 
   if ((await tailleFichier(partiel)) !== tailleOctets) {
     await rm(partiel, { force: true })
-    throw new ErreurTelechargement('Fichier incomplet ou de taille inattendue : relance le téléchargement.')
+    throw new ErreurTelechargement('Fichier incomplet ou de taille inattendue : relancez le téléchargement.')
   }
   if ((await empreinte(partiel)) !== sha256) {
     await rm(partiel, { force: true })

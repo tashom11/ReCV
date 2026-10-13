@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { basename, resolve } from 'node:path'
 import { type AnalyseOffre, analyserCouverture, preparerProfil } from '@core/adaptation'
 import { formaterCompetence } from '@core/adaptation/competences'
 import type {
@@ -40,8 +40,8 @@ import type { StockageParametres } from './parametres'
 export interface DependancesService {
   bdd: Bdd
   parametres: StockageParametres
-  /** Ouvre le sélecteur de fichier et retourne le texte extrait du CV, ou `null` si annulé. */
-  choisirEtLireCv: () => Promise<string | null>
+  /** Ouvre le sélecteur de fichier et retourne le texte extrait du CV et le nom du fichier, ou `null` si annulé. */
+  choisirEtLireCv: () => Promise<{ texte: string; nom: string } | null>
   /** Texte extrait d'un CV désigné par son chemin (fichier déposé dans la fenêtre). */
   lireCv: (chemin: string) => Promise<string>
   /** Repli de rendu navigateur pour les offres en JS. */
@@ -127,12 +127,12 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
     return actif
   }
 
-  const importer = async (texte: string): Promise<ProfilEnregistre> => {
+  const importer = async (texte: string, nomFichier: string): Promise<ProfilEnregistre> => {
     signaler({ tache: 'import', etape: 'Analyse du CV par le modèle' })
     const extrait = await (await fournisseur()).extraireProfil(texte)
     // La photo est choisie par l'utilisateur, pas extraite du CV : elle suit le profil actif.
     const photo = obtenirProfilActif(bdd)?.profil.photo
-    return creerProfil(bdd, photo ? { ...extrait, photo } : extrait)
+    return { ...creerProfil(bdd, photo ? { ...extrait, photo } : extrait), nomFichier }
   }
 
   // L'analyse d'une offre ne dépend pas du profil : mémorisée, elle sert à la carte de confirmation de l'annonce
@@ -152,12 +152,12 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
 
   return {
     async importerCv(): Promise<ProfilEnregistre | null> {
-      const texte = await choisirEtLireCv()
-      return texte === null ? null : importer(texte)
+      const choisi = await choisirEtLireCv()
+      return choisi === null ? null : importer(choisi.texte, choisi.nom)
     },
 
     async importerCvDepose(chemin: string): Promise<ProfilEnregistre> {
-      return importer(await deps.lireCv(chemin))
+      return importer(await deps.lireCv(chemin), basename(chemin))
     },
 
     async obtenirProfil() {

@@ -35,7 +35,7 @@ function creer() {
       ressources: async () => ({ ramGo: 8, vramGo: 0 }),
       emettre: () => undefined,
     }),
-    choisirEtLireCv: async () => 'cv',
+    choisirEtLireCv: async () => ({ texte: 'cv', nom: 'mon-cv.pdf' }),
     lireCv: async () => 'cv',
     ouvrirChemin: async () => undefined,
     montrerChemin: () => undefined,

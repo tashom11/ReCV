@@ -30,3 +30,16 @@ export const CANAUX = {
 
 /** Enveloppe sérialisable : les erreurs traversent l'IPC avec un message lisible. */
 export type ResultatIpc<T> = { ok: true; valeur: T } | { ok: false; message: string; code?: string }
+
+// Le pont de contexte d'Electron ne transmet d'une erreur que son message : les propriétés ajoutées (le code)
+// sont perdues en route. Le code voyage donc en tête du message, et l'interface le sépare à l'arrivée.
+const MOTIF_CODE = /^\[\[([a-z-]+)\]\] /
+
+export function encoderErreur(message: string, code?: string): string {
+  return code ? `[[${code}]] ${message}` : message
+}
+
+export function decoderErreur(message: string): { code?: string; message: string } {
+  const trouve = MOTIF_CODE.exec(message)
+  return trouve ? { code: trouve[1], message: message.slice(trouve[0].length) } : { message }
+}

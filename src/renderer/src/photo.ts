@@ -7,7 +7,7 @@ const TYPES_ACCEPTES = ['image/jpeg', 'image/png', 'image/webp']
  */
 export async function reduirePhoto(fichier: File): Promise<string> {
   if (!TYPES_ACCEPTES.includes(fichier.type))
-    throw new Error('Format non pris en charge : utilise un JPEG, PNG ou WebP.')
+    throw new Error('Format non pris en charge : choisissez une image JPEG, PNG ou WebP.')
   if (fichier.size > 15 * 1024 * 1024) throw new Error('Cette image est trop volumineuse (15 Mo maximum).')
 
   const bitmap = await createImageBitmap(fichier)
