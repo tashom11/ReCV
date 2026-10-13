@@ -16,6 +16,16 @@ Réécris l'expérience fournie en au plus ${maxPoints} puces ("points") :
 
 ${REGLES_ANTI_INVENTION}`
 
+// Un petit modèle peut laisser de la ponctuation JSON dans une puce (« ,Collaboration… », « ], »).
+// On retire ces résidus aux extrémités ; une puce sans mot exploitable est abandonnée (chaîne vide).
+export function nettoyerPoint(point: string): string {
+  const propre = point
+    .replace(/^[\s,;:.\][{}()"'`•*–—-]+/u, '')
+    .replace(/[\s,;:\][{}("'`]+$/u, '')
+    .trim()
+  return /\p{L}{3,}/u.test(propre) ? propre : ''
+}
+
 // Points d'origine du profil, utilisés si le LLM ne renvoie rien d'exploitable.
 export function pointsOrigine(experience: Experience): string[] {
   if (experience.realisations.length > 0) return experience.realisations
@@ -58,7 +68,7 @@ export async function reecrireExperience(
     utilisateur: `Poste visé : ${analyse.titreCible}\nMots-clés de l'offre : ${analyse.motsCles.join(', ')}\n${encadrer('experience', JSON.stringify(contenu, null, 2))}`,
   })
   const nettoyes = points
-    .map((point) => point.trim())
+    .map(nettoyerPoint)
     .filter((point) => point.length > 0 && pointFidele(point, source, termesAbsents))
   return nettoyes.length > 0 ? nettoyes.slice(0, maxPoints) : pointsOrigine(experience)
 }

@@ -55,6 +55,18 @@ function dureesFideles(texte: string, source: string): boolean {
   return (texte.match(MOTIF_DUREE) ?? []).every((duree) => reference.includes(normaliser(duree).replace(/\s+/g, ' ')))
 }
 
+const LONGUEUR_MAX_ACCROCHE = 450
+
+// Le prompt demande 400 caractères maximum ; un petit modèle l'ignore parfois et répète les mêmes idées.
+// On coupe à la dernière phrase complète qui tient dans la limite ; sans phrase exploitable, on rejette.
+export function borneAccroche(accroche: string): string {
+  const texte = accroche.trim()
+  if (texte.length <= LONGUEUR_MAX_ACCROCHE) return texte
+  const coupe = texte.slice(0, LONGUEUR_MAX_ACCROCHE)
+  const fin = Math.max(coupe.lastIndexOf('. '), coupe.lastIndexOf('.'))
+  return fin >= 60 ? coupe.slice(0, fin + 1) : ''
+}
+
 // Enchaîne les étapes : mots-clés → pertinence (tri) → réécriture expérience par expérience → titre + accroche.
 // Les faits (postes, entreprises, dates, formations, langues, compétences) sont recopiés du profil, jamais générés.
 // Ce qui n'a aucun rapport avec l'offre est écarté du CV (et listé dans `ecartes` pour que l'utilisateur décide).
@@ -151,8 +163,10 @@ export async function adapterCv(moteur: MoteurLLM, profil: Profil, offre: Offre)
   const rang = (indice: number) => pertinence.experiences[indice] ?? 0
   const principale = [...experiences].sort((a, b) => rang(b.indice ?? 0) - rang(a.indice ?? 0))[0]
   const titre = (aEcarte ? principale?.poste : (profil.titrePoste ?? principale?.poste)) ?? ''
-  const accrocheFidele = pointFidele(redige.accroche, source, termesInterdits) && dureesFideles(redige.accroche, source)
-  const accroche = accrocheFidele ? redige.accroche : aEcarte ? '' : (profil.accroche ?? '')
+  const proposee = borneAccroche(redige.accroche)
+  const accrocheFidele =
+    proposee !== '' && pointFidele(proposee, source, termesInterdits) && dureesFideles(proposee, source)
+  const accroche = accrocheFidele ? proposee : aEcarte ? '' : (profil.accroche ?? '')
 
   return cvAdapteSchema.parse({
     titre,
