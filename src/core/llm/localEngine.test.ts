@@ -1,8 +1,96 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
-import { removeNulls, responseText, toGrammarSchema } from './localEngine'
+import { LocalEngine, removeNulls, responseText, toGrammarSchema } from './localEngine'
 
-// Pure functions only: no model is loaded.
+// Simulated node-llama-cpp: counts what the engine creates, no model is loaded.
+const native = vi.hoisted(() => {
+  const counts = { grammars: 0, contexts: 0, disposedContexts: 0, clearedHistories: 0, prompting: 0, maxPrompting: 0 }
+  const context = () => {
+    counts.contexts++
+    // Like node-llama-cpp: a single sequence per context, not given back at once when disposed.
+    let taken = false
+    return {
+      getSequence: () => {
+        if (taken) throw new Error('No sequences left')
+        taken = true
+        return {
+          clearHistory: async () => {
+            counts.clearedHistories++
+          },
+        }
+      },
+      dispose: async () => {
+        counts.disposedContexts++
+      },
+    }
+  }
+  const llama = {
+    createGrammarForJsonSchema: async () => {
+      counts.grammars++
+      return { parse: (text: string) => JSON.parse(text) }
+    },
+    loadModel: async () => ({ createContext: async () => context(), dispose: async () => undefined }),
+  }
+  class LlamaChatSession {
+    async promptWithMeta() {
+      counts.prompting++
+      counts.maxPrompting = Math.max(counts.maxPrompting, counts.prompting)
+      await new Promise((r) => setTimeout(r, 5))
+      counts.prompting--
+      return { response: ['{"name":"x"}'] }
+    }
+    dispose() {}
+  }
+  return { counts, getLlama: async () => llama, LlamaChatSession }
+})
+vi.mock('node-llama-cpp', () => ({ getLlama: native.getLlama, LlamaChatSession: native.LlamaChatSession }))
+
+describe('LocalEngine', () => {
+  const schema = z.object({ name: z.string() })
+  const request = { name: 'step', schema, system: 's', user: 'u' }
+
+  beforeEach(() => {
+    for (const key of Object.keys(native.counts)) native.counts[key as keyof typeof native.counts] = 0
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('compiles the grammar of a schema once and reuses the context between calls', async () => {
+    const engine = new LocalEngine('m.gguf')
+    expect(await engine.generateObject(request)).toEqual({ name: 'x' })
+    await engine.generateObject(request)
+    expect(native.counts.grammars).toBe(1)
+    expect(native.counts.contexts).toBe(1)
+    // Each call starts from an empty conversation.
+    expect(native.counts.clearedHistories).toBe(2)
+  })
+
+  it('runs simultaneous calls one after the other on the shared context', async () => {
+    const engine = new LocalEngine('m.gguf')
+    await Promise.all([engine.generateObject(request), engine.generateObject(request)])
+    expect(native.counts.maxPrompting).toBe(1)
+    expect(native.counts.contexts).toBe(1)
+  })
+
+  it('frees the context after a while without calls', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const engine = new LocalEngine('m.gguf')
+    const result = engine.generateObject(request)
+    await vi.advanceTimersByTimeAsync(10)
+    await result
+    expect(native.counts.disposedContexts).toBe(0)
+    await vi.advanceTimersByTimeAsync(60_000)
+    expect(native.counts.disposedContexts).toBe(1)
+    // The next call creates a new context.
+    const next = engine.generateObject(request)
+    await vi.advanceTimersByTimeAsync(10)
+    await next
+    expect(native.counts.contexts).toBe(2)
+  })
+})
+
+// Pure functions: no model is loaded.
 describe('toGrammarSchema', () => {
   it('makes optional properties nullable and removes $schema/default', () => {
     const schema = z.object({
