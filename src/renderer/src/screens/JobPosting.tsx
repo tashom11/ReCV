@@ -3,6 +3,7 @@ import type { JobPosting } from '@core/schemas'
 import { useState } from 'react'
 import { describeError, type ErrorAction, type ErrorDescription } from '../errors'
 import { announcedDuration } from '../estimate'
+import { texts } from '../i18n'
 import { useTaskProgress } from '../progress'
 import { Button, ErrorAlert, LinkButton, Loading, PageTitle } from '../ui'
 import { JobPostingCard } from './job-posting/JobPostingCard'
@@ -71,17 +72,19 @@ export function JobPostingScreen({
   const loading = busyWith && (
     <Loading
       title={
-        busyWith === 'reading' && mode === 'link' ? 'Nous ouvrons la page de l’annonce…' : 'Nous lisons l’annonce…'
+        busyWith === 'reading' && mode === 'link'
+          ? texts.jobPosting.loading.openingPage
+          : texts.jobPosting.loading.reading
       }
-      step={progress ? 'Nous repérons le poste et ce que l’employeur recherche' : undefined}
-      note="Cela prend généralement moins d’une minute."
+      step={progress ? texts.jobPosting.loading.analysing : undefined}
+      note={texts.jobPosting.loading.note}
     />
   )
 
   if (posting) {
     return (
       <div className="mx-auto w-full max-w-4xl space-y-7 px-6 py-12">
-        <PageTitle kicker="Annonce lue">C’est bien cette annonce ?</PageTitle>
+        <PageTitle kicker={texts.jobPosting.confirm.kicker}>{texts.jobPosting.confirm.title}</PageTitle>
         {generationError && (
           <ErrorAlert
             description={generationError}
@@ -102,12 +105,12 @@ export function JobPostingScreen({
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <LinkButton icon="arrow-left" onClick={() => onJobPosting(null)}>
-            Ce n’est pas la bonne annonce
+            {texts.jobPosting.confirm.wrongPosting}
           </LinkButton>
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-corps text-encre-douce">{announcedDuration(estimateS)}</span>
             <Button size="large" endIcon="arrow-right" onClick={onCreate} disabled={busyWith !== null}>
-              Créer mon CV adapté
+              {texts.jobPosting.confirm.create}
             </Button>
           </div>
         </div>
@@ -117,9 +120,7 @@ export function JobPostingScreen({
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-8 px-6 py-12">
-      <PageTitle subtitle="Donnez-nous l’adresse de l’annonce. Si le site ne se laisse pas lire, collez simplement son texte.">
-        Quelle annonce vous intéresse ?
-      </PageTitle>
+      <PageTitle subtitle={texts.jobPosting.subtitle}>{texts.jobPosting.title}</PageTitle>
       {error && <ErrorAlert description={error} onAction={onErrorAction} />}
 
       <JobPostingInput
@@ -135,7 +136,7 @@ export function JobPostingScreen({
       />
 
       <LinkButton icon="arrow-left" onClick={onBackToCv}>
-        Revenir à mon CV
+        {texts.jobPosting.backToCv}
       </LinkButton>
     </div>
   )

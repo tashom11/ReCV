@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { texts } from '../../i18n'
 import { Button, SegmentedTabs, TextField } from '../../ui'
 import { tabId } from '../../ui/SegmentedTabs'
 
@@ -32,40 +33,40 @@ export function JobPostingInput({
   return (
     <section className="space-y-6 rounded-panneau border border-trait bg-surface p-8 shadow-carte">
       <SegmentedTabs
-        label="Façon de donner l’annonce"
+        label={texts.jobPosting.input.modesLabel}
         panelId={PANEL_ID}
         value={mode}
         onChange={onMode}
         disabled={busy}
         tabs={[
-          { id: 'link', label: 'Coller un lien', icon: 'link' },
-          { id: 'text', label: 'Coller le texte', icon: 'clipboard' },
+          { id: 'link', label: texts.jobPosting.input.link, icon: 'link' },
+          { id: 'text', label: texts.jobPosting.input.text, icon: 'clipboard' },
         ]}
       />
       <div id={PANEL_ID} role="tabpanel" aria-labelledby={tabId(PANEL_ID, mode)} className="space-y-5">
         {mode === 'link' ? (
           <TextField
-            label="Adresse de l’annonce"
+            label={texts.jobPosting.input.urlLabel}
             type="url"
             large
             value={url}
             onChange={onUrl}
-            placeholder="Collez ici l’adresse (elle commence par https://)"
-            hint="Astuce : dans votre navigateur, cliquez sur la barre d’adresse puis faites Ctrl + C pour copier."
+            placeholder={texts.jobPosting.input.urlPlaceholder}
+            hint={texts.jobPosting.input.urlHint}
           />
         ) : (
           <TextField
-            label="Texte de l’annonce"
+            label={texts.jobPosting.input.textLabel}
             multiline
             rows={10}
             value={text}
             onChange={onText}
-            placeholder="Collez ici tout le texte de l’annonce"
-            hint="Astuce : sur la page de l’annonce, sélectionnez le texte avec la souris, faites Ctrl + C, puis Ctrl + V ici."
+            placeholder={texts.jobPosting.input.textPlaceholder}
+            hint={texts.jobPosting.input.textHint}
           />
         )}
         <Button size="large" onClick={onRead} busy={busy} disabled={mode === 'link' ? !url.trim() : !text.trim()}>
-          Lire l’annonce
+          {texts.jobPosting.input.read}
         </Button>
         {loading}
       </div>
