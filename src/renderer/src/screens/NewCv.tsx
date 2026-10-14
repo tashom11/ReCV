@@ -48,7 +48,7 @@ export function NewCvScreen({
       .catch(() => undefined)
   }
 
-  const { previews } = usePreviews(draft.finalCv)
+  const { previews } = usePreviews(draft.finalCv, cvTemplate)
   const template = findTemplate(cvTemplate)
 
   const exportAs = async (format: ExportFormat) => {
