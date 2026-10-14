@@ -4,6 +4,7 @@ import { describeError, type ErrorDescription } from '../errors'
 import { texts } from '../i18n'
 import { hasUnsavedTextChanges } from '../settingsDraft'
 import { Button, Card, Checkbox, Confirmation, ErrorAlert, Icon, PageTitle, Pill, TextField } from '../ui'
+import { DiagnosticsCard } from './settings/DiagnosticsCard'
 import { EngineChoiceCard } from './settings/EngineChoiceCard'
 import { EraseDataCard } from './settings/EraseDataCard'
 import { ModelLevels } from './settings/ModelLevels'
@@ -209,6 +210,8 @@ export function SettingsScreen({
       </Card>
 
       <UpdatesCard />
+
+      <DiagnosticsCard />
 
       <EraseDataCard hasApiKey={state.hasApiKey} onErased={onErased} onError={setError} />
 

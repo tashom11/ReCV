@@ -49,7 +49,7 @@ Quand l’annonce demande une compétence absente de votre CV, elle vous est pro
 | **Ollama** | Il reste sur votre ordinateur, ou va à l’adresse que vous indiquez. |
 | **Service en ligne** (votre clé personnelle) | Il est envoyé au service choisi à chaque création. Certaines offres gratuites réutilisent les données reçues : lisez leurs conditions. |
 
-Votre clé personnelle est chiffrée par Windows et n’est jamais réaffichée. Il n’y a ni compte, ni publicité, ni mesure d’audience.
+Votre clé personnelle est chiffrée par Windows et n’est jamais réaffichée. Il n’y a ni compte, ni publicité, ni mesure d’audience. Un journal de diagnostic local ne garde que des codes d’erreur (jamais de message ni de donnée du CV) ; il ne quitte votre ordinateur que si vous copiez le rapport depuis les Réglages pour un signalement.
 
 En dehors du moteur choisi, Re:CV ne se connecte à internet que pour télécharger le modèle, lire une annonce à partir d’un lien et vérifier les mises à jour.
 
@@ -65,7 +65,7 @@ Re:CV vérifie les nouvelles versions au démarrage, puis toutes les six heures.
 
 ## Un problème, une idée ?
 
-Ouvrez un [ticket](https://github.com/tashom11/ReCV/issues/new/choose) : il y a un formulaire pour signaler un problème et un autre pour proposer une idée. Vous pouvez écrire en français. Pour une faille de sécurité, suivez plutôt [SECURITY.md](SECURITY.md).
+Ouvrez un [ticket](https://github.com/tashom11/ReCV/issues/new/choose) et collez-y le rapport de diagnostic (Réglages → « Signaler un problème ») : il y a un formulaire pour signaler un problème et un autre pour proposer une idée. Vous pouvez écrire en français. Pour une faille de sécurité, suivez plutôt [SECURITY.md](SECURITY.md).
 
 ## Développer
 

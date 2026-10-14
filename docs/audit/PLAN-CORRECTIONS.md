@@ -78,9 +78,10 @@ Reste dans ces étapes :
   - Restent hors du dictionnaire, à traiter avec une deuxième langue : noms et descriptions des mises en page
     (`core/export/templates.ts`) et des modèles locaux (`core/llm/localModels.ts`), messages d'erreur du main.
 - Étape 10, contributions : `README.md` (anglais) et `README.fr.md`, `CONTRIBUTING.md`, `SECURITY.md` (signalement
-  privé par GitHub), `CODE_OF_CONDUCT.md` (adresse de contact à renseigner), formulaires de tickets et modèle de pull
-  request. Le journal de diagnostic (AMEL-03) attend une décision (D6) : les messages d'erreur des bibliothèques LLM
-  peuvent contenir des extraits du CV, il faut choisir ce qui est journalisé.
+  privé par GitHub), `CODE_OF_CONDUCT.md`, formulaires de tickets et modèle de pull
+  request. Journal de diagnostic (AMEL-03, D6) : `userData/logs/recv.log` (rotation à 200 Ko), une ligne
+  par démarrage, appel IPC en échec (canal, code, nom de classe) ou plantage de fenêtre ; jamais de message. Bouton
+  « Copier le rapport » dans les Réglages, qui affiche aussi ce qui a été copié. Vérifié dans l'application.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 
@@ -92,8 +93,8 @@ Reste dans ces étapes :
 | D2 | Dépendances de test : `@testing-library/react`, `happy-dom`, `vitest-axe` (dev uniquement) | oui | étape 7 (tests de composants) |
 | D3 | Données conservées : historique « Mes CV » ou purge [SEC-05, AMEL-04] | purge maintenant (dernier profil, 20 dernières créations), historique plus tard | étape 1.4 |
 | D4 | Langue des prompts [I18N-02] | français, sortis dans `prompts/fr.ts` | étape 5 |
-| D5 | Binaires CUDA dans l'installeur [PERF-07] | à décider : 396 Mo avec, 177 Mo sans (NVIDIA via Vulkan) | — |
-| D6 | Journal de diagnostic [AMEL-03] | à décider : contenu (codes d'erreur seuls, ou messages filtrés) | — |
+| D5 | Binaires CUDA dans l'installeur [PERF-07] | gardés (396 Mo) | — |
+| D6 | Journal de diagnostic [AMEL-03] | codes d'erreur seuls, jamais de message | étape 10 |
 
 ---
 

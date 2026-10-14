@@ -581,6 +581,15 @@ export const fr = {
       noKey: 'Aucune clé enregistrée pour l’instant.',
       removeKey: 'Supprimer la clé',
     },
+    diagnostics: {
+      title: 'Signaler un problème',
+      subtitle:
+        'Le rapport aide à comprendre un problème : versions de Re:CV et de Windows, moteur choisi, mémoire de l’ordinateur et codes des dernières erreurs. Il ne contient rien de votre CV.',
+      copy: 'Copier le rapport',
+      copied: 'Rapport copié. Collez-le dans votre signalement avec Ctrl + V.',
+      failed: 'Le rapport n’a pas pu être copié. Réessayez dans un instant.',
+      show: 'Voir le contenu du rapport',
+    },
     data: {
       title: 'Mes données',
       subtitle: 'Votre CV, vos annonces et les CV créés sont enregistrés uniquement sur cet ordinateur.',

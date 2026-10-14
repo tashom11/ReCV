@@ -245,6 +245,30 @@ describe('handlers IPC', () => {
     })
   })
 
+  it('reports failed calls to the diagnostic log, but not a cancellation', async () => {
+    const handlers = new Map<string, Handler>()
+    const ipcMain = { handle: (channel: string, h: Handler) => void handlers.set(channel, h) } as unknown as IpcMain
+    const failure = new CodedError('unreadable-file', 'Illisible')
+    const api = {
+      importCv: async () => {
+        throw failure
+      },
+      cancelTailoring: async () => {
+        throw new CodedError('cancelled', 'Création annulée.')
+      },
+    }
+    const reported: [string, unknown][] = []
+    registerHandlers(
+      ipcMain,
+      api as never,
+      () => true,
+      (channel, error) => reported.push([channel, error]),
+    )
+    await handlers.get(CHANNELS.importCv)?.({})
+    await handlers.get(CHANNELS.cancelTailoring)?.({})
+    expect(reported).toEqual([[CHANNELS.importCv, failure]])
+  })
+
   it('refuses an empty or oversized file path', async () => {
     const { handlers, calledMethods } = wire(() => true)
     expect((await handlers.get(CHANNELS.openFile)?.({}, ''))?.ok).toBe(false)
