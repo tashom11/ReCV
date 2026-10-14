@@ -19,7 +19,7 @@ export interface DownloadOptions {
 export class DownloadError extends Error {
   constructor(message: string) {
     super(message)
-    this.name = 'ErreurTelechargement'
+    this.name = 'DownloadError'
   }
 }
 
