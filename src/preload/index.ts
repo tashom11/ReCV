@@ -2,54 +2,54 @@ import type { ModelDownloadProgress, RecvApi, TaskProgress, UpdateState } from '
 import { CHANNELS, encodeError, type IpcResult } from '@core/channels'
 import { contextBridge, type IpcRendererEvent, ipcRenderer, webUtils } from 'electron'
 
-// API typée exposée au renderer : uniquement ces méthodes, jamais ipcRenderer lui-même.
-async function appeler<T>(canal: string, ...args: unknown[]): Promise<T> {
-  const resultat = (await ipcRenderer.invoke(canal, ...args)) as IpcResult<T>
-  if (!resultat.ok) throw new Error(encodeError(resultat.message, resultat.code))
-  return resultat.value
+// Typed API exposed to the renderer: only these methods, never ipcRenderer itself.
+async function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
+  const result = (await ipcRenderer.invoke(channel, ...args)) as IpcResult<T>
+  if (!result.ok) throw new Error(encodeError(result.message, result.code))
+  return result.value
 }
 
 const api: RecvApi = {
-  importCv: () => appeler(CHANNELS.importCv),
-  // Le chemin d'un fichier déposé n'est lisible qu'ici : le renderer ne transmet que l'objet File.
-  importDroppedCv: (fichier) => appeler(CHANNELS.importDroppedCv, webUtils.getPathForFile(fichier as File)),
-  getProfile: () => appeler(CHANNELS.getProfile),
-  saveProfile: (profil) => appeler(CHANNELS.saveProfile, profil),
-  fetchJobPosting: (url) => appeler(CHANNELS.fetchJobPosting, url),
-  parseJobPostingText: (texte) => appeler(CHANNELS.parseJobPostingText, texte),
-  previewJobPosting: (offre) => appeler(CHANNELS.previewJobPosting, offre),
-  tailorCv: (offre) => appeler(CHANNELS.tailorCv, offre),
-  cancelTailoring: () => appeler(CHANNELS.cancelTailoring),
-  openFile: (chemin) => appeler(CHANNELS.openFile, chemin),
-  revealInFolder: (chemin) => appeler(CHANNELS.revealInFolder, chemin),
-  getSettings: () => appeler(CHANNELS.getSettings),
-  saveSettings: (parametres) => appeler(CHANNELS.saveSettings, parametres),
-  setApiKey: (cle) => appeler(CHANNELS.setApiKey, cle),
-  exportCv: (cv, format, modeleId) => appeler(CHANNELS.exportCv, cv, format, modeleId),
-  templateHtml: (cv, modeleId) => appeler(CHANNELS.templateHtml, cv, modeleId),
-  generateSummary: (profil) => appeler(CHANNELS.generateSummary, profil),
-  getModelsState: () => appeler(CHANNELS.getModelsState),
-  downloadModel: (id) => appeler(CHANNELS.downloadModel, id),
-  cancelDownload: () => appeler(CHANNELS.cancelDownload),
-  deleteModel: (id) => appeler(CHANNELS.deleteModel, id),
-  eraseData: () => appeler(CHANNELS.eraseData),
-  getUpdateState: () => appeler(CHANNELS.getUpdateState),
-  checkForUpdate: () => appeler(CHANNELS.checkForUpdate),
-  installUpdate: () => appeler(CHANNELS.installUpdate),
+  importCv: () => invoke(CHANNELS.importCv),
+  // The path of a dropped file can only be read here: the renderer only passes the File object.
+  importDroppedCv: (file) => invoke(CHANNELS.importDroppedCv, webUtils.getPathForFile(file as File)),
+  getProfile: () => invoke(CHANNELS.getProfile),
+  saveProfile: (profile) => invoke(CHANNELS.saveProfile, profile),
+  fetchJobPosting: (url) => invoke(CHANNELS.fetchJobPosting, url),
+  parseJobPostingText: (text) => invoke(CHANNELS.parseJobPostingText, text),
+  previewJobPosting: (jobPosting) => invoke(CHANNELS.previewJobPosting, jobPosting),
+  tailorCv: (jobPosting) => invoke(CHANNELS.tailorCv, jobPosting),
+  cancelTailoring: () => invoke(CHANNELS.cancelTailoring),
+  openFile: (path) => invoke(CHANNELS.openFile, path),
+  revealInFolder: (path) => invoke(CHANNELS.revealInFolder, path),
+  getSettings: () => invoke(CHANNELS.getSettings),
+  saveSettings: (settings) => invoke(CHANNELS.saveSettings, settings),
+  setApiKey: (key) => invoke(CHANNELS.setApiKey, key),
+  exportCv: (cv, format, templateId) => invoke(CHANNELS.exportCv, cv, format, templateId),
+  templateHtml: (cv, templateId) => invoke(CHANNELS.templateHtml, cv, templateId),
+  generateSummary: (profile) => invoke(CHANNELS.generateSummary, profile),
+  getModelsState: () => invoke(CHANNELS.getModelsState),
+  downloadModel: (id) => invoke(CHANNELS.downloadModel, id),
+  cancelDownload: () => invoke(CHANNELS.cancelDownload),
+  deleteModel: (id) => invoke(CHANNELS.deleteModel, id),
+  eraseData: () => invoke(CHANNELS.eraseData),
+  getUpdateState: () => invoke(CHANNELS.getUpdateState),
+  checkForUpdate: () => invoke(CHANNELS.checkForUpdate),
+  installUpdate: () => invoke(CHANNELS.installUpdate),
   onUpdate: (rappel) => {
-    const ecouteur = (_e: IpcRendererEvent, etat: UpdateState) => rappel(etat)
-    ipcRenderer.on(CHANNELS.updateStatus, ecouteur)
-    return () => ipcRenderer.removeListener(CHANNELS.updateStatus, ecouteur)
+    const listener = (_e: IpcRendererEvent, state: UpdateState) => rappel(state)
+    ipcRenderer.on(CHANNELS.updateStatus, listener)
+    return () => ipcRenderer.removeListener(CHANNELS.updateStatus, listener)
   },
   onTaskProgress: (rappel) => {
-    const ecouteur = (_e: IpcRendererEvent, progression: TaskProgress) => rappel(progression)
-    ipcRenderer.on(CHANNELS.taskProgress, ecouteur)
-    return () => ipcRenderer.removeListener(CHANNELS.taskProgress, ecouteur)
+    const listener = (_e: IpcRendererEvent, progress: TaskProgress) => rappel(progress)
+    ipcRenderer.on(CHANNELS.taskProgress, listener)
+    return () => ipcRenderer.removeListener(CHANNELS.taskProgress, listener)
   },
   onModelProgress: (rappel) => {
-    const ecouteur = (_e: IpcRendererEvent, progression: ModelDownloadProgress) => rappel(progression)
-    ipcRenderer.on(CHANNELS.modelProgress, ecouteur)
-    return () => ipcRenderer.removeListener(CHANNELS.modelProgress, ecouteur)
+    const listener = (_e: IpcRendererEvent, progress: ModelDownloadProgress) => rappel(progress)
+    ipcRenderer.on(CHANNELS.modelProgress, listener)
+    return () => ipcRenderer.removeListener(CHANNELS.modelProgress, listener)
   },
 }
 

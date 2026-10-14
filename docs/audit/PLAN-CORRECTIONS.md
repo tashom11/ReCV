@@ -38,6 +38,11 @@ Reste dans ces étapes :
     canaux IPC. À faire avec l'interface (étape 7) : elle compare certains codes sans contrôle de type.
   - Commentaires et noms de tests du core : traduits en anglais (fait). Les exemples français cités entre « » sont
     des données réelles (extraits de CV et d'annonces) et restent tels quels, comme le contenu des prompts.
+- Étape 6 (process principal et preload) : fait. Identifiants, fichiers (`bdd/` → `db/`, `modeles/` → `models/`…),
+  commentaires et noms de tests en anglais ; canaux IPC renommés ; migration 3 (tables et colonnes en anglais) ;
+  dossier de données renommé au démarrage (`parametres.json` → `settings.json`, `cle-api.bin` → `api-key.bin`,
+  `modeles/` → `models/`, chemin du modèle sélectionné mis à jour). Mise à jour depuis la v0.2.1 vérifiée dans
+  l'application.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 

@@ -2,38 +2,38 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { type Chiffreur, StockageParametres } from './parametres'
 import { migrateSettings, SETTINGS_VERSION, type SettingsMigration } from './settingsMigrations'
+import { type Encryptor, SettingsStore } from './settingsStore'
 
-const chiffreur: Chiffreur = {
-  disponible: () => true,
-  chiffrer: (t) => Buffer.from(t, 'utf8'),
-  dechiffrer: (b) => Buffer.from(b).toString('utf8'),
+const encryptor: Encryptor = {
+  isAvailable: () => true,
+  encrypt: (t) => Buffer.from(t, 'utf8'),
+  decrypt: (b) => Buffer.from(b).toString('utf8'),
 }
 
-let dossier: string
+let folder: string
 beforeEach(async () => {
-  dossier = await mkdtemp(join(tmpdir(), 'recv-param-'))
+  folder = await mkdtemp(join(tmpdir(), 'recv-param-'))
 })
 afterEach(async () => {
-  await rm(dossier, { recursive: true, force: true })
+  await rm(folder, { recursive: true, force: true })
 })
 
 describe('settings file versioning', () => {
   it('reads a v0.2.1 settings file (no version number)', async () => {
     await writeFile(
-      join(dossier, 'parametres.json'),
+      join(folder, 'settings.json'),
       JSON.stringify({ fournisseur: 'ollama', modeleOllama: 'mistral', reformulerPuces: true }),
     )
-    const lus = await new StockageParametres(dossier, chiffreur).lire()
-    expect(lus).toMatchObject({ provider: 'ollama', ollamaModel: 'mistral', rewriteBullets: true })
+    const loaded = await new SettingsStore(folder, encryptor).read()
+    expect(loaded).toMatchObject({ provider: 'ollama', ollamaModel: 'mistral', rewriteBullets: true })
   })
 
   it('writes the version number with the settings', async () => {
-    const stockage = new StockageParametres(dossier, chiffreur)
-    await stockage.enregistrer(await stockage.lire())
-    const ecrit = JSON.parse(await readFile(join(dossier, 'parametres.json'), 'utf8'))
-    expect(ecrit.version).toBe(SETTINGS_VERSION)
+    const store = new SettingsStore(folder, encryptor)
+    await store.save(await store.read())
+    const written = JSON.parse(await readFile(join(folder, 'settings.json'), 'utf8'))
+    expect(written.version).toBe(SETTINGS_VERSION)
   })
 })
 

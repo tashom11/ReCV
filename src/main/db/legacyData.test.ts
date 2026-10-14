@@ -131,12 +131,12 @@ describe('v0.2.1 data → English keys', () => {
   })
 
   it('converts an older tailored CV that had no requested skills nor excluded items', () => {
-    const ancien = { titre: 'T', accroche: 'A', experiences: [], competences: [] }
-    expect(tailoredCvSchema.parse(tailoredCvFromV1(ancien))).toMatchObject({ headline: 'T', summary: 'A' })
+    const previous = { titre: 'T', accroche: 'A', experiences: [], competences: [] }
+    expect(tailoredCvSchema.parse(tailoredCvFromV1(previous))).toMatchObject({ headline: 'T', summary: 'A' })
   })
 
   it('leaves data that is already converted unchanged', () => {
-    const converti = profileFromV1(PROFIL_V1)
-    expect(profileFromV1(converti)).toEqual(converti)
+    const converted = profileFromV1(PROFIL_V1)
+    expect(profileFromV1(converted)).toEqual(converted)
   })
 })
