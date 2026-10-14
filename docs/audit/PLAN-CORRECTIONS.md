@@ -53,6 +53,20 @@ Reste dans ces étapes :
   QUAL-04, QUAL-05. Vérifié dans l'application : retrait annulable, dialogue d'effacement, aucun défilement
   horizontal à 320 et 640 px de large (zoom 400 % et 200 %). Reste à faire par une personne : un passage complet
   au lecteur d'écran (NVDA) et en mode Contraste élevé de Windows.
+- Étape 8, performance :
+  - PERF-01 fait : pendant la saisie, seul l'aperçu choisi est recalculé (vérifié : 2 cadres rafraîchis à ~260 ms,
+    les 5 autres vignettes à ~1,4 s ; changer de modèle ne relance aucun rendu).
+  - PERF-02 fait : grammaire en cache par schéma, contexte et séquence réutilisés, libérés après 30 s d'inactivité.
+    Mesure (Qwen3.5 9B sur GPU, `npm run try`) : adaptation 9,2-9,5 s → 8,1-8,8 s ; gain plus fort en mode
+    « réécriture » et sur processeur.
+  - PERF-03 fait : détection RAM/VRAM une fois par session.
+  - PERF-04 reporté : extraction mesurée à 20-120 ms pour un PDF de 90 à 350 ko ; un fil séparé ajouterait une
+    entrée de build et des risques d'empaquetage (pdf.js) pour un gain imperceptible.
+  - PERF-06 non corrigé : les `.woff` et le sous-ensemble vietnamien (~52 ko) ne sont jamais chargés par Chromium ;
+    seul l'installeur en porte le poids.
+  - PERF-07 : binaires ARM exclus. Installeur mesuré à 396 Mo (1 121 Mo installés). Sans les binaires CUDA :
+    177 Mo (603 Mo installés) ; les cartes NVIDIA passeraient alors par Vulkan. Décision D5 ci-dessous.
+  - Scripts passés en anglais : `npm run try` (`scripts/try-pipeline.ts`), `latest-yml.mjs`, fixtures renommées.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 
@@ -64,6 +78,7 @@ Reste dans ces étapes :
 | D2 | Dépendances de test : `@testing-library/react`, `happy-dom`, `vitest-axe` (dev uniquement) | oui | étape 7 (tests de composants) |
 | D3 | Données conservées : historique « Mes CV » ou purge [SEC-05, AMEL-04] | purge maintenant (dernier profil, 20 dernières créations), historique plus tard | étape 1.4 |
 | D4 | Langue des prompts [I18N-02] | français, sortis dans `prompts/fr.ts` | étape 5 |
+| D5 | Binaires CUDA dans l'installeur [PERF-07] | à décider : 396 Mo avec, 177 Mo sans (NVIDIA via Vulkan) | — |
 
 ---
 
