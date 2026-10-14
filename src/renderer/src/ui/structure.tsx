@@ -215,7 +215,8 @@ export function EtatVide({ titre, texte, action }: { titre: string; texte: strin
         <div className="h-1 w-3/5 rounded-full bg-trait" />
         <div className="h-6" />
       </div>
-      <h2 className="font-titre text-titre-section font-bold text-encre">{titre}</h2>
+      {/* Always the whole content of a screen: its title is the screen title. */}
+      <h1 className="font-titre text-titre-section font-bold text-encre">{titre}</h1>
       <p className="max-w-md text-corps text-encre-douce">{texte}</p>
       {action && <div className="pt-3">{action}</div>}
     </div>

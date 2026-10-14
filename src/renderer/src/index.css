@@ -15,6 +15,8 @@
   --color-surface: #ffffff;
   --color-trait: #ded8ca;
   --color-trait-fort: #8c8778;
+  /* Placeholder text: 5.6:1 on white, 5.1:1 on paper (WCAG AA). trait-fort (3.6:1) is reserved for borders. */
+  --color-indicatif: #6b675c;
   --color-creux: #efeadf;
   --color-marque: #23624a;
   --color-marque-survol: #1b4f3b;

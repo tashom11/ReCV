@@ -1,7 +1,9 @@
 import { choixInitial, composerCv } from '@core/adaptation/composition'
 import type { CvGenere } from '@core/api'
 import type { Offre, Profil } from '@core/schemas'
+import { estServiceLocal } from '@core/serviceUrl'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { focusScreenTitle, windowTitle } from './accessibility'
 import logo from './assets/logo.png'
 import { EcranAccueil } from './ecrans/Accueil'
 import { type AnnonceLue, EcranAnnonce } from './ecrans/Annonce'
@@ -57,7 +59,9 @@ export default function App() {
     () =>
       Promise.all([window.api.lireParametres(), window.api.lireEtatModeles()]).then(
         ([p, m]) => {
-          const etat = { pret: moteurPret(p, m.modeles), enLigne: p.fournisseur === 'api' }
+          // "Online": the CV leaves this computer (online service, or Ollama on another machine).
+          const enLigne = p.fournisseur === 'api' || (p.fournisseur === 'ollama' && !estServiceLocal(p.urlOllama))
+          const etat = { pret: moteurPret(p, m.modeles), enLigne }
           setMoteur(etat)
           return etat
         },
@@ -76,6 +80,19 @@ export default function App() {
       () => setVue('accueil'),
     )
   }, [verifierMoteur])
+
+  // Each screen change is announced: window title, then focus on the title of the new screen
+  // (the clicked button has disappeared, the focus would otherwise fall back to the page).
+  const previousView = useRef<Vue | null>(null)
+  useEffect(() => {
+    if (vue === null) return
+    document.title = windowTitle(vue)
+    const isFirstScreen = previousView.current === null
+    previousView.current = vue
+    // Effects run after the DOM is updated: the new title is already there. (No requestAnimationFrame: it is
+    // paused while the window is minimised, which users are invited to do during long tasks.)
+    if (!isFirstScreen) focusScreenTitle()
+  }, [vue])
 
   const aller = useCallback((suivante: Vue) => {
     setVue((actuelle) => {

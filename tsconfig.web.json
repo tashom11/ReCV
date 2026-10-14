@@ -10,6 +10,7 @@
     "src/core/export/modeles.ts",
     "src/core/adaptation/texte.ts",
     "src/core/canaux.ts",
+    "src/core/serviceUrl.ts",
     "src/core/erreurs.ts",
     "src/core/etapes.ts"
   ],
