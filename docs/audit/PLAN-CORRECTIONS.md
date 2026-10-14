@@ -77,6 +77,10 @@ Reste dans ces étapes :
   - Point 3 : libellés du CV produit dans `CV_LABELS[langue]` ; sections identifiées par un `id`.
   - Restent hors du dictionnaire, à traiter avec une deuxième langue : noms et descriptions des mises en page
     (`core/export/templates.ts`) et des modèles locaux (`core/llm/localModels.ts`), messages d'erreur du main.
+- Étape 10, contributions : `README.md` (anglais) et `README.fr.md`, `CONTRIBUTING.md`, `SECURITY.md` (signalement
+  privé par GitHub), `CODE_OF_CONDUCT.md` (adresse de contact à renseigner), formulaires de tickets et modèle de pull
+  request. Le journal de diagnostic (AMEL-03) attend une décision (D6) : les messages d'erreur des bibliothèques LLM
+  peuvent contenir des extraits du CV, il faut choisir ce qui est journalisé.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 
@@ -89,6 +93,7 @@ Reste dans ces étapes :
 | D3 | Données conservées : historique « Mes CV » ou purge [SEC-05, AMEL-04] | purge maintenant (dernier profil, 20 dernières créations), historique plus tard | étape 1.4 |
 | D4 | Langue des prompts [I18N-02] | français, sortis dans `prompts/fr.ts` | étape 5 |
 | D5 | Binaires CUDA dans l'installeur [PERF-07] | à décider : 396 Mo avec, 177 Mo sans (NVIDIA via Vulkan) | — |
+| D6 | Journal de diagnostic [AMEL-03] | à décider : contenu (codes d'erreur seuls, ou messages filtrés) | — |
 
 ---
 
