@@ -1,6 +1,7 @@
 import type { ModelsState, Settings, SettingsState } from '@core/api'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { describeError, type ErrorDescription } from '../errors'
+import { texts } from '../i18n'
 import { hasUnsavedTextChanges } from '../settingsDraft'
 import { Button, Card, Checkbox, Confirmation, ErrorAlert, Icon, PageTitle, Pill, TextField } from '../ui'
 import { EngineChoiceCard } from './settings/EngineChoiceCard'
@@ -77,7 +78,11 @@ export function SettingsScreen({
   if (!state) {
     return (
       <div className="mx-auto w-full max-w-3xl px-6 py-10">
-        {error ? <ErrorAlert description={error} onAction={() => undefined} /> : <p role="status">Un instant…</p>}
+        {error ? (
+          <ErrorAlert description={error} onAction={() => undefined} />
+        ) : (
+          <p role="status">{texts.settings.loading}</p>
+        )}
       </div>
     )
   }
@@ -98,11 +103,7 @@ export function SettingsScreen({
       setKey('')
       setState(after)
       setSaved(after)
-      setConfirmation(
-        state.hasApiKey && !after.hasApiKey
-          ? 'Réglages enregistrés. Le service a changé : saisissez à nouveau votre clé personnelle.'
-          : 'Vos réglages sont enregistrés.',
-      )
+      setConfirmation(state.hasApiKey && !after.hasApiKey ? texts.settings.savedKeyCleared : texts.settings.saved)
       onChange()
     } catch (e) {
       setError(describeError('settings', e))
@@ -116,7 +117,7 @@ export function SettingsScreen({
     setBusyWith('key')
     try {
       setState({ ...state, hasApiKey: (await window.api.setApiKey('')).hasApiKey })
-      setConfirmation('Votre clé personnelle est supprimée.')
+      setConfirmation(texts.settings.keyRemoved)
     } catch (e) {
       setError(describeError('settings', e))
     } finally {
@@ -126,27 +127,25 @@ export function SettingsScreen({
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10">
-      <PageTitle subtitle="La plupart des personnes n’ont rien à changer ici.">Réglages</PageTitle>
+      <PageTitle subtitle={texts.settings.subtitle}>{texts.settings.title}</PageTitle>
       {error && <ErrorAlert description={error} onAction={() => setError(null)} />}
 
-      <Card title="Moteur d’intelligence artificielle" subtitle="C’est lui qui lit votre CV et l’annonce.">
+      <Card title={texts.settings.engine.title} subtitle={texts.settings.engine.subtitle}>
         {/* One radio group for the three engines, two of which are in the collapsed advanced options. */}
         <fieldset className="space-y-4">
-          <legend className="sr-only">
-            Où tourne le moteur : sur cet ordinateur, ou avec Ollama ou un service en ligne (options avancées)
-          </legend>
+          <legend className="sr-only">{texts.settings.engine.legend}</legend>
           <EngineChoiceCard
             chosen={local}
             onChoose={() => void choose({ provider: 'local' })}
-            title="Sur mon ordinateur"
-            label={<Pill variant="recommended">Recommandé</Pill>}
-            description="Gratuit et privé : rien ne quitte votre ordinateur. Fonctionne sans internet."
+            title={texts.settings.engine.local}
+            label={<Pill variant="recommended">{texts.settings.engine.recommended}</Pill>}
+            description={texts.settings.engine.localDescription}
             highlighted
           >
             {local && (
               <p className={`flex items-center gap-2 pl-[34px] font-bold ${ready ? 'text-marque' : 'text-alerte'}`}>
                 <Icon name={ready ? 'check-circle' : 'warning'} size={18} />
-                {ready ? 'Prêt à l’emploi' : 'Il manque un téléchargement : installez un niveau ci-dessous'}
+                {ready ? texts.settings.engine.ready : texts.settings.engine.missing}
               </p>
             )}
           </EngineChoiceCard>
@@ -156,8 +155,8 @@ export function SettingsScreen({
           <details open={!local} className="group rounded-carte border border-trait bg-papier">
             <summary className="flex min-h-16 items-center gap-4 rounded-carte px-5 py-3">
               <span className="flex-1">
-                <span className="block font-titre text-intro font-bold">Options avancées</span>
-                <span className="block text-petit text-aide">Pour les personnes à l’aise avec l’informatique</span>
+                <span className="block font-titre text-intro font-bold">{texts.settings.engine.advanced}</span>
+                <span className="block text-petit text-aide">{texts.settings.engine.advancedHint}</span>
               </span>
               <Icon name="chevron-down" className="transition-transform duration-(--duree) group-open:rotate-180" />
             </summary>
@@ -165,8 +164,8 @@ export function SettingsScreen({
               <EngineChoiceCard
                 chosen={state.provider === 'ollama'}
                 onChoose={() => void choose({ provider: 'ollama' })}
-                title="Ollama (installé séparément)"
-                description="Utilise un modèle servi par Ollama sur cet ordinateur. Les données restent chez vous."
+                title={texts.settings.engine.ollama}
+                description={texts.settings.engine.ollamaDescription}
               >
                 {state.provider === 'ollama' && <OllamaFields settings={state} update={update} />}
               </EngineChoiceCard>
@@ -174,8 +173,8 @@ export function SettingsScreen({
               <EngineChoiceCard
                 chosen={state.provider === 'api'}
                 onChoose={() => void choose({ provider: 'api' })}
-                title="Service en ligne avec ma clé personnelle"
-                description="OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service."
+                title={texts.settings.engine.online}
+                description={texts.settings.engine.onlineDescription}
               >
                 {state.provider === 'api' && (
                   <OnlineServiceFields
@@ -192,15 +191,15 @@ export function SettingsScreen({
 
               <div className="rounded-carte border border-trait bg-surface px-4 py-2">
                 <Checkbox
-                  label={<strong className="text-intro">Réécrire les phrases de mes expériences</strong>}
-                  hint="Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes."
+                  label={<strong className="text-intro">{texts.settings.engine.rewrite}</strong>}
+                  hint={texts.settings.engine.rewriteHint}
                   check={state.rewriteBullets}
                   onChange={(v) => void choose({ rewriteBullets: v })}
                 />
               </div>
 
               <TextField
-                label="Fichier du modèle (.gguf)"
+                label={texts.settings.engine.modelFile}
                 value={state.localModelPath ?? ''}
                 onChange={(v) => update({ localModelPath: v })}
               />
@@ -218,11 +217,11 @@ export function SettingsScreen({
         {saved && hasUnsavedTextChanges(saved, state, key) && (
           <p className="flex items-center gap-2 font-bold text-alerte">
             <Icon name="warning" size={18} />
-            Des modifications ne sont pas encore enregistrées.
+            {texts.settings.unsaved}
           </p>
         )}
         <Button onClick={() => void save()} busy={busyWith === 'save'} disabled={busyWith !== null}>
-          Enregistrer les réglages
+          {texts.settings.save}
         </Button>
       </div>
     </div>
