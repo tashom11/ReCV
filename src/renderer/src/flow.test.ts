@@ -1,6 +1,6 @@
 import { decodeError, encodeError } from '@core/channels'
 import { describe, expect, it } from 'vitest'
-import { describeError, errorMessage, isCancellation } from './errors'
+import { actionLabel, describeError, errorMessage, isCancellation } from './errors'
 import {
   announcedDuration,
   DEFAULT_ESTIMATE_S,
@@ -163,6 +163,12 @@ describe('errors', () => {
       expect(`${d.title} ${d.text}`).not.toContain('ECONNRESET')
       expect(d.details).toContain('ECONNRESET')
     }
+  })
+
+  it('shortens the label of an action that is not the recommended one', () => {
+    expect(actionLabel('paste-text', true)).toBe('Coller le texte à la place')
+    expect(actionLabel('paste-text', false)).toBe('Coller le texte')
+    expect(actionLabel('retry', false)).toBe('Réessayer')
   })
 })
 

@@ -1,4 +1,5 @@
 import { decodeError } from '@core/channels'
+import { texts } from './i18n'
 
 // Every problem says what is happening and what to do: a short title, a sentence without jargon, an action.
 // The raw technical message is never shown directly: it stays in « Détails », collapsed.
@@ -19,13 +20,11 @@ export interface ErrorDescription {
   code?: string
 }
 
-export const ACTION_LABELS: Record<ErrorAction, string> = {
-  'paste-text': 'Coller le texte à la place',
-  retry: 'Réessayer',
-  'choose-file': 'Choisir un autre fichier',
-  'finish-setup': 'Terminer la préparation',
-  'choose-folder': 'Choisir un autre dossier',
-  dismiss: 'Reprendre',
+export const ACTION_LABELS: Record<ErrorAction, string> = texts.errors.actions
+
+/** Label of an action button: shorter when it is not the recommended action. */
+export function actionLabel(action: ErrorAction, recommended: boolean): string {
+  return (!recommended && texts.errors.secondaryActions[action]) || ACTION_LABELS[action]
 }
 
 /** Code and message of an error coming from the main process (the code travels at the start of the message). */
@@ -54,8 +53,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
       ...base,
       type: 'warning',
       icon: 'warning',
-      title: 'Re:CV n’est pas encore tout à fait prêt',
-      text: 'Il manque un téléchargement unique. Ensuite, plus besoin d’internet.',
+      ...texts.errors.engineMissing,
       actions: ['finish-setup'],
     }
   }
@@ -66,8 +64,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
         ...base,
         type: 'info',
         icon: 'offline',
-        title: 'Pas de connexion internet',
-        text: 'Pour lire un lien, il faut internet. En collant le texte de l’annonce, tout fonctionne sans connexion.',
+        ...texts.errors.posting.network,
         actions: ['paste-text', 'retry'],
       }
     }
@@ -76,8 +73,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
         ...base,
         type: 'error',
         icon: 'x-circle',
-        title: 'Cette adresse n’est pas complète',
-        text: 'Une adresse d’annonce commence par https://. Copiez-la depuis la barre d’adresse de votre navigateur.',
+        ...texts.errors.posting.invalidUrl,
         actions: ['paste-text'],
       }
     }
@@ -86,8 +82,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
         ...base,
         type: 'error',
         icon: 'x-circle',
-        title: 'Cette adresse n’est pas celle d’une annonce',
-        text: 'Elle mène à un appareil de votre ordinateur ou de votre réseau (box, imprimante…). Copiez l’adresse de l’annonce depuis votre navigateur, ou collez son texte.',
+        ...texts.errors.posting.localNetwork,
         actions: ['paste-text'],
       }
     }
@@ -96,8 +91,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
         ...base,
         type: 'error',
         icon: 'x-circle',
-        title: 'Ce site ne nous laisse pas lire l’annonce',
-        text: 'Ça arrive souvent, ce n’est pas grave. Copiez le texte de l’annonce sur la page, puis collez-le ici.',
+        ...texts.errors.posting.blockedSite,
         actions: ['paste-text'],
       }
     }
@@ -105,8 +99,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
       ...base,
       type: 'error',
       icon: 'restart',
-      title: 'La lecture de l’annonce s’est arrêtée en route',
-      text: 'Rien n’est perdu : vous pouvez relancer tout de suite.',
+      ...texts.errors.posting.interrupted,
       actions: ['retry'],
     }
   }
@@ -117,8 +110,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
         ...base,
         type: 'error',
         icon: 'file-x',
-        title: 'Nous n’arrivons pas à lire ce fichier',
-        text: 'C’est souvent le cas d’un CV scanné ou pris en photo. Essayez la version Word, ou un PDF enregistré depuis Word.',
+        ...texts.errors.cv.unreadable,
         actions: ['choose-file'],
       }
     }
@@ -126,8 +118,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
       ...base,
       type: 'error',
       icon: 'restart',
-      title: 'La lecture de votre CV s’est arrêtée en route',
-      text: 'Votre fichier n’a pas été modifié. Vous pouvez relancer tout de suite.',
+      ...texts.errors.cv.interrupted,
       actions: ['retry'],
     }
   }
@@ -137,8 +128,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
       ...base,
       type: 'error',
       icon: 'folder-x',
-      title: 'Impossible d’enregistrer le CV ici',
-      text: 'Le fichier est peut-être déjà ouvert, ou le dossier est protégé. Fermez le PDF s’il est ouvert, ou choisissez un autre dossier.',
+      ...texts.errors.export,
       actions: ['choose-folder', 'retry'],
     }
   }
@@ -148,8 +138,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
       ...base,
       type: 'error',
       icon: 'restart',
-      title: 'Le téléchargement s’est interrompu',
-      text: 'Ce qui est déjà téléchargé est gardé : il repartira là où il s’était arrêté.',
+      ...texts.errors.setup,
       actions: ['dismiss'],
     }
   }
@@ -159,8 +148,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
       ...base,
       type: 'error',
       icon: 'x-circle',
-      title: 'Ce réglage n’a pas pu être enregistré',
-      text: 'Vérifiez ce que vous avez saisi, puis réessayez.',
+      ...texts.errors.settings,
       actions: [],
     }
   }
@@ -169,8 +157,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
     ...base,
     type: 'error',
     icon: 'restart',
-    title: 'La création s’est arrêtée en route',
-    text: 'Rien n’est perdu : votre CV et l’annonce sont gardés. Vous pouvez relancer tout de suite.',
+    ...texts.errors.generating,
     actions: ['retry'],
   }
 }
