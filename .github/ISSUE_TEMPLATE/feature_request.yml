@@ -1,0 +1,27 @@
+name: Proposer une idée (Suggest an idea)
+description: Une amélioration ou une nouvelle fonction. An improvement or a new feature.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci pour votre idée ! Vous pouvez écrire en français ou en anglais.
+        Re:CV ne doit jamais inventer ce qui n'est pas dans le CV : une idée qui ajoute du contenu doit le laisser
+        choisir par la personne.
+  - type: textarea
+    id: need
+    attributes:
+      label: Quel besoin ? (What do you need?)
+      description: La situation où l'application vous manque, avant la solution.
+      placeholder: Quand je postule à …, je dois …
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Votre idée (Your idea)
+      description: Comment vous verriez la chose, si vous avez une idée.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Comment faites-vous aujourd'hui ? (Current workaround)
