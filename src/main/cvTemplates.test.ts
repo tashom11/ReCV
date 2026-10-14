@@ -37,8 +37,8 @@ function create() {
     }),
     pickAndReadCv: async () => ({ text: 'cv', name: 'mon-cv.pdf' }),
     updater: {
-      state: () => ({ version: '0.0.0', status: 'indisponible' as const }),
-      check: async () => ({ version: '0.0.0', status: 'indisponible' as const }),
+      state: () => ({ version: '0.0.0', status: 'unavailable' as const }),
+      check: async () => ({ version: '0.0.0', status: 'unavailable' as const }),
       install: () => undefined,
     },
     readCv: async () => 'cv',
@@ -62,7 +62,7 @@ describe('CV templates and photo', () => {
     const { service } = create()
     await service.saveProfile({ ...cannedProfile, photo: PHOTO })
     const html = await service.templateHtml(cv, 'elegant')
-    expect(html).toContain('data-modele="elegant"')
+    expect(html).toContain('data-template="elegant"')
     expect(html).toContain('<img class="photo"')
   })
 
@@ -70,12 +70,12 @@ describe('CV templates and photo', () => {
     const { service, settings, pdfs } = create()
     await service.saveProfile(cannedProfile)
 
-    await service.exportCv(cv, 'pdf', 'bandeau')
-    expect(pdfs.at(-1)).toContain('data-modele="bandeau"')
+    await service.exportCv(cv, 'pdf', 'banner')
+    expect(pdfs.at(-1)).toContain('data-template="banner"')
 
-    await settings.save({ ...(await settings.read()), cvTemplate: 'moderne' })
+    await settings.save({ ...(await settings.read()), cvTemplate: 'modern' })
     await service.exportCv(cv, 'pdf')
-    expect(pdfs.at(-1)).toContain('data-modele="moderne"')
+    expect(pdfs.at(-1)).toContain('data-template="modern"')
   })
 
   it('importing another CV keeps the photo of the active profile', async () => {

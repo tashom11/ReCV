@@ -27,6 +27,20 @@ export const SETTINGS_MIGRATIONS: readonly SettingsMigration[] = [
       return Object.fromEntries(Object.entries(settings).map(([key, value]) => [keys[key] ?? key, value]))
     },
   },
+  // Version 3: CV template ids in English.
+  {
+    version: 3,
+    up: (settings) => {
+      const ids: Record<string, string> = {
+        classique: 'classic',
+        moderne: 'modern',
+        bandeau: 'banner',
+        lateral: 'sidebar',
+      }
+      const template = settings.cvTemplate
+      return typeof template === 'string' && ids[template] ? { ...settings, cvTemplate: ids[template] } : settings
+    },
+  },
 ]
 
 export const SETTINGS_VERSION = Math.max(...SETTINGS_MIGRATIONS.map((m) => m.version))

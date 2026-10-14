@@ -38,8 +38,8 @@ describe('extractJobPostingFromHtml', () => {
 
 describe('fetchJobPosting', () => {
   it('rejects an invalid or non-http(s) URL', async () => {
-    await expect(fetchJobPosting('pas une url')).rejects.toMatchObject({ code: 'url-invalide' })
-    await expect(fetchJobPosting('file:///etc/passwd')).rejects.toMatchObject({ code: 'url-invalide' })
+    await expect(fetchJobPosting('pas une url')).rejects.toMatchObject({ code: 'invalid-url' })
+    await expect(fetchJobPosting('file:///etc/passwd')).rejects.toMatchObject({ code: 'invalid-url' })
   })
 
   it('refuses addresses of the local network, without any request', async () => {
@@ -58,7 +58,9 @@ describe('fetchJobPosting', () => {
       'http://0.0.0.0/',
     ]
     for (const url of localUrls) {
-      await expect(fetchJobPosting(url, { fetchImpl, renderHtml }), url).rejects.toMatchObject({ code: 'reseau-local' })
+      await expect(fetchJobPosting(url, { fetchImpl, renderHtml }), url).rejects.toMatchObject({
+        code: 'local-network',
+      })
     }
     expect(fetchImpl).not.toHaveBeenCalled()
     expect(renderHtml).not.toHaveBeenCalled()
@@ -91,7 +93,7 @@ describe('fetchJobPosting', () => {
     })
     const promise = fetchJobPosting('https://exemple.test/offre', { fetchImpl, renderHtml })
     await expect(promise).rejects.toBeInstanceOf(JobPostingFetchError)
-    await expect(promise).rejects.toMatchObject({ code: 'contenu-vide' })
+    await expect(promise).rejects.toMatchObject({ code: 'empty-content' })
     await expect(promise).rejects.toThrow(/Collez le texte/)
   })
 
@@ -111,7 +113,7 @@ describe('fetchJobPosting', () => {
     const renderHtml = vi.fn(async () => EMPTY_JS_HTML)
     for (const url of ['https://fr.indeed.com/viewjob?jk=abc', 'https://www.linkedin.com/jobs/view/1']) {
       await expect(fetchJobPosting(url, { fetchImpl, renderHtml })).rejects.toMatchObject({
-        code: 'site-protege',
+        code: 'protected-site',
         message: expect.stringMatching(/protège ses pages.*collez-le ici/),
       })
     }
@@ -129,7 +131,7 @@ describe('fetchJobPosting', () => {
       throw new TypeError('fetch failed')
     }) as unknown as typeof fetch
     await expect(fetchJobPosting('https://exemple.test/x', { fetchImpl })).rejects.toMatchObject({
-      code: 'reseau',
+      code: 'network',
     })
   })
 
@@ -138,7 +140,7 @@ describe('fetchJobPosting', () => {
       async () => new Response('%PDF', { headers: { 'content-type': 'application/pdf' } }),
     ) as unknown as typeof fetch
     await expect(fetchJobPosting('https://exemple.test/a.pdf', { fetchImpl })).rejects.toMatchObject({
-      code: 'contenu-non-html',
+      code: 'not-html',
     })
   })
 })

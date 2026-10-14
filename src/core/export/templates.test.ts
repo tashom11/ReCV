@@ -36,8 +36,8 @@ describe('template catalogue', () => {
   })
 
   it('falls back to the classic template for an unknown id', () => {
-    expect(findTemplate('inconnu').id).toBe('classique')
-    expect(findTemplate(undefined).id).toBe('classique')
+    expect(findTemplate('inconnu').id).toBe('classic')
+    expect(findTemplate(undefined).id).toBe('classic')
   })
 })
 
@@ -47,7 +47,7 @@ describe.each(TEMPLATE_IDS)('modèle %s', (id) => {
 
   it('stays ATS-friendly: real text, standard titles, no table nor SVG', () => {
     expect(html).not.toMatch(/<table|<svg|<canvas|<script/i)
-    if (findTemplate(id).layout === 'lateral') {
+    if (findTemplate(id).layout === 'sidebar') {
       // Sidebar column: subtitle and list, the main content staying before the column in the code.
       expect(html).toContain('<h3>Compétences clés</h3><ul><li>LinkedIn Recruiter</li>')
       expect(html.indexOf('<h2>Expérience professionnelle</h2>')).toBeLessThan(html.indexOf('<h2>Compétences</h2>'))
@@ -55,7 +55,7 @@ describe.each(TEMPLATE_IDS)('modèle %s', (id) => {
       expect(html).toContain('Compétences clés : LinkedIn Recruiter')
     }
     expect(html).toContain('<h2>Compétences</h2>')
-    expect(html).toContain(`data-modele="${id}"`)
+    expect(html).toContain(`data-template="${id}"`)
   })
 
   it('never spaces letters out (ATS extraction would read « p r o f i l »)', () => {

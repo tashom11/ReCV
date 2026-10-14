@@ -42,7 +42,7 @@ describe('GestionnaireMiseAJour', () => {
     const engine = fakeEngine(() => undefined)
     const { manager } = create(engine, false)
     manager.start()
-    expect(manager.state()).toEqual({ version: '0.2.0', status: 'indisponible' })
+    expect(manager.state()).toEqual({ version: '0.2.0', status: 'unavailable' })
     await manager.check()
     expect(engine.checks).toBe(0)
   })
@@ -51,10 +51,10 @@ describe('GestionnaireMiseAJour', () => {
     const engine = fakeEngine((m) => void m.emit('update-not-available'))
     const { manager, states } = create(engine)
     manager.start()
-    await vi.waitFor(() => expect(manager.state().status).toBe('a-jour'))
+    await vi.waitFor(() => expect(manager.state().status).toBe('up-to-date'))
     expect(engine.autoDownload).toBe(true)
     expect(engine.autoInstallOnAppQuit).toBe(true)
-    expect(states.map((e) => e.status)).toEqual(['verification', 'a-jour'])
+    expect(states.map((e) => e.status)).toEqual(['checking', 'up-to-date'])
     expect(manager.state().checkedAt).toBeGreaterThan(0)
     manager.stop()
   })
@@ -68,12 +68,12 @@ describe('GestionnaireMiseAJour', () => {
     const { manager, states } = create(engine)
     expect(() => manager.install()).toThrow(/Aucune mise à jour/)
     manager.start()
-    await vi.waitFor(() => expect(manager.state().status).toBe('prete'))
+    await vi.waitFor(() => expect(manager.state().status).toBe('ready'))
     expect(states.map((e) => `${e.status}:${e.percent ?? ''}`)).toEqual([
-      'verification:',
-      'telechargement:0',
-      'telechargement:42',
-      'prete:100',
+      'checking:',
+      'downloading:0',
+      'downloading:42',
+      'ready:100',
     ])
     expect(manager.state().newVersion).toBe('0.3.0')
 
@@ -81,7 +81,7 @@ describe('GestionnaireMiseAJour', () => {
     await manager.check()
     expect(engine.checks).toBe(1)
     engine.emit('error', new Error('réseau'))
-    expect(manager.state().status).toBe('prete')
+    expect(manager.state().status).toBe('ready')
 
     manager.install()
     expect(engine.installations).toBe(1)
@@ -96,11 +96,11 @@ describe('GestionnaireMiseAJour', () => {
     })
     const { manager } = create(engine)
     manager.start()
-    await vi.waitFor(() => expect(manager.state().status).toBe('erreur'))
+    await vi.waitFor(() => expect(manager.state().status).toBe('error'))
     expect(manager.state().message).toContain('ERR_INTERNET_DISCONNECTED')
 
     online = true
-    expect((await manager.check()).status).toBe('a-jour')
+    expect((await manager.check()).status).toBe('up-to-date')
     expect(manager.state().message).toBeUndefined()
     manager.stop()
   })

@@ -122,7 +122,7 @@ describe('GestionnaireModeles', () => {
 
     await manager.download('qwen3.5-4b')
     expect(installedModels).toHaveLength(1)
-    expect(events.at(-1)?.status).toBe('termine')
+    expect(events.at(-1)?.status).toBe('done')
     expect((await manager.state()).models.find((m) => m.id === 'qwen3.5-4b')?.installed).toBe(true)
 
     await manager.remove('qwen3.5-4b')

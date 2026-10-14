@@ -112,7 +112,7 @@ export async function tailorCv(
   // if it is already known (retry, other profile), it is reused.
   let analysis = options.analysis
   if (!analysis) {
-    report({ key: 'analyse', label: 'Analyse de l’offre' })
+    report({ key: 'analysis', label: 'Analyse de l’offre' })
     analysis = await analyzeJobPosting(engine, jobPosting)
     options.onAnalysis?.(analysis)
   }
@@ -149,7 +149,7 @@ export async function tailorCv(
     let bullets: string[]
     if (options.rewrite) {
       report({
-        key: 'reformulation',
+        key: 'rewriting',
         label: 'Reformulation des expériences',
         current: experiences.length + 1,
         total: experienceIndices.length,
@@ -207,7 +207,7 @@ export async function tailorCv(
       profile.experiences[i] ? bulletsCloseToJob(profile.experiences[i], nearbyTerms, 3) : [],
     ),
   }
-  report({ key: 'accroche', label: 'Rédaction de l’accroche' })
+  report({ key: 'summary', label: 'Rédaction de l’accroche' })
   const written = await writeSummary(engine, summaryInput, analysis)
 
   // Guard in code (the prompt alone is not enough, especially against a booby-trapped job posting): a headline or a

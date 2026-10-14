@@ -37,6 +37,22 @@ describe('settings file versioning', () => {
   })
 })
 
+describe('CV template ids', () => {
+  it('converts the French template ids of older settings', () => {
+    for (const [before, after] of [
+      ['classique', 'classic'],
+      ['moderne', 'modern'],
+      ['bandeau', 'banner'],
+      ['lateral', 'sidebar'],
+      ['elegant', 'elegant'],
+      ['pastel', 'pastel'],
+    ]) {
+      expect(migrateSettings({ version: 2, cvTemplate: before }).cvTemplate).toBe(after)
+      expect(migrateSettings({ modeleCv: before }).cvTemplate).toBe(after)
+    }
+  })
+})
+
 describe('migrateSettings', () => {
   it('applies the missing steps in order', () => {
     const steps: SettingsMigration[] = [

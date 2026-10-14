@@ -13,16 +13,16 @@ const EXTENSIONS = new Set(['.pdf', '.docx'])
 export async function readCv(path: string): Promise<string> {
   const extension = extname(path).toLowerCase()
   if (!EXTENSIONS.has(extension)) {
-    throw new CodedError('fichier-illisible', 'Ce fichier n’est ni un PDF ni un document Word (.docx).')
+    throw new CodedError('unreadable-file', 'Ce fichier n’est ni un PDF ni un document Word (.docx).')
   }
   let size: number
   try {
     size = (await stat(path)).size
   } catch (error) {
-    throw new CodedError('fichier-illisible', 'Fichier introuvable ou inaccessible.', { cause: error })
+    throw new CodedError('unreadable-file', 'Fichier introuvable ou inaccessible.', { cause: error })
   }
   if (size > MAX_CV_BYTES) {
-    throw new CodedError('fichier-illisible', 'Ce fichier dépasse 20 Mo : ce n’est probablement pas un CV.')
+    throw new CodedError('unreadable-file', 'Ce fichier dépasse 20 Mo : ce n’est probablement pas un CV.')
   }
 
   let text: string
@@ -31,10 +31,10 @@ export async function readCv(path: string): Promise<string> {
     text = extension === '.docx' ? await extractDocxText(buffer) : await extractPdfText(buffer)
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
-    throw new CodedError('fichier-illisible', `Lecture du fichier impossible : ${detail}`, { cause: error })
+    throw new CodedError('unreadable-file', `Lecture du fichier impossible : ${detail}`, { cause: error })
   }
   if (!text.trim()) {
-    throw new CodedError('fichier-illisible', 'Aucun texte trouvé dans ce fichier (PDF scanné ?).')
+    throw new CodedError('unreadable-file', 'Aucun texte trouvé dans ce fichier (PDF scanné ?).')
   }
   return text
 }

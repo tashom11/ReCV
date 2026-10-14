@@ -1,18 +1,18 @@
-import type { Vue } from './parcours'
+import type { View } from './flow'
 
-const TITLES: Record<Vue, string> = {
-  accueil: '',
-  preparation: 'Préparation',
+const TITLES: Record<View, string> = {
+  welcome: '',
+  setup: 'Préparation',
   cv: 'Étape 1 sur 3 : mon CV',
-  annonce: 'Étape 2 sur 3 : l’annonce',
-  creation: 'Création de votre CV',
-  resultat: 'Étape 3 sur 3 : mon nouveau CV',
-  succes: 'CV téléchargé',
-  reglages: 'Réglages',
+  posting: 'Étape 2 sur 3 : l’annonce',
+  generating: 'Création de votre CV',
+  result: 'Étape 3 sur 3 : mon nouveau CV',
+  success: 'CV téléchargé',
+  settings: 'Réglages',
 }
 
 /** Window title of a screen: the first thing a screen reader says when the screen changes (WCAG 2.4.2). */
-export function windowTitle(view: Vue): string {
+export function windowTitle(view: View): string {
   return TITLES[view] ? `${TITLES[view]} — Re:CV` : 'Re:CV'
 }
 

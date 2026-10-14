@@ -76,8 +76,8 @@ describe('service', () => {
       }),
       pickAndReadCv: async () => ({ text: 'texte du cv', name: 'mon-cv.pdf' }),
       updater: {
-        state: () => ({ version: '0.0.0', status: 'indisponible' as const }),
-        check: async () => ({ version: '0.0.0', status: 'indisponible' as const }),
+        state: () => ({ version: '0.0.0', status: 'unavailable' as const }),
+        check: async () => ({ version: '0.0.0', status: 'unavailable' as const }),
         install: () => undefined,
       },
       readCv: async (path) => `texte de ${path}`,
@@ -144,7 +144,7 @@ describe('service', () => {
       },
     }))
     const jobPosting = { jobTitle: 'Développeur React', rawText: 'Poste en CDI à temps plein. React, Figma.' }
-    await expect(api.previewJobPosting(jobPosting)).rejects.toMatchObject({ code: 'profil-absent' })
+    await expect(api.previewJobPosting(jobPosting)).rejects.toMatchObject({ code: 'profile-missing' })
 
     await api.importCv()
     const preview = await api.previewJobPosting(jobPosting)
@@ -180,7 +180,7 @@ describe('service', () => {
     const tailoring = api.tailorCv({ jobTitle: 'Dev', rawText: 'x' })
     await inProgress
     await api.cancelTailoring()
-    await expect(tailoring).rejects.toMatchObject({ code: 'annule' })
+    await expect(tailoring).rejects.toMatchObject({ code: 'cancelled' })
     // Cancelling with no tailoring in progress does nothing.
     await expect(api.cancelTailoring()).resolves.toBeUndefined()
   })
@@ -212,8 +212,8 @@ describe('service', () => {
       }),
       pickAndReadCv: async () => ({ text: 'cv', name: 'mon-cv.pdf' }),
       updater: {
-        state: () => ({ version: '0.0.0', status: 'indisponible' as const }),
-        check: async () => ({ version: '0.0.0', status: 'indisponible' as const }),
+        state: () => ({ version: '0.0.0', status: 'unavailable' as const }),
+        check: async () => ({ version: '0.0.0', status: 'unavailable' as const }),
         install: () => undefined,
       },
       readCv: async () => 'cv',
@@ -227,7 +227,7 @@ describe('service', () => {
     })
     await api.importCv()
     const cannedCv = await new MockProvider().tailorCv(cannedProfile, { jobTitle: 'Dev', rawText: 'x' })
-    await expect(api.exportCv(cannedCv, 'pdf')).rejects.toMatchObject({ code: 'ecriture-impossible' })
+    await expect(api.exportCv(cannedCv, 'pdf')).rejects.toMatchObject({ code: 'write-failed' })
   })
 
   it('passes the settings and the key to the provider factory', async () => {
@@ -242,14 +242,14 @@ describe('lireCv', () => {
   it('refuses what is neither a PDF nor a DOCX, without reading the file', async () => {
     const path = join(folder, 'secret.txt')
     await writeFile(path, 'contenu privé')
-    await expect(readCv(path)).rejects.toMatchObject({ code: 'fichier-illisible' })
-    await expect(readCv('C:\\Windows\\System32\\cmd.exe')).rejects.toMatchObject({ code: 'fichier-illisible' })
+    await expect(readCv(path)).rejects.toMatchObject({ code: 'unreadable-file' })
+    await expect(readCv('C:\\Windows\\System32\\cmd.exe')).rejects.toMatchObject({ code: 'unreadable-file' })
   })
 
   it('reports a missing or unreadable file with the same code', async () => {
-    await expect(readCv(join(folder, 'absent.pdf'))).rejects.toMatchObject({ code: 'fichier-illisible' })
+    await expect(readCv(join(folder, 'absent.pdf'))).rejects.toMatchObject({ code: 'unreadable-file' })
     const fake = join(folder, 'faux.docx')
     await writeFile(fake, 'ceci n’est pas un document Word')
-    await expect(readCv(fake)).rejects.toMatchObject({ code: 'fichier-illisible' })
+    await expect(readCv(fake)).rejects.toMatchObject({ code: 'unreadable-file' })
   })
 })

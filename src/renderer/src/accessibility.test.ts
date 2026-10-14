@@ -4,16 +4,16 @@ import { downloadAnnouncement, windowTitle } from './accessibility'
 describe('windowTitle', () => {
   it('names the step and its position in the three-step flow', () => {
     expect(windowTitle('cv')).toBe('Étape 1 sur 3 : mon CV — Re:CV')
-    expect(windowTitle('annonce')).toBe('Étape 2 sur 3 : l’annonce — Re:CV')
-    expect(windowTitle('resultat')).toBe('Étape 3 sur 3 : mon nouveau CV — Re:CV')
+    expect(windowTitle('posting')).toBe('Étape 2 sur 3 : l’annonce — Re:CV')
+    expect(windowTitle('result')).toBe('Étape 3 sur 3 : mon nouveau CV — Re:CV')
   })
 
   it('names the screens outside the flow', () => {
-    expect(windowTitle('accueil')).toBe('Re:CV')
-    expect(windowTitle('preparation')).toBe('Préparation — Re:CV')
-    expect(windowTitle('creation')).toBe('Création de votre CV — Re:CV')
-    expect(windowTitle('succes')).toBe('CV téléchargé — Re:CV')
-    expect(windowTitle('reglages')).toBe('Réglages — Re:CV')
+    expect(windowTitle('welcome')).toBe('Re:CV')
+    expect(windowTitle('setup')).toBe('Préparation — Re:CV')
+    expect(windowTitle('generating')).toBe('Création de votre CV — Re:CV')
+    expect(windowTitle('success')).toBe('CV téléchargé — Re:CV')
+    expect(windowTitle('settings')).toBe('Réglages — Re:CV')
   })
 })
 

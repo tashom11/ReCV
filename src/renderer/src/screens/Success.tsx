@@ -1,26 +1,26 @@
 import { useState } from 'react'
-import { messageErreur } from '../erreurs'
-import { lieuEnregistrement } from '../parcours'
-import { Alerte, Bouton, Icone } from '../ui'
+import { messageErreur } from '../errors'
+import { savedLocation } from '../flow'
+import { Alert, Button, Icon } from '../ui'
 
-/** Fin du parcours : le CV est téléchargé, on peut l'ouvrir ou repartir pour une autre annonce. */
-export function EcranSucces({
-  chemin,
-  titrePoste,
-  onAutreOffre,
+/** End of the flow: the CV is downloaded, it can be opened or the user can start again for another job posting. */
+export function SuccessScreen({
+  path,
+  jobTitle,
+  onAnotherPosting,
 }: {
-  /** Fichier écrit par le téléchargement. */
-  chemin: string
-  titrePoste: string
-  onAutreOffre: () => void
+  /** File written by the download. */
+  path: string
+  jobTitle: string
+  onAnotherPosting: () => void
 }) {
-  const [erreur, setErreur] = useState<string | null>(null)
-  const { fichier, lieu } = lieuEnregistrement(chemin)
-  const extension = fichier.toLowerCase().endsWith('.docx') ? 'Word' : 'PDF'
+  const [error, setError] = useState<string | null>(null)
+  const { file, place } = savedLocation(path)
+  const extension = file.toLowerCase().endsWith('.docx') ? 'Word' : 'PDF'
 
-  const ouvrir = (action: (chemin: string) => Promise<void>) => {
-    setErreur(null)
-    action(chemin).catch((e) => setErreur(messageErreur(e)))
+  const open = (action: (path: string) => Promise<void>) => {
+    setError(null)
+    action(path).catch((e) => setError(messageErreur(e)))
   }
 
   return (
@@ -29,12 +29,12 @@ export function EcranSucces({
         className="coche-succes mx-auto flex size-[120px] items-center justify-center rounded-full bg-accent text-encre ring-[14px] ring-accent-pale"
         aria-hidden="true"
       >
-        <Icone nom="coche" taille={56} epaisseur={3} />
+        <Icon name="check" size={56} strokeWidth={3} />
       </span>
       <header className="space-y-3">
         <h1 className="font-titre text-[2.75rem] leading-tight font-bold">Votre CV est prêt à envoyer</h1>
         <p className="mx-auto max-w-xl text-intro text-encre-douce">
-          Il est adapté à l’annonce « {titrePoste} ». Bonne chance pour votre candidature !
+          Il est adapté à l’annonce « {jobTitle} ». Bonne chance pour votre candidature !
         </p>
       </header>
 
@@ -44,22 +44,20 @@ export function EcranSucces({
             {extension}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-intro font-bold">{fichier}</p>
-            <p className="text-corps text-encre-douce">{lieu}</p>
+            <p className="truncate text-intro font-bold">{file}</p>
+            <p className="text-corps text-encre-douce">{place}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Bouton icone="dossier" onClick={() => ouvrir(window.api.revealInFolder)}>
+          <Button icon="folder" onClick={() => open(window.api.revealInFolder)}>
             Ouvrir le dossier
-          </Bouton>
-          <Bouton variante="secondaire" onClick={() => ouvrir(window.api.openFile)}>
+          </Button>
+          <Button variant="secondary" onClick={() => open(window.api.openFile)}>
             Ouvrir le CV
-          </Bouton>
+          </Button>
         </div>
-        {erreur && (
-          <Alerte type="avertissement">
-            Le fichier ne s’ouvre pas tout seul. Vous le trouverez à cet endroit : {chemin}
-          </Alerte>
+        {error && (
+          <Alert type="warning">Le fichier ne s’ouvre pas tout seul. Vous le trouverez à cet endroit : {path}</Alert>
         )}
       </section>
 
@@ -67,9 +65,9 @@ export function EcranSucces({
 
       <section className="space-y-4">
         <h2 className="font-titre text-titre-section font-bold">Une autre annonce vous intéresse ?</h2>
-        <Bouton variante="contour" taille="grand" icone="recommencer" onClick={onAutreOffre}>
+        <Button variant="outline" size="large" icon="restart" onClick={onAnotherPosting}>
           Adapter pour une autre offre
-        </Bouton>
+        </Button>
         <p className="text-corps text-encre-douce">
           Votre CV de départ est gardé : vous n’aurez qu’à indiquer la nouvelle annonce.
         </p>

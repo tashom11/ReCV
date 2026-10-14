@@ -43,6 +43,11 @@ Reste dans ces étapes :
   dossier de données renommé au démarrage (`parametres.json` → `settings.json`, `cle-api.bin` → `api-key.bin`,
   `modeles/` → `models/`, chemin du modèle sélectionné mis à jour). Mise à jour depuis la v0.2.1 vérifiée dans
   l'application.
+- Étape 7, partie renommage : fait. Identifiants, fichiers (`ecrans/` → `screens/`, `ui/Bouton` → `ui/Button`…),
+  commentaires et noms de tests de l'interface en anglais. Valeurs textuelles (5.5) en anglais partout : codes
+  d'erreur, états, étapes, icônes, variantes, vues, identifiants des modèles de CV (migration 3 des réglages).
+  Exceptions voulues : balises des prompts (`<offre>`, `<titre>`…), classes CSS du CV exporté, données de test
+  françaises. Reste de l'étape 7 : découpage des composants et accessibilité (7.1 à 7.6).
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 

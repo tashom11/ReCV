@@ -35,7 +35,7 @@ export class Updater {
   private engine: UpdateEngine | null = null
 
   constructor(private readonly deps: UpdaterDeps) {
-    this.current = { version: deps.version, status: deps.installed ? 'inactif' : 'indisponible' }
+    this.current = { version: deps.version, status: deps.installed ? 'idle' : 'unavailable' }
   }
 
   state(): UpdateState {
@@ -56,17 +56,17 @@ export class Updater {
     engine.autoInstallOnAppQuit = true
     engine.on('checking-for-update', () => {
       // A version already ready stays ready: the next check must not remove it from the screen.
-      if (this.current.status !== 'prete') this.setState({ status: 'verification', message: undefined })
+      if (this.current.status !== 'ready') this.setState({ status: 'checking', message: undefined })
     })
-    engine.on('update-not-available', () => this.setState({ status: 'a-jour', checkedAt: Date.now() }))
+    engine.on('update-not-available', () => this.setState({ status: 'up-to-date', checkedAt: Date.now() }))
     engine.on('update-available', (info: { version: string }) =>
-      this.setState({ status: 'telechargement', newVersion: info.version, percent: 0 }),
+      this.setState({ status: 'downloading', newVersion: info.version, percent: 0 }),
     )
     engine.on('download-progress', (progress: { percent: number }) =>
-      this.setState({ status: 'telechargement', percent: Math.round(progress.percent) }),
+      this.setState({ status: 'downloading', percent: Math.round(progress.percent) }),
     )
     engine.on('update-downloaded', (info: { version: string }) =>
-      this.setState({ status: 'prete', newVersion: info.version, percent: 100, checkedAt: Date.now() }),
+      this.setState({ status: 'ready', newVersion: info.version, percent: 100, checkedAt: Date.now() }),
     )
     engine.on('error', (error: Error) => this.failure(error))
 
@@ -77,14 +77,14 @@ export class Updater {
   }
 
   private failure(error: unknown): void {
-    if (this.current.status === 'prete') return
-    this.setState({ status: 'erreur', message: error instanceof Error ? error.message : String(error) })
+    if (this.current.status === 'ready') return
+    this.setState({ status: 'error', message: error instanceof Error ? error.message : String(error) })
   }
 
   /** Checks now. No effect during a check or a download, or if a version is ready. */
   async check(): Promise<UpdateState> {
     const { status: state } = this.current
-    if (!this.engine || state === 'verification' || state === 'telechargement' || state === 'prete') return this.current
+    if (!this.engine || state === 'checking' || state === 'downloading' || state === 'ready') return this.current
     try {
       await this.engine.checkForUpdatesAndNotify()
     } catch (error) {
@@ -95,7 +95,7 @@ export class Updater {
 
   /** Quits the application and installs the downloaded version. */
   install(): void {
-    if (this.current.status !== 'prete' || !this.engine) {
+    if (this.current.status !== 'ready' || !this.engine) {
       throw new Error('Aucune mise à jour n’est prête à être installée.')
     }
     this.engine.quitAndInstall()

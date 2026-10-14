@@ -6,9 +6,9 @@ import { splitSoftAndHardSkills } from '../tailoring/skills'
 // standard section titles (read by ATS).
 
 export type Block =
-  | { type: 'paragraphe'; text: string }
-  | { type: 'liste'; elements: string[] }
-  | { type: 'entree'; heading: string; subtitle?: string; dateRange?: string; bullets: string[] }
+  | { type: 'paragraph'; text: string }
+  | { type: 'list'; elements: string[] }
+  | { type: 'entry'; heading: string; subtitle?: string; dateRange?: string; bullets: string[] }
 
 export interface Section {
   title: string
@@ -41,7 +41,7 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
   const sections: Section[] = []
 
   if (isNotEmpty(cv.summary)) {
-    sections.push({ title: SECTION_TITLES.profile, blocks: [{ type: 'paragraphe', text: cv.summary.trim() }] })
+    sections.push({ title: SECTION_TITLES.profile, blocks: [{ type: 'paragraph', text: cv.summary.trim() }] })
   }
 
   // Skills on three labelled lines, readable by a human as well as by an ATS: key skills (those of the job posting),
@@ -56,7 +56,7 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
   if (lines.length > 0) {
     sections.push({
       title: SECTION_TITLES.skills,
-      blocks: lines.map((l) => ({ type: 'paragraphe' as const, text: `${l.tag} : ${l.elements.join(', ')}` })),
+      blocks: lines.map((l) => ({ type: 'paragraph' as const, text: `${l.tag} : ${l.elements.join(', ')}` })),
     })
   }
 
@@ -67,7 +67,7 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
     sections.push({
       title: SECTION_TITLES.experience,
       blocks: experiences.map((e) => ({
-        type: 'entree' as const,
+        type: 'entry' as const,
         heading: e.position,
         subtitle: joinNonEmpty(e.company, e.location),
         dateRange: e.dateRange,
@@ -80,7 +80,7 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
     sections.push({
       title: SECTION_TITLES.education,
       blocks: cv.education.map((f) => ({
-        type: 'entree' as const,
+        type: 'entry' as const,
         heading: f.degree,
         subtitle: joinNonEmpty(f.school, f.location),
         dateRange: f.dateRange,
@@ -94,7 +94,7 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
       title: SECTION_TITLES.languages,
       blocks: [
         {
-          type: 'paragraphe',
+          type: 'paragraph',
           text: cv.languages.map((l) => (isNotEmpty(l.level) ? `${l.name} (${l.level})` : l.name)).join(', '),
         },
       ],

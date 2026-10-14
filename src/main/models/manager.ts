@@ -62,7 +62,7 @@ export class ModelManager {
     if (this.current) throw new Error('Un téléchargement est déjà en cours.')
     const model = this.find(id)
     const cancel = new AbortController()
-    const state = { id, cancel, latest: this.progress(id, 0, model.sizeBytes, 'en-cours') }
+    const state = { id, cancel, latest: this.progress(id, 0, model.sizeBytes, 'downloading') }
     this.current = state
 
     const emit = (p: ModelDownloadProgress) => {
@@ -84,17 +84,17 @@ export class ModelManager {
           if (now - lastSent < PROGRESS_INTERVAL_MS && received < total) return
           lastSent = now
           // At 100 %, the file is still being hashed then renamed.
-          emit(this.progress(id, received, total, received >= total ? 'verification' : 'en-cours'))
+          emit(this.progress(id, received, total, received >= total ? 'verifying' : 'downloading'))
         },
       })
       await this.deps.afterInstall?.(this.modelPath(model), model)
-      emit(this.progress(id, model.sizeBytes, model.sizeBytes, 'termine'))
+      emit(this.progress(id, model.sizeBytes, model.sizeBytes, 'done'))
     } catch (error) {
       if (cancel.signal.aborted) {
-        emit({ ...state.latest, status: 'annule' })
+        emit({ ...state.latest, status: 'cancelled' })
       } else {
         const message = error instanceof Error ? error.message : String(error)
-        emit({ ...state.latest, status: 'erreur', message })
+        emit({ ...state.latest, status: 'error', message })
         throw error
       }
     } finally {
