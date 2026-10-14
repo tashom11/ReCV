@@ -1,4 +1,5 @@
 import { formatSkill } from '@core/tailoring/skills'
+import { texts } from '../../i18n'
 import { Checkbox, Collapsible } from '../../ui'
 
 /**
@@ -22,10 +23,10 @@ export function HighlightedSkillsSection({
 }) {
   if (present.length === 0 && missing.length === 0) return null
   return (
-    <Collapsible title="Compétences mises en avant" open>
+    <Collapsible title={texts.newCv.highlighted.title} open>
       {present.length > 0 && (
         <fieldset>
-          <legend className="text-libelle font-bold text-marque">Déjà dans votre CV · placées en premier</legend>
+          <legend className="text-libelle font-bold text-marque">{texts.newCv.highlighted.present}</legend>
           {present.map((term) => (
             <Checkbox key={term} label={term} check={isPresentKept(term)} onChange={(v) => onTogglePresent(term, v)} />
           ))}
@@ -34,11 +35,9 @@ export function HighlightedSkillsSection({
       {missing.length > 0 && (
         <fieldset className="rounded-bouton bg-alerte-fond p-4">
           <legend className="float-left w-full text-libelle font-bold text-alerte">
-            Demandées par l’annonce, absentes de votre CV
+            {texts.newCv.highlighted.missing}
           </legend>
-          <p className="clear-both pt-1.5 pb-1 text-petit text-alerte">
-            Cochez seulement ce que vous savez vraiment faire : on pourra vous interroger dessus en entretien.
-          </p>
+          <p className="clear-both pt-1.5 pb-1 text-petit text-alerte">{texts.newCv.highlighted.missingWarning}</p>
           {missing.map((term, i) => (
             <Checkbox
               key={term}

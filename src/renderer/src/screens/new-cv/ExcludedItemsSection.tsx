@@ -1,5 +1,6 @@
 import type { Excluded } from '@core/schemas'
 import type { CompositionChoices } from '@core/tailoring/composition'
+import { texts } from '../../i18n'
 import { Checkbox, Collapsible } from '../../ui'
 import { replaceAt } from './useTailoredCvDraft'
 
@@ -16,15 +17,9 @@ export function ExcludedItemsSection({
   const count = excluded.experiences.length + excluded.skills.length + excluded.education.length
   if (count === 0) return null
   return (
-    <Collapsible
-      title="Retiré de ce CV"
-      count={count}
-      summaryLine="Sans rapport avec l’annonce · vous pouvez le remettre"
-    >
+    <Collapsible title={texts.newCv.excluded.title} count={count} summaryLine={texts.newCv.excluded.summary}>
       <fieldset>
-        <legend className="text-petit text-aide">
-          Cochez ce que vous voulez remettre. Une expérience revient avec ses phrases de départ.
-        </legend>
+        <legend className="text-petit text-aide">{texts.newCv.excluded.legend}</legend>
         {excluded.experiences.map((e, i) => (
           <Checkbox
             key={`${e.sourceIndex ?? i}-${e.position}-${e.company}`}

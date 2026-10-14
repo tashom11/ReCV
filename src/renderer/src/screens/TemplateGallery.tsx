@@ -1,5 +1,6 @@
 import { CV_TEMPLATES, type TemplateId } from '@core/export/templates'
 import { useRef, useState } from 'react'
+import { texts } from '../i18n'
 import { Spinner, TemplateThumbnail } from '../ui'
 import type { Previews } from './template-gallery/usePreviews'
 import { useScaleToWidth } from './template-gallery/useScaleToWidth'
@@ -58,7 +59,7 @@ export function TemplateStrip({
   return (
     <div>
       <p id="template-label" className="pb-2.5 text-corps font-bold text-encre">
-        Mise en page
+        {texts.newCv.gallery.layout}
       </p>
       <div
         role="radiogroup"
@@ -82,7 +83,7 @@ export function TemplateStrip({
               onChoose={() => onChange(m.id)}
             >
               {html ? (
-                <ScaledPage html={html} title={`Aperçu de la mise en page ${m.name}`} />
+                <ScaledPage html={html} title={texts.newCv.gallery.thumbnail(m.name)} />
               ) : (
                 <span className="flex aspect-[794/1123] items-center justify-center rounded-[4px] border border-trait bg-white text-trait-fort">
                   {previews[m.id]?.error ? <span className="text-petit text-aide">—</span> : <Spinner size={18} />}
@@ -118,12 +119,12 @@ export function LargePreview({
   const height = pages * PAGE_HEIGHT
 
   return (
-    <section aria-label="Aperçu de votre CV" className="rounded-panneau bg-creux p-6 lg:p-8">
+    <section aria-label={texts.newCv.gallery.previewLabel} className="rounded-panneau bg-creux p-6 lg:p-8">
       <div ref={container} className="mx-auto w-full max-w-[660px]">
         {html ? (
           <div className="overflow-hidden bg-white shadow-panneau" style={{ height: height * scale }}>
             <iframe
-              title={`Votre CV, mise en page ${templateName}`}
+              title={texts.newCv.gallery.previewFrame(templateName)}
               srcDoc={html}
               sandbox="allow-same-origin"
               className="origin-top-left border-0"
@@ -140,15 +141,13 @@ export function LargePreview({
         ) : (
           <div className="flex aspect-[794/1123] flex-col items-center justify-center gap-3 bg-white text-encre-douce shadow-panneau">
             {error ? (
-              <p className="max-w-xs px-6 text-center">
-                L’aperçu n’a pas pu s’afficher. Vous pouvez quand même télécharger votre CV.
-              </p>
+              <p className="max-w-xs px-6 text-center">{texts.newCv.gallery.previewFailed}</p>
             ) : (
               <>
                 <span className="text-marque">
                   <Spinner size={28} />
                 </span>
-                <p role="status">Nous mettons votre CV en page…</p>
+                <p role="status">{texts.newCv.gallery.layingOut}</p>
               </>
             )}
           </div>
