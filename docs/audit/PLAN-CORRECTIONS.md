@@ -29,6 +29,14 @@ Reste dans ces étapes :
 - 4.2 migrations versionnées : fait. Base : `PRAGMA user_version` + `src/main/bdd/migrations.ts` (migration 1 = schéma
   v0.2.1 ; base d'une version plus récente refusée sans être touchée). Réglages : champ `version` +
   `src/main/settingsMigrations.ts`. Vérifié sur un dossier de données v0.2.1 dans l'application.
+- 1.4 purge : fait (profil actif + 20 dernières créations, après chaque import et chaque création).
+- Étape 5 (renommage du core) : identifiants, fichiers et dossiers faits (commits `9f2dbb3`, `0ac5b5e`) ; données
+  v0.2.1 converties (migration 2 de la base, migration 2 des réglages), vérifié dans l'application.
+  Reste pour clore l'étape 5 :
+  - 5.5 valeurs textuelles : codes d'erreur (`annule`, `fichier-illisible`…), identifiants des modèles de CV
+    (`classique`… : migration des réglages), états (`en-cours`, `indisponible`…), étapes (`analyse`…), types de bloc,
+    canaux IPC. À faire avec l'interface (étape 7) : elle compare certains codes sans contrôle de type.
+  - Commentaires et noms de tests du core encore en français.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 
