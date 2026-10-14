@@ -11,6 +11,8 @@ directories:
 files:
   - out/**
   - package.json
+  # The installer targets x64 only: the ARM binaries of the local engine are never loaded.
+  - "!node_modules/@node-llama-cpp/win-arm64/**"
 
 # Modules natifs / binaires : doivent rester hors de l'archive asar pour être chargés.
 asarUnpack:
