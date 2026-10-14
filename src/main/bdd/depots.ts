@@ -26,6 +26,22 @@ export function effacerDonnees(bdd: Bdd): void {
   bdd.run(sql`PRAGMA wal_checkpoint(TRUNCATE)`)
 }
 
+/**
+ * Data minimisation: keeps the active profile and the `keepCreations` most recent tailored CVs (with their job
+ * postings and the profiles they were made from). Everything older is deleted (and overwritten: secure_delete).
+ */
+export function purgeOldData(bdd: Bdd, { keepCreations }: { keepCreations: number }): void {
+  bdd.transaction((tx) => {
+    tx.run(
+      sql`DELETE FROM cv_generes WHERE id NOT IN (SELECT id FROM cv_generes ORDER BY id DESC LIMIT ${keepCreations})`,
+    )
+    tx.run(sql`DELETE FROM offres WHERE id NOT IN (SELECT offre_id FROM cv_generes)`)
+    tx.run(
+      sql`DELETE FROM profils WHERE id <> (SELECT MAX(id) FROM profils) AND id NOT IN (SELECT profil_id FROM cv_generes)`,
+    )
+  })
+}
+
 /** Met à jour le profil actif s'il existe, sinon le crée. */
 export function enregistrerProfil(bdd: Bdd, profil: Profil): { id: number; profil: Profil } {
   const actif = obtenirProfilActif(bdd)
