@@ -185,15 +185,11 @@ describe('tailorCv: step reporting', () => {
       rewriting: { bullets: [] },
       summary: { summary: '' },
     })
-    const steps: { label: string; current?: number; total?: number }[] = []
+    const steps: { key?: string; current?: number; total?: number }[] = []
     await tailorCv(m, profile, { jobTitle: 'Dev', rawText: 'Offre' }, { rewrite: true, onStep: (e) => steps.push(e) })
-    expect(steps.map((e) => e.label)).toEqual([
-      'Analyse de l’offre',
-      'Choix des éléments du profil à mettre en avant',
-      'Reformulation des expériences',
-      'Reformulation des expériences',
-      'Rédaction de l’accroche',
-    ])
+    expect(steps.map((e) => e.key)).toEqual(['analysis', 'selection', 'rewriting', 'rewriting', 'summary'])
+    // The interface words each step itself: no text travels with the progress.
+    expect(steps.every((e) => !('label' in e))).toBe(true)
     expect(steps.filter((e) => e.current !== undefined).map((e) => `${e.current}/${e.total}`)).toEqual(['1/2', '2/2'])
   })
 })

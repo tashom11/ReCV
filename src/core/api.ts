@@ -144,8 +144,6 @@ export interface TaskProgress {
   task: 'import' | 'job-posting' | 'tailoring' | 'summary'
   /** Stable tailoring step (the interface turns it into plain words). */
   key?: StepKey
-  /** Readable label, e.g. « Réécriture des expériences ». */
-  label: string
   current?: number
   total?: number
   /** Where the local model runs: on the processor, computing is much slower. */

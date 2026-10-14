@@ -133,7 +133,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
   }
 
   const importCvText = async (text: string, fileName: string): Promise<SavedProfile> => {
-    report({ task: 'import', label: 'Analyse du CV par le modèle' })
+    report({ task: 'import' })
     const extracted = await (await provider()).extractProfile(text)
     // The photo is chosen by the user, not extracted from the CV: it follows the active profile.
     const photo = getActiveProfile(db)?.profile.photo
@@ -178,7 +178,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     fetchJobPosting: (url: string) => fetchJobPosting(url, { renderHtml: renderHtml, userAgent: deps.userAgent }),
 
     async parseJobPostingText(text: string): Promise<JobPosting> {
-      report({ task: 'job-posting', label: 'Analyse de l’offre par le modèle' })
+      report({ task: 'job-posting' })
       return (await provider()).extractJobPosting(text)
     },
 
@@ -187,7 +187,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
       const key = jobPostingKey(jobPosting)
       let analysis = analyses.get(key)
       if (!analysis) {
-        report({ task: 'job-posting', label: 'Repérage de ce que l’employeur recherche' })
+        report({ task: 'job-posting' })
         analysis = await (await provider()).analyzeJobPosting(jobPosting)
         remember(key, analysis)
       }
@@ -212,7 +212,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
       const cancellation = new AbortController()
       runningTailoring = cancellation
       try {
-        report({ task: 'tailoring', key: 'setup', label: 'Préparation du modèle' })
+        report({ task: 'tailoring', key: 'setup' })
         const [params, llm] = await Promise.all([settings.read(), provider()])
         const key = jobPostingKey(jobPosting)
         const cv = await llm.tailorCv(active.profile, jobPosting, {
@@ -240,7 +240,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     },
 
     async generateSummary(profile: Profile) {
-      report({ task: 'summary', label: 'Repérage des compétences transversales' })
+      report({ task: 'summary' })
       return (await provider()).generateSummary(profile)
     },
 
