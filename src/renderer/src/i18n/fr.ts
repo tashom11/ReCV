@@ -247,4 +247,71 @@ export const fr = {
     restart: 'Redémarrer maintenant',
     check: 'Rechercher une mise à jour',
   },
+
+  jobPosting: {
+    title: 'Quelle annonce vous intéresse ?',
+    subtitle: 'Donnez-nous l’adresse de l’annonce. Si le site ne se laisse pas lire, collez simplement son texte.',
+    backToCv: 'Revenir à mon CV',
+    loading: {
+      openingPage: 'Nous ouvrons la page de l’annonce…',
+      reading: 'Nous lisons l’annonce…',
+      analysing: 'Nous repérons le poste et ce que l’employeur recherche',
+      note: 'Cela prend généralement moins d’une minute.',
+    },
+    input: {
+      modesLabel: 'Façon de donner l’annonce',
+      link: 'Coller un lien',
+      text: 'Coller le texte',
+      urlLabel: 'Adresse de l’annonce',
+      urlPlaceholder: 'Collez ici l’adresse (elle commence par https://)',
+      urlHint: 'Astuce : dans votre navigateur, cliquez sur la barre d’adresse puis faites Ctrl + C pour copier.',
+      textLabel: 'Texte de l’annonce',
+      textPlaceholder: 'Collez ici tout le texte de l’annonce',
+      textHint:
+        'Astuce : sur la page de l’annonce, sélectionnez le texte avec la souris, faites Ctrl + C, puis Ctrl + V ici.',
+      read: 'Lire l’annonce',
+    },
+    confirm: {
+      kicker: 'Annonce lue',
+      title: 'C’est bien cette annonce ?',
+      wrongPosting: 'Ce n’est pas la bonne annonce',
+      create: 'Créer mon CV adapté',
+    },
+    card: {
+      sought: 'Ce que l’employeur recherche',
+      goodToKnow: 'Bon à savoir :',
+      fullText: 'Voir le texte complet de l’annonce',
+      jobTitleLabel: 'Intitulé du poste',
+      textLabel: 'Texte de l’annonce',
+      reread: 'Relire l’annonce corrigée',
+      keep: 'Ne rien changer',
+      correct: 'Corriger le texte',
+    },
+    /** What the job posting wishes for and the CV does not show: said without discouraging. */
+    goodToKnow: {
+      experienceNotFound: (required: string) => `l’annonce souhaite « ${required} ». Cela n’apparaît pas dans votre CV`,
+      educationInsufficient: (required: string) => `l’annonce demande « ${required} »`,
+      profileEducation: (value: string) => ` (votre CV indique « ${value} »)`,
+      separator: ' ; ',
+      conclusion: (sentences: string) => `${sentences}, mais cela ne vous empêche pas de postuler.`,
+    },
+  },
+
+  generating: {
+    title: (jobTitle: string) => `Nous préparons votre CV pour « ${jobTitle} »`,
+    duration: (duration: string) => `${duration}. Vous pouvez réduire la fenêtre en attendant.`,
+    stepAnnouncement: (step: string) => `${step} : en cours`,
+    stepStates: { done: 'Fait', current: 'En cours', upcoming: 'À venir' },
+    progressLabel: 'Avancement de la création',
+    longTitle: 'C’est plus long que prévu, mais ça avance',
+    keepWaiting: 'Continuer d’attendre',
+    cancel: 'Annuler',
+    slowCpu: 'Votre ordinateur calcule sans aide de la carte graphique. ',
+    slow: 'Votre ordinateur calcule encore. ',
+    fasterNextTime: 'Pour aller plus vite la prochaine fois, choisissez « Rapide » dans les Réglages.',
+    privacyOnline:
+      'Votre CV et l’annonce sont envoyés au service en ligne choisi dans les Réglages, le temps de la création.',
+    privacyLocal:
+      'Votre ordinateur fait tout le travail lui-même : c’est parfois un peu long, mais rien ne sort de chez vous.',
+  },
 }

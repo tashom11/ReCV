@@ -1,6 +1,7 @@
 import type { JobPostingPreview } from '@core/api'
 import type { JobPosting } from '@core/schemas'
 import { type ReactNode, useState } from 'react'
+import { texts } from '../../i18n'
 import { Button, Icon, Pill, TextField } from '../../ui'
 import { goodToKnow } from './goodToKnow'
 
@@ -47,7 +48,7 @@ export function JobPostingCard({
 
         {preview.soughtSkills.length > 0 && (
           <section className="space-y-3">
-            <h3 className="text-corps font-bold text-encre">Ce que l’employeur recherche</h3>
+            <h3 className="text-corps font-bold text-encre">{texts.jobPosting.card.sought}</h3>
             <ul className="flex flex-wrap gap-2.5">
               {preview.soughtSkills.map((term) => (
                 <li key={term}>
@@ -62,7 +63,7 @@ export function JobPostingCard({
           <p className="flex items-start gap-3 rounded-carte bg-info-fond px-5 py-4 text-info">
             <Icon name="info" className="mt-0.5" />
             <span>
-              <strong>Bon à savoir :</strong> {note}
+              <strong>{texts.jobPosting.card.goodToKnow}</strong> {note}
             </span>
           </p>
         )}
@@ -71,19 +72,19 @@ export function JobPostingCard({
       <details className="group border-t border-trait">
         <summary className="flex min-h-16 items-center gap-3 rounded-b-panneau px-8 font-bold text-marque">
           <Icon name="eye" />
-          <span className="flex-1">Voir le texte complet de l’annonce</span>
+          <span className="flex-1">{texts.jobPosting.card.fullText}</span>
           <Icon name="chevron-down" className="transition-transform duration-(--duree) group-open:rotate-180" />
         </summary>
         <div className="space-y-4 px-8 pb-8">
           {correction ? (
             <>
               <TextField
-                label="Intitulé du poste"
+                label={texts.jobPosting.card.jobTitleLabel}
                 value={correction.jobTitle}
                 onChange={(v) => setCorrection({ ...correction, jobTitle: v })}
               />
               <TextField
-                label="Texte de l’annonce"
+                label={texts.jobPosting.card.textLabel}
                 multiline
                 rows={12}
                 value={correction.rawText}
@@ -95,10 +96,10 @@ export function JobPostingCard({
                   busy={busy}
                   disabled={!correction.jobTitle.trim() || !correction.rawText.trim()}
                 >
-                  Relire l’annonce corrigée
+                  {texts.jobPosting.card.reread}
                 </Button>
                 <Button variant="secondary" onClick={() => setCorrection(null)} disabled={busy}>
-                  Ne rien changer
+                  {texts.jobPosting.card.keep}
                 </Button>
               </div>
               {loading}
@@ -109,7 +110,7 @@ export function JobPostingCard({
                 {jobPosting.rawText}
               </p>
               <Button variant="secondary" icon="pencil" onClick={() => setCorrection(jobPosting)}>
-                Corriger le texte
+                {texts.jobPosting.card.correct}
               </Button>
             </>
           )}
