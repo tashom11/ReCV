@@ -37,7 +37,11 @@ export function SegmentedTabs<T extends string>({
     End: () => select(tabs.length - 1),
   }
   return (
-    <div role="tablist" aria-label={label} className="inline-flex gap-1 rounded-carte bg-creux p-1">
+    <div
+      role="tablist"
+      aria-label={label}
+      className="inline-flex max-w-full flex-wrap gap-1 rounded-carte bg-creux p-1"
+    >
       {tabs.map((tab) => {
         const active = tab.id === value
         return (

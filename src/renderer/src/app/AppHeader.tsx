@@ -26,7 +26,7 @@ export function AppHeader({
   const header = headerForView(view)
   return (
     <header className="sticky top-0 z-20 border-b border-trait bg-surface">
-      <div className="mx-auto flex min-h-[72px] max-w-7xl items-center gap-8 px-6">
+      <div className="mx-auto flex min-h-[72px] max-w-7xl flex-wrap items-center gap-x-8 gap-y-2 px-6 py-2">
         <span className="flex shrink-0 items-center gap-3 font-titre text-2xl font-bold text-encre">
           <img src={logo} alt="" width={40} height={40} className="rounded-champ" />
           Re:CV
