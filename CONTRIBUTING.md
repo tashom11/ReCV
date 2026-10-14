@@ -39,6 +39,19 @@ To try the whole pipeline on text files without Electron, see `npm run try` in t
 
 ## Conventions
 
+### No personal data, ever
+
+Never commit real personal data: no real résumé (yours or anyone's), phone number, e-mail, address, employer, school
+or personal website, not even in tests or fixtures. Use fictitious data (`claire@exemple.fr`, `06 12 34 56 78`,
+invented names and companies). `npm run check:personal-data` runs in the CI; enable it before every commit with:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+To protect your own strings (employer, town…), list them in an untracked `.private-patterns` file at the root, one
+per line.
+
 ### Languages
 
 - **Code is in English**: identifiers, file names, comments, test names, commit messages.

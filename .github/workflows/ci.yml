@@ -29,6 +29,10 @@ jobs:
           cache: npm
 
       - run: npm ci
+      # No personal data in the repository; the maintainers' own strings come from a secret, never from the code.
+      - run: npm run check:personal-data
+        env:
+          RECV_PRIVATE_PATTERNS: ${{ secrets.RECV_PRIVATE_PATTERNS }}
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test

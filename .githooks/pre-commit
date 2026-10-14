@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks a commit that would add personal data (real phone numbers, e-mails, the maintainers' private patterns).
+# Enable once per clone: git config core.hooksPath .githooks
+exec node scripts/check-personal-data.mjs --staged

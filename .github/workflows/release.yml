@@ -37,6 +37,9 @@ jobs:
         shell: bash
 
       - run: npm ci
+      - run: npm run check:personal-data
+        env:
+          RECV_PRIVATE_PATTERNS: ${{ secrets.RECV_PRIVATE_PATTERNS }}
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test

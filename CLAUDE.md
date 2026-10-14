@@ -30,6 +30,10 @@ App bureau Windows open source (gratuite) : import d'un CV (PDF/DOCX) → profil
 - Textes affichés à l'utilisateur en FRANÇAIS (vouvoiement), hors du code de logique : tous dans
   `src/renderer/src/i18n/fr.ts`, lus via `texts.…` (jamais de texte en dur dans un composant). Les libellés du CV
   produit sont dans `CV_LABELS` (`src/core/export/cvDocument.ts`).
+- ⚠️ JAMAIS de données personnelles réelles dans le dépôt (CV de l'auteur ou de quiconque, téléphone, e-mail,
+  adresse, employeurs, écoles, site perso), y compris dans les tests, fixtures, docs et messages de commit. Données
+  de test fictives uniquement (`exemple.fr`, `06 12 34 56 78`, noms inventés). Contrôle : `npm run check:personal-data`
+  (hook pre-commit `.githooks`, CI) ; liste privée de l'auteur dans `.private-patterns` (ignoré par Git).
 - Le LLM ne doit JAMAIS inventer : il reformule/priorise uniquement ce qui existe dans le profil.
 - Toute sortie LLM passe par un schéma Zod validé.
 - En test, utiliser `MockProvider` / `MockEngine` (jamais d'appel LLM réel dans Vitest).
