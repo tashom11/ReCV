@@ -1,5 +1,6 @@
 import type { Settings } from '@core/api'
 import type { StepKey } from '@core/steps'
+import { texts } from './i18n'
 
 // Rules of the three-step flow, without React nor access to the application: testable on their own.
 
@@ -68,12 +69,7 @@ export function headerForView(view: View): { steps: boolean; settings: boolean }
 }
 
 /** Generation steps, in the user's words. */
-export const GENERATION_STEPS = [
-  'Je lis l’annonce',
-  'Je choisis ce qui vous met en valeur',
-  'J’écris votre phrase de présentation',
-  'Je mets votre CV en page',
-] as const
+export const GENERATION_STEPS = texts.generationSteps
 
 const STEP_RANK: Record<StepKey, number> = { setup: 0, analysis: 0, selection: 1, rewriting: 1, summary: 2 }
 
@@ -87,22 +83,14 @@ export function currentGenerationStep(key: StepKey | undefined, postingRead: boo
   return postingRead ? Math.max(1, rank) : rank
 }
 
-const KNOWN_FOLDERS: Record<string, string> = {
-  desktop: 'sur votre Bureau',
-  bureau: 'sur votre Bureau',
-  documents: 'dans vos Documents',
-  downloads: 'dans vos Téléchargements',
-  téléchargements: 'dans vos Téléchargements',
-}
-
 /** File name and save folder, said simply (« Enregistré sur votre Bureau »). */
 export function savedLocation(path: string): { file: string; place: string } {
   const parts = path.split(/[\\/]/).filter(Boolean)
   const file = parts.pop() ?? path
-  const dossier = parts.pop()
-  if (!dossier) return { file, place: 'Enregistré sur votre ordinateur' }
-  const known = KNOWN_FOLDERS[dossier.toLowerCase()]
-  return { file, place: known ? `Enregistré ${known}` : `Enregistré dans le dossier « ${dossier} »` }
+  const folder = parts.pop()
+  if (!folder) return { file, place: texts.savedLocation.computer }
+  const known = texts.savedLocation.knownFolders[folder.toLowerCase()]
+  return { file, place: known ? texts.savedLocation.known(known) : texts.savedLocation.folder(folder) }
 }
 
 /** Initials shown in the summary badge (« Camille Martin » → « CM »). */

@@ -1,4 +1,5 @@
 // Durations said simply: an honest estimate rather than a stopwatch to the second.
+import { texts } from './i18n'
 
 /** Assumed duration of a creation as long as none has been measured on this computer. */
 export const DEFAULT_ESTIMATE_S = 120
@@ -20,26 +21,25 @@ export function saveDuration(storage: KeyValueStorage, seconds: number): void {
 }
 
 const minutes = (seconds: number) => Math.max(1, Math.round(seconds / 60))
-const inMinutes = (n: number) => `${n} minute${n > 1 ? 's' : ''}`
 
 /** « Environ 2 minutes »: duration announced before starting. */
 export function announcedDuration(estimateS: number): string {
-  return estimateS < 45 ? 'Moins d’une minute' : `Environ ${inMinutes(minutes(estimateS))}`
+  return estimateS < 45 ? texts.duration.lessThanAMinute : texts.duration.about(minutes(estimateS))
 }
 
 /** « Encore environ 1 minute »: what remains, never showing zero nor a countdown. */
 export function remainingGeneration(elapsedS: number, estimateS: number): string {
   const rest = estimateS - elapsedS
-  if (rest <= 0) return 'Presque terminé'
-  if (rest < 45) return 'Encore moins d’une minute'
-  return `Encore environ ${inMinutes(minutes(rest))}`
+  if (rest <= 0) return texts.duration.almostDone
+  if (rest < 45) return texts.duration.lessThanAMinuteLeft
+  return texts.duration.aboutLeft(minutes(rest))
 }
 
 /** « Depuis 1 min 05 s ». */
 export function elapsedLabel(seconds: number): string {
   const m = Math.floor(seconds / 60)
   const s = seconds % 60
-  return m === 0 ? `Depuis ${s} s` : `Depuis ${m} min ${String(s).padStart(2, '0')} s`
+  return m === 0 ? texts.duration.elapsedSeconds(s) : texts.duration.elapsed(m, String(s).padStart(2, '0'))
 }
 
 /** Filled part of the bar (0 to 1): it moves with time but never claims to be finished before the end. */
@@ -70,7 +70,6 @@ export function remainingDownload(
 ): string | null {
   if (!bytesPerSecond || totalBytes <= receivedBytes) return null
   const seconds = (totalBytes - receivedBytes) / bytesPerSecond
-  if (seconds < 45) return 'moins d’une minute restante'
-  const n = minutes(seconds)
-  return `environ ${n} minute${n > 1 ? 's restantes' : ' restante'}`
+  if (seconds < 45) return texts.download.lessThanAMinuteLeft
+  return texts.download.minutesLeft(minutes(seconds))
 }

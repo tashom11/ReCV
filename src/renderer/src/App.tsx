@@ -7,6 +7,7 @@ import { useNavigation } from './app/useNavigation'
 import { describeError, type ErrorDescription, isCancellation } from './errors'
 import { readEstimate, saveDuration } from './estimate'
 import { afterStart, doneSteps, initialView, titleWithoutGender, viewForStep } from './flow'
+import { texts } from './i18n'
 import { GeneratingScreen } from './screens/Generating'
 import { JobPostingScreen, type ReadJobPosting } from './screens/JobPosting'
 import { MyCvScreen } from './screens/MyCv'
@@ -138,14 +139,14 @@ export default function App() {
           <div className="mx-auto w-full max-w-4xl px-6 pt-8">
             <Alert
               type="warning"
-              title="Re:CV n’est pas encore tout à fait prêt"
+              title={texts.emptyStates.notReady.title}
               actions={
                 <Button size="small" onClick={goToSetup}>
-                  Terminer la préparation
+                  {texts.emptyStates.notReady.action}
                 </Button>
               }
             >
-              Il manque un téléchargement unique. Ensuite, plus besoin d’internet.
+              {texts.emptyStates.notReady.text}
             </Alert>
           </div>
         )}
@@ -187,9 +188,9 @@ export default function App() {
           ) : (
             <div className="mx-auto w-full max-w-3xl px-6 py-12">
               <EmptyState
-                title="Commençons par votre CV"
-                text="Pour lire une annonce et y adapter votre CV, il nous faut d’abord votre CV actuel."
-                action={<Button onClick={() => goTo('cv')}>Importer mon CV</Button>}
+                title={texts.emptyStates.noCv.title}
+                text={texts.emptyStates.noCv.text}
+                action={<Button onClick={() => goTo('cv')}>{texts.emptyStates.noCv.action}</Button>}
               />
             </div>
           ))}
@@ -220,11 +221,11 @@ export default function App() {
         {view === 'result' && !result && (
           <div className="mx-auto w-full max-w-3xl px-6 py-12">
             <EmptyState
-              title="Votre nouveau CV apparaîtra ici"
-              text="Pour le créer, il nous faut votre CV actuel et l’annonce qui vous intéresse."
+              title={texts.emptyStates.noTailoredCv.title}
+              text={texts.emptyStates.noTailoredCv.text}
               action={
                 <Button onClick={() => goTo(profile ? 'posting' : 'cv')}>
-                  {profile ? 'Indiquer une annonce' : 'Commencer par mon CV'}
+                  {profile ? texts.emptyStates.noTailoredCv.toPosting : texts.emptyStates.noTailoredCv.toCv}
                 </Button>
               }
             />

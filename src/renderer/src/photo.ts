@@ -1,4 +1,7 @@
 const MAX_SIDE = 360
+
+import { texts } from './i18n'
+
 const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 /**
@@ -6,9 +9,8 @@ const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
  * enough for a CV, and the database stays light.
  */
 export async function shrinkPhoto(file: File): Promise<string> {
-  if (!ACCEPTED_TYPES.includes(file.type))
-    throw new Error('Format non pris en charge : choisissez une image JPEG, PNG ou WebP.')
-  if (file.size > 15 * 1024 * 1024) throw new Error('Cette image est trop volumineuse (15 Mo maximum).')
+  if (!ACCEPTED_TYPES.includes(file.type)) throw new Error(texts.photo.unsupportedFormat)
+  if (file.size > 15 * 1024 * 1024) throw new Error(texts.photo.tooLarge)
 
   const bitmap = await createImageBitmap(file)
   try {
@@ -18,7 +20,7 @@ export async function shrinkPhoto(file: File): Promise<string> {
     canvas.width = size
     canvas.height = size
     const context = canvas.getContext('2d')
-    if (!context) throw new Error('Impossible de traiter cette image.')
+    if (!context) throw new Error(texts.photo.unprocessable)
     context.imageSmoothingQuality = 'high'
     // White background: a transparent PNG must not turn black in JPEG.
     context.fillStyle = '#ffffff'

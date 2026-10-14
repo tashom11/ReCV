@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { texts } from '../i18n'
 import { Button } from './Button'
 import { Icon } from './icons'
 
@@ -41,13 +42,13 @@ export function DropZone({
         <Icon name="drop" size={36} strokeWidth={2.2} />
       </span>
       <p className="pt-2 font-titre text-[1.75rem] leading-tight font-bold text-encre">
-        {hovering ? 'Lâchez le fichier ici' : 'Glissez votre CV ici'}
+        {hovering ? texts.dropZone.drop : texts.dropZone.drag}
       </p>
-      <p className="text-corps text-encre-douce">ou</p>
+      <p className="text-corps text-encre-douce">{texts.dropZone.or}</p>
       <Button size="large" icon="folder" onClick={onChoose} busy={busyWith}>
-        Choisir mon CV sur l’ordinateur
+        {texts.dropZone.choose}
       </Button>
-      <p className="pt-1 text-corps text-encre-douce">Fichier PDF ou Word (.docx)</p>
+      <p className="pt-1 text-corps text-encre-douce">{texts.dropZone.formats}</p>
     </div>
   )
 }
