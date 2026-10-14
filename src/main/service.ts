@@ -33,6 +33,7 @@ import {
   enregistrerOffre,
   enregistrerProfil,
   obtenirProfilActif,
+  purgeOldData,
 } from './bdd/depots'
 import type { GestionnaireMiseAJour } from './miseAJour'
 import type { GestionnaireModeles } from './modeles/gestionnaire'
@@ -66,6 +67,8 @@ export interface DependancesService {
 }
 
 const MAX_RECHERCHEES = 8
+// Data minimisation: older tailored CVs (and their job postings) are deleted.
+const CREATIONS_CONSERVEES = 20
 
 async function fournisseurParDefaut(parametres: Parametres, cleApi: string | null): Promise<FournisseurLLM> {
   switch (parametres.fournisseur) {
@@ -134,7 +137,9 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
     const extrait = await (await fournisseur()).extraireProfil(texte)
     // La photo est choisie par l'utilisateur, pas extraite du CV : elle suit le profil actif.
     const photo = obtenirProfilActif(bdd)?.profil.photo
-    return { ...creerProfil(bdd, photo ? { ...extrait, photo } : extrait), nomFichier }
+    const cree = creerProfil(bdd, photo ? { ...extrait, photo } : extrait)
+    purgeOldData(bdd, { keepCreations: CREATIONS_CONSERVEES })
+    return { ...cree, nomFichier }
   }
 
   // L'analyse d'une offre ne dépend pas du profil : mémorisée, elle sert à la carte de confirmation de l'annonce
@@ -215,7 +220,9 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
         })
         annulation.signal.throwIfAborted()
         const offreId = enregistrerOffre(bdd, offre)
-        return { id: enregistrerCv(bdd, actif.id, offreId, cv), offreId, cv }
+        const id = enregistrerCv(bdd, actif.id, offreId, cv)
+        purgeOldData(bdd, { keepCreations: CREATIONS_CONSERVEES })
+        return { id, offreId, cv }
       } catch (erreur) {
         if (annulation.signal.aborted) throw new ErreurCodee('annule', 'Création annulée.', { cause: erreur })
         throw erreur

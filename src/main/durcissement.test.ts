@@ -9,6 +9,7 @@ import type { IpcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './bdd/connexion'
 import { creerProfil, effacerDonnees } from './bdd/depots'
+import { cvGeneres, profils } from './bdd/schema'
 import { enregistrerHandlers } from './ipc'
 import { GestionnaireModeles } from './modeles/gestionnaire'
 import { type Chiffreur, StockageParametres } from './parametres'
@@ -153,12 +154,26 @@ describe('service : cycle de vie du fournisseur et données', () => {
     expect(liberes()).toBe(2)
   })
 
-  it('importer un CV crée un nouveau profil sans écraser le précédent', async () => {
-    const { service } = creer()
+  it('importing a CV creates a new active profile and deletes the unused previous one', async () => {
+    const { service, bdd } = creer()
     const premier = await service.importerCv()
     const second = await service.importerCv()
     expect(second?.id).not.toBe(premier?.id)
     expect((await service.obtenirProfil())?.id).toBe(second?.id)
+    expect(
+      bdd
+        .select()
+        .from(profils)
+        .all()
+        .map((p) => p.id),
+    ).toEqual([second?.id])
+  })
+
+  it('keeps no more than 20 tailored CVs', async () => {
+    const { service, bdd } = creer()
+    await service.importerCv()
+    for (let i = 0; i < 22; i++) await service.adapterCv({ titrePoste: `Poste ${i}`, texteBrut: 'x' })
+    expect(bdd.select().from(cvGeneres).all()).toHaveLength(20)
   })
 
   it('efface profils, offres, CV et clé API', async () => {
