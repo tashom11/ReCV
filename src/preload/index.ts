@@ -36,18 +36,18 @@ const api: RecvApi = {
   getUpdateState: () => invoke(CHANNELS.getUpdateState),
   checkForUpdate: () => invoke(CHANNELS.checkForUpdate),
   installUpdate: () => invoke(CHANNELS.installUpdate),
-  onUpdate: (rappel) => {
-    const listener = (_e: IpcRendererEvent, state: UpdateState) => rappel(state)
+  onUpdate: (callback) => {
+    const listener = (_e: IpcRendererEvent, state: UpdateState) => callback(state)
     ipcRenderer.on(CHANNELS.updateStatus, listener)
     return () => ipcRenderer.removeListener(CHANNELS.updateStatus, listener)
   },
-  onTaskProgress: (rappel) => {
-    const listener = (_e: IpcRendererEvent, progress: TaskProgress) => rappel(progress)
+  onTaskProgress: (callback) => {
+    const listener = (_e: IpcRendererEvent, progress: TaskProgress) => callback(progress)
     ipcRenderer.on(CHANNELS.taskProgress, listener)
     return () => ipcRenderer.removeListener(CHANNELS.taskProgress, listener)
   },
-  onModelProgress: (rappel) => {
-    const listener = (_e: IpcRendererEvent, progress: ModelDownloadProgress) => rappel(progress)
+  onModelProgress: (callback) => {
+    const listener = (_e: IpcRendererEvent, progress: ModelDownloadProgress) => callback(progress)
     ipcRenderer.on(CHANNELS.modelProgress, listener)
     return () => ipcRenderer.removeListener(CHANNELS.modelProgress, listener)
   },

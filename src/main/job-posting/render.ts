@@ -27,11 +27,11 @@ export async function renderHtml(url: string, delayMs = 20_000): Promise<string>
 
   // Untrusted remote content: no permission, no download, http(s) only.
   const session = appWindow.webContents.session
-  session.setPermissionRequestHandler((_contents, _permission, rappel) => rappel(false))
+  session.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
   session.setPermissionCheckHandler(() => false)
   session.on('will-download', (event) => event.preventDefault())
-  session.webRequest.onBeforeRequest((request, rappel) => {
-    rappel({ cancel: !/^(https?|wss?|data|blob):/i.test(request.url) })
+  session.webRequest.onBeforeRequest((request, callback) => {
+    callback({ cancel: !/^(https?|wss?|data|blob):/i.test(request.url) })
   })
   appWindow.webContents.on('will-navigate', (event, url) => {
     if (!/^https?:/i.test(url)) event.preventDefault()

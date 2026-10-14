@@ -80,7 +80,7 @@ function createWindow(): void {
 app.whenReady().then(async () => {
   app.setAppUserModelId('org.recv.app')
   // Electron grants permissions (camera, microphone, geolocation…) by default: the app needs none of them.
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, rappel) => rappel(false))
+  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false))
   session.defaultSession.setPermissionCheckHandler(() => false)
   protocol.handle(APP_SCHEME, (request) => {
     const file = resolveAppFile(request.url, RENDERER_DIR)
