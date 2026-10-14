@@ -1,6 +1,7 @@
 import type { Profile } from '@core/schemas'
 import { useRef, useState } from 'react'
 import { describeError, type ErrorAction, type ErrorDescription, errorMessage } from '../errors'
+import { texts } from '../i18n'
 import { useTaskProgress } from '../progress'
 import { ActionBar, Button, Collapsible, ErrorAlert, Loading, TextField } from '../ui'
 import { ContactSection } from './my-cv/ContactSection'
@@ -75,8 +76,7 @@ export function MyCvScreen({
       setError({
         type: 'error',
         icon: 'restart',
-        title: 'Vos corrections n’ont pas pu être enregistrées',
-        text: 'Rien n’est perdu : elles sont toujours affichées. Réessayez dans un instant.',
+        ...texts.myCv.saveFailed,
         actions: [],
         details: errorMessage(e),
       })
@@ -92,12 +92,12 @@ export function MyCvScreen({
     try {
       const summary = await window.api.generateSummary(cleanProfile(draft))
       update({ summary })
-      setSummaryFeedback({ type: 'success', text: 'Voici une proposition : relisez-la et ajustez-la si besoin.' })
+      setSummaryFeedback({ type: 'success', text: texts.myCv.contact.suggested })
     } catch (e) {
       const description = describeError('generating', e)
       setSummaryFeedback({
         type: 'error',
-        text: description.code === 'engine-missing' ? description.title : 'La proposition n’a pas abouti. Réessayez.',
+        text: description.code === 'engine-missing' ? description.title : texts.myCv.contact.suggestFailed,
       })
     } finally {
       setBusyWith(null)
@@ -130,18 +130,16 @@ export function MyCvScreen({
 
         {busyWith === 'import' && (
           <Loading
-            title="Nous lisons votre nouveau CV…"
-            step={importProgress ? 'Nous repérons vos expériences, vos compétences et vos formations' : undefined}
-            note="Votre CV actuel reste affiché tant que la lecture n’est pas terminée."
+            title={texts.myCv.import.readingNew}
+            step={importProgress ? texts.myCv.import.readingStep : undefined}
+            note={texts.myCv.import.readingNewNote}
           />
         )}
         {error && <ErrorAlert description={error} onAction={onErrorAction} />}
 
         <header className="space-y-1 pt-2">
-          <h2 className="font-titre text-titre-section font-bold">Vérifiez ce que nous avons compris</h2>
-          <p className="text-corps text-encre-douce">
-            Ouvrez une partie pour la corriger. Si tout vous semble juste, vous pouvez continuer directement.
-          </p>
+          <h2 className="font-titre text-titre-section font-bold">{texts.myCv.check.title}</h2>
+          <p className="text-corps text-encre-douce">{texts.myCv.check.text}</p>
         </header>
 
         <div className="space-y-3">
@@ -156,17 +154,17 @@ export function MyCvScreen({
           />
           <ExperienceList experiences={draft.experiences} onChange={(experiences) => update({ experiences })} />
           <Collapsible
-            title="Compétences et qualités"
+            title={texts.myCv.skills.title}
             count={skillCount(draft.skills)}
             summaryLine={skillsSummary(draft.skills)}
           >
             <TextField
-              label="Vos compétences et qualités (une par ligne)"
+              label={texts.myCv.skills.label}
               multiline
               rows={8}
               value={draft.skills.join('\n')}
               onChange={(v) => update({ skills: toLines(v) })}
-              hint="Quelques mots suffisent : « Organisation », « Travail en équipe », « Gestion des stocks »."
+              hint={texts.myCv.skills.hint}
             />
           </Collapsible>
           <EducationList education={draft.education} onChange={(education) => update({ education })} />
@@ -181,10 +179,10 @@ export function MyCvScreen({
         left={
           saveStatus === 'error' ? (
             <span role="alert" className="font-bold text-erreur">
-              Vos dernières corrections ne sont pas encore enregistrées. Elles le seront quand vous continuerez.
+              {texts.myCv.autosaveFailed}
             </span>
           ) : (
-            'Vos corrections sont enregistrées automatiquement.'
+            texts.myCv.autosaved
           )
         }
       >
@@ -195,7 +193,7 @@ export function MyCvScreen({
           busy={busyWith === 'saving'}
           disabled={busyWith !== null}
         >
-          Ça me va, continuer
+          {texts.myCv.next}
         </Button>
       </ActionBar>
     </>

@@ -1,5 +1,6 @@
 import type { Profile } from '@core/schemas'
 import { countOf, initials } from '../../flow'
+import { texts } from '../../i18n'
 import { Button, Icon, Pill } from '../../ui'
 import { skillCount } from './profileDraft'
 
@@ -16,19 +17,20 @@ export function ProfileSummaryCard({
   importing: boolean
   onImport: () => void
 }) {
+  const words = texts.myCv.summaryCard
   const name = (draft.fullName ?? '').trim()
   const subtitle = [draft.headline, draft.location].filter((v) => v && v.trim() !== '').join(' · ')
   const counts = [
-    countOf(draft.experiences.length, 'expérience', 'expériences'),
-    countOf(draft.education.length, 'formation', 'formations'),
-    countOf(skillCount(draft.skills), 'compétence ou qualité', 'compétences et qualités'),
-    countOf(draft.languages.length, 'langue', 'langues'),
+    countOf(draft.experiences.length, ...words.counts.experiences),
+    countOf(draft.education.length, ...words.counts.education),
+    countOf(skillCount(draft.skills), ...words.counts.skills),
+    countOf(draft.languages.length, ...words.counts.languages),
   ]
   return (
     <section className="sur-sombre space-y-5 rounded-panneau bg-encre p-7 text-white shadow-panneau">
       <p className="flex items-center gap-2 font-bold text-accent">
         <Icon name="check-circle" />
-        Votre CV est lu
+        {words.read}
       </p>
       <div className="flex items-center gap-5">
         {draft.photo ? (
@@ -42,7 +44,7 @@ export function ProfileSummaryCard({
           </span>
         )}
         <div className="min-w-0">
-          <h1 className="break-words font-titre text-[1.75rem] leading-tight font-bold">{name || 'Votre CV'}</h1>
+          <h1 className="break-words font-titre text-[1.75rem] leading-tight font-bold">{name || words.untitled}</h1>
           {subtitle && <p className="break-words text-intro text-white/85">{subtitle}</p>}
         </div>
       </div>
@@ -58,10 +60,10 @@ export function ProfileSummaryCard({
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/20 pt-5">
         <p className="flex min-w-0 items-center gap-2.5 text-white/90">
           <Icon name="file" size={18} />
-          <span className="break-all">{fileName ?? 'Votre CV enregistré'}</span>
+          <span className="break-all">{fileName ?? words.savedCv}</span>
         </p>
         <Button variant="on-dark" onClick={onImport} busy={importing}>
-          Utiliser un autre CV
+          {words.otherCv}
         </Button>
       </div>
     </section>

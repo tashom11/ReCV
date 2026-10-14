@@ -1,4 +1,5 @@
 import type { ErrorAction, ErrorDescription } from '../../errors'
+import { texts } from '../../i18n'
 import { DropZone, ErrorAlert, Icon, Loading, PageTitle } from '../../ui'
 
 /** Step ① before any CV: drop zone (or file picker), import progress and the privacy promise. */
@@ -23,24 +24,20 @@ export function CvImportStep({
 }) {
   return (
     <div className="mx-auto w-full max-w-4xl space-y-8 px-6 py-12">
-      <PageTitle subtitle="Nous allons le lire pour comprendre votre parcours. Vous pourrez tout vérifier juste après.">
-        Commençons par votre CV
-      </PageTitle>
+      <PageTitle subtitle={texts.myCv.import.subtitle}>{texts.myCv.import.title}</PageTitle>
       {error && <ErrorAlert description={error} onAction={onErrorAction} />}
       {importing ? (
         <Loading
-          title="Nous lisons votre CV…"
-          step={showProgressStep ? 'Nous repérons vos expériences, vos compétences et vos formations' : undefined}
-          note="Cela prend une à deux minutes. Vous pouvez réduire la fenêtre en attendant."
+          title={texts.myCv.import.reading}
+          step={showProgressStep ? texts.myCv.import.readingStep : undefined}
+          note={texts.myCv.import.readingNote}
         />
       ) : (
         <DropZone onFile={onFile} onChoose={onChoose} />
       )}
       <p className="flex items-center gap-3 text-intro text-encre">
         <Icon name="lock" className="text-marque" />
-        {online
-          ? 'Votre CV sera lu par le service en ligne choisi dans les Réglages : il quitte votre ordinateur.'
-          : 'Votre CV reste sur cet ordinateur : il n’est envoyé nulle part.'}
+        {online ? texts.myCv.import.privacyOnline : texts.myCv.import.privacyLocal}
       </p>
     </div>
   )
