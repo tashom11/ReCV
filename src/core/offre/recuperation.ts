@@ -1,7 +1,14 @@
 import type { Offre } from '../schemas/offre'
 import { extraireOffreDepuisHtml } from './extraction'
 
-export type CodeErreurOffre = 'url-invalide' | 'reseau' | 'http' | 'contenu-non-html' | 'contenu-vide' | 'site-protege'
+export type CodeErreurOffre =
+  | 'url-invalide'
+  | 'reseau-local'
+  | 'reseau'
+  | 'http'
+  | 'contenu-non-html'
+  | 'contenu-vide'
+  | 'site-protege'
 
 // Sites qui servent un défi anti-robot ou exigent une connexion : inutile d'insister, on guide l'utilisateur.
 const SITES_PROTEGES: { motif: RegExp; nom: string }[] = [
@@ -42,14 +49,49 @@ export interface OptionsRecuperation {
 
 const MESSAGE_COLLER = 'Impossible de récupérer cette offre automatiquement. Collez le texte de l’annonce à la place.'
 
+/**
+ * Host of this computer or of the local network (router, printer, cloud metadata service…). A job posting is never
+ * there, and the fallback window would run that page's JavaScript with access to the network.
+ * Literal check only: a public name resolving to a private address is not detected.
+ */
+export function estHoteReseauLocal(hostname: string): boolean {
+  const hote = hostname.toLowerCase().replace(/\.$/, '')
+  if (hote === 'localhost' || hote.endsWith('.localhost') || hote.endsWith('.local')) return true
+  if (hote.startsWith('[')) {
+    const ipv6 = hote.slice(1, -1)
+    return ipv6 === '::' || ipv6 === '::1' || /^(f[cd]|fe[89ab])/.test(ipv6) || ipv6.startsWith('::ffff:')
+  }
+  const octets = hote.split('.').map(Number)
+  if (octets.length !== 4 || octets.some((o) => !Number.isInteger(o))) return false
+  const [a = -1, b = -1] = octets
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 100 && b >= 64 && b <= 127)
+  )
+}
+
 function validerUrl(brute: string): URL {
+  let url: URL | null = null
   try {
-    const url = new URL(brute.trim())
-    if (url.protocol === 'http:' || url.protocol === 'https:') return url
+    url = new URL(brute.trim())
   } catch {
     // tombe sur l'erreur ci-dessous
   }
-  throw new ErreurRecuperationOffre('url-invalide', 'Adresse invalide : une URL http(s) est attendue.')
+  if (!url || (url.protocol !== 'http:' && url.protocol !== 'https:')) {
+    throw new ErreurRecuperationOffre('url-invalide', 'Adresse invalide : une URL http(s) est attendue.')
+  }
+  if (estHoteReseauLocal(url.hostname)) {
+    throw new ErreurRecuperationOffre(
+      'reseau-local',
+      'Cette adresse désigne un appareil de votre ordinateur ou de votre réseau, pas une annonce en ligne.',
+    )
+  }
+  return url
 }
 
 async function telechargerHtml(

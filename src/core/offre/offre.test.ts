@@ -42,6 +42,34 @@ describe('recupererOffre', () => {
     await expect(recupererOffre('file:///etc/passwd')).rejects.toMatchObject({ code: 'url-invalide' })
   })
 
+  it('refuses addresses of the local network, without any request', async () => {
+    const fetchImpl = vi.fn(async () => reponseHtml(HTML_OFFRE)) as unknown as typeof fetch
+    const rendreHtml = vi.fn(async () => HTML_OFFRE)
+    const locales = [
+      'http://localhost:8080/admin',
+      'http://127.0.0.1/',
+      'http://[::1]/',
+      'http://192.168.1.1/',
+      'http://10.0.0.5/',
+      'http://172.16.4.2/',
+      'http://169.254.169.254/latest/meta-data',
+      'http://imprimante.local/',
+      'http://[fd12::1]/',
+      'http://0.0.0.0/',
+    ]
+    for (const url of locales) {
+      await expect(recupererOffre(url, { fetchImpl, rendreHtml }), url).rejects.toMatchObject({ code: 'reseau-local' })
+    }
+    expect(fetchImpl).not.toHaveBeenCalled()
+    expect(rendreHtml).not.toHaveBeenCalled()
+  })
+
+  it('accepts public addresses that merely look like private ones', async () => {
+    const fetchImpl = vi.fn(async () => reponseHtml(HTML_OFFRE)) as unknown as typeof fetch
+    await expect(recupererOffre('https://172.32.0.1/offre', { fetchImpl })).resolves.toBeDefined()
+    await expect(recupererOffre('https://localhost.example.com/offre', { fetchImpl })).resolves.toBeDefined()
+  })
+
   it('retourne l’offre extraite via fetch', async () => {
     const fetchImpl = vi.fn(async () => reponseHtml(HTML_OFFRE)) as unknown as typeof fetch
     const offre = await recupererOffre('https://exemple.test/offre', { fetchImpl })
