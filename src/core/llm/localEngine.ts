@@ -7,9 +7,9 @@ type GrammarSchema = Parameters<Llama['createGrammarForJsonSchema']>[0]
 
 type Json = Record<string, unknown>
 
-// Convertit un schéma Zod en JSON Schema accepté par la grammaire de node-llama-cpp :
-// retire `$schema` et `default`, et rend nullables les propriétés optionnelles, car la grammaire
-// impose toutes les clés (sans `null` possible, le modèle serait forcé d'inventer une valeur).
+// Converts a Zod schema to a JSON Schema accepted by the node-llama-cpp grammar: removes `$schema` and `default`, and
+// makes optional properties nullable, because the grammar requires every key (without a possible `null`, the model
+// would be forced to make up a value).
 export function toGrammarSchema(schema: z.ZodType): GrammarSchema {
   const clean = (value: unknown): unknown => {
     if (Array.isArray(value)) return value.map(clean)
@@ -33,9 +33,9 @@ export function toGrammarSchema(schema: z.ZodType): GrammarSchema {
   return clean(z.toJSONSchema(schema)) as GrammarSchema
 }
 
-// Recolle tout le texte généré. Les modèles « à réflexion » (Qwen3.5…) ouvrent le tour par <think> : ce que la
-// grammaire force à produire est alors rangé dans un segment de pensée et `responseText` est vide
-// (« Unexpected end of JSON input »). Avec une grammaire, tout le texte généré EST la réponse.
+// Joins all the generated text back. « Thinking » models (Qwen3.5…) open their turn with <think>: what the grammar
+// forces them to produce is then put in a thought segment and `responseText` is empty (« Unexpected end of JSON
+// input »). With a grammar, all the generated text IS the answer.
 export function responseText(parts: readonly unknown[]): string {
   return parts
     .map((part) => {
@@ -46,7 +46,7 @@ export function responseText(parts: readonly unknown[]): string {
     .join('')
 }
 
-// Retire les `null` produits pour les champs optionnels avant la validation Zod.
+// Removes the `null` produced for optional fields before Zod validation.
 export function removeNulls(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(removeNulls)
   if (value === null || typeof value !== 'object') return value
@@ -57,9 +57,9 @@ export function removeNulls(value: unknown): unknown {
   )
 }
 
-// Contexte (prompt + réponse) : un CV ou une offre font 1 000 à 4 000 jetons, la réponse JSON autant.
-// Sans consigne, node-llama-cpp dimensionne le contexte sur la VRAM restante, parfois à quelques centaines
-// de jetons : la génération s'arrête alors en plein JSON (« Unexpected end of JSON input »).
+// Context (prompt + answer): a CV or a job posting is 1,000 to 4,000 tokens, the JSON answer as much.
+// Without guidance, node-llama-cpp sizes the context on the remaining VRAM, sometimes a few hundred tokens: generation
+// then stops in the middle of the JSON (« Unexpected end of JSON input »).
 const TARGET_CONTEXT_SIZE = 8192
 const MIN_CONTEXT_SIZE = 4096
 const GPU_RETRY_DELAY_MS = 60_000
@@ -68,8 +68,8 @@ const OUT_OF_MEMORY_MESSAGE =
   'Mémoire insuffisante pour le modèle embarqué. Fermez les applications qui utilisent la carte graphique ' +
   '(Ollama, jeux, autre fenêtre de Re:CV…) ou choisissez « Rapide » dans les réglages.'
 
-// Modèle embarqué (.gguf) : la sortie est contrainte par une grammaire dérivée du schéma Zod.
-// Fichier volontairement non exporté par `llm/index.ts` : node-llama-cpp est natif, réservé au process Node.
+// Local model (.gguf): the output is constrained by a grammar derived from the Zod schema.
+// File deliberately not exported by `llm/index.ts`: node-llama-cpp is native, for the Node process only.
 export class LocalEngine implements LlmEngine {
   private loading?: Promise<{ llama: Llama; model: LlamaModel }>
   private onCpu = false
@@ -80,11 +80,12 @@ export class LocalEngine implements LlmEngine {
   private load(onCpu = this.onCpu) {
     if (this.loading) return this.loading
     const loading = (async () => {
-      // Import dynamique : node-llama-cpp est ESM avec top-level await (incompatible avec require).
+      // Dynamic import: node-llama-cpp is ESM with top-level await (incompatible with require).
       const { getLlama } = await import('node-llama-cpp')
-      // Repli processeur : instance SANS backend GPU, pour que ni les poids ni le cache de contexte ne réclament de VRAM.
+      // Processor fallback: an instance WITHOUT GPU backend, so
+      // that neither the weights nor the context cache claim VRAM.
       const llama = await getLlama(onCpu ? { gpu: false } : undefined)
-      // GPU : autant de couches que possible TOUT EN laissant la place d'un contexte de CONTEXTE_CIBLE jetons.
+      // GPU: as many layers as possible WHILE leaving room for a context of TARGET_CONTEXT_SIZE tokens.
       const model = await llama.loadModel({
         modelPath: this.modelPath,
         gpuLayers: onCpu ? 0 : { fitContext: { contextSize: TARGET_CONTEXT_SIZE } },
@@ -92,23 +93,23 @@ export class LocalEngine implements LlmEngine {
       return { llama, model }
     })()
     this.loading = loading
-    // Un chargement en échec ne doit pas rester en cache : sinon le repli CPU relirait l'échec.
+    // A failed load must not stay cached: otherwise the CPU fallback would read the failure again.
     loading.catch(() => {
       if (this.loading === loading) this.loading = undefined
     })
     return loading
   }
 
-  // Si le contexte ne tient pas en VRAM (autre application, Ollama…), on recharge le modèle sur le processeur :
-  // plus lent, mais le résultat est correct.
+  // If the context does not fit in VRAM (another application, Ollama…), the model is reloaded on the processor:
+  // slower, but the result is correct.
   computeMode(): 'gpu' | 'cpu' | null {
     if (!this.loading) return null
     return this.onCpu ? 'cpu' : 'gpu'
   }
 
   private async createContext() {
-    // Le repli CPU n'est pas définitif : la VRAM a pu se libérer (autre application fermée). On retente le GPU
-    // si le dernier repli date de plus d'une minute.
+    // The CPU fallback is not final: VRAM may have been freed (another application closed). The GPU is tried again
+    // if the last fallback is more than a minute old.
     if (this.onCpu && Date.now() - this.lastCpuFallback > GPU_RETRY_DELAY_MS) {
       await this.release()
       this.onCpu = false
@@ -144,7 +145,7 @@ export class LocalEngine implements LlmEngine {
         temperature: temperature ?? 0.2,
         signal,
       })
-      // Une génération interrompue rend un texte partiel : ce n'est pas une réponse.
+      // An interrupted generation returns partial text: it is not an answer.
       signal?.throwIfAborted()
       const response = responseText(meta.response)
       let parsed: unknown
@@ -171,7 +172,7 @@ export class LocalEngine implements LlmEngine {
       const { model } = await loading
       await model.dispose()
     } catch {
-      // Chargement échoué : il n'y a rien à libérer.
+      // Failed load: there is nothing to free.
     }
   }
 }

@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { extractDocxText } from './docx'
 import { extractPdfText } from './pdf'
 
-describe('extraireTextePdf', () => {
-  it('rejette proprement un buffer qui n’est pas un PDF valide', async () => {
+describe('extractPdfText', () => {
+  it('cleanly rejects a buffer that is not a valid PDF', async () => {
     const buffer = Buffer.from('ceci n’est pas un PDF')
     await expect(extractPdfText(buffer)).rejects.toThrow()
   })
 })
 
-describe('extraireTexteDocx', () => {
-  it('rejette proprement un buffer qui n’est pas un DOCX valide', async () => {
+describe('extractDocxText', () => {
+  it('cleanly rejects a buffer that is not a valid DOCX', async () => {
     const buffer = Buffer.from('ceci n’est pas un DOCX')
     await expect(extractDocxText(buffer)).rejects.toThrow()
   })

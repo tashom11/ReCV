@@ -2,7 +2,7 @@ import { cleanJobTitle } from '../job-posting/text'
 import type { LlmEngine } from '../llm/engine'
 import type { TailoringOptions } from '../llm/provider'
 import { type JobPosting, type Profile, type TailoredCv, type TailoredExperience, tailoredCvSchema } from '../schemas'
-import { analyzeCoverage, dejaListee } from './coverage'
+import { analyzeCoverage, isAlreadyListed } from './coverage'
 import { analyzeJobPosting } from './jobAnalysis'
 import { evaluateRelevance, keptIndexes } from './relevance'
 import { bulletsCloseToJob, isBulletFaithful, originalBullets, rewriteExperience, selectBullets } from './rewriting'
@@ -15,22 +15,22 @@ const MAX_KEY_SKILLS = 12
 const MAX_SOFT_SKILLS = 8
 const MAX_HARD_SKILLS = 12
 
-// Nombre de puces : plus détaillé pour ce qui est directement lié au poste visé.
+// Number of bullets: more detail for what is directly related to the target position.
 const PRIORITY_BULLETS = 5
 const SECONDARY_BULLETS = 3
 
-// Vrai si la compétence est citée dans les termes de l'offre (comparaison par mots entiers).
-// Une liste d'outils (« WordPress / CMS », « HTML, CSS ») est citée dès que l'une de ses parties l'est.
-// On ne découpe que sur « / » et « , » : découper « Gestion & créa. de landing pages » sur « & » ferait
-// valider la compétence par le seul mot « gestion », présent dans presque toutes les offres.
+// True if the skill is quoted in the job posting terms (whole-word comparison).
+// A list of tools (« WordPress / CMS », « HTML, CSS ») is quoted as soon as one of its parts is.
+// It is only split on « / » and « , »: splitting « Gestion & créa. de landing pages » on « & » would validate the
+// skill on the word « gestion » alone, present in almost every job posting.
 function isSkillCited(skill: string, normalizedTerms: string[]): boolean {
   const full = normalize(skill)
   const parts = [full, ...full.split(/\s*[/,]\s*/)].filter((part) => part.length >= 3)
   return parts.some((c) => normalizedTerms.some((term) => containsWord(term, c) || containsWord(c, term)))
 }
 
-// Calculé en code, pas par le LLM : sous-ensemble exact des compétences du profil,
-// celles citées par l'offre en premier (ordre d'origine conservé sinon).
+// Computed in code, not by the LLM: exact subset of the profile skills, those quoted by the job posting first
+// (original order kept otherwise).
 export function prioritizeSkills(skills: string[], jobTerms: string[]): string[] {
   const terms = jobTerms.map(normalize)
   const isCited = (skill: string) => isSkillCited(skill, terms)
@@ -47,7 +47,7 @@ function profileText(profile: Profile): string {
   ].join('\n')
 }
 
-// Source de vérification de l'accroche et du titre : tout ce que le profil affirme, dates et lieux compris.
+// Reference to check the summary and the headline: everything the profile states, dates and locations included.
 function verificationText(profile: Profile): string {
   return [
     profileText(profile),
@@ -57,8 +57,8 @@ function verificationText(profile: Profile): string {
   ].join('\n')
 }
 
-// Les durées (« 4 ans », « 6 mois ») ne sont acceptées que si elles figurent telles quelles dans le profil :
-// le modèle les déduit des dates (souvent à tort, surtout quand des expériences ont été écartées).
+// Durations (« 4 ans », « 6 mois ») are only accepted if they appear as such in the profile: the model infers them
+// from the dates (often wrongly, especially when experiences have been excluded).
 const DURATION_PATTERN = /\b\d+\s*(?:ans?|années?|mois)\b/gi
 function durationsAreFaithful(text: string, source: string): boolean {
   const reference = normalize(source).replace(/\s+/g, ' ')
@@ -69,8 +69,8 @@ function durationsAreFaithful(text: string, source: string): boolean {
 
 const MAX_SUMMARY_LENGTH = 450
 
-// Le prompt demande 400 caractères maximum ; un petit modèle l'ignore parfois et répète les mêmes idées.
-// On coupe à la dernière phrase complète qui tient dans la limite ; sans phrase exploitable, on rejette.
+// The prompt asks for 400 characters at most; a small model sometimes ignores it and repeats the same ideas.
+// The summary is cut at the last complete sentence within the limit; without a usable sentence, it is rejected.
 export function boundSummary(summary: string): string {
   const text = summary.trim()
   if (text.length <= MAX_SUMMARY_LENGTH) return text
@@ -79,16 +79,16 @@ export function boundSummary(summary: string): string {
   return end >= 60 ? cut.slice(0, end + 1) : ''
 }
 
-// Enchaîne les étapes : mots-clés → pertinence (tri) → réécriture expérience par expérience → titre + accroche.
-// Les faits (postes, entreprises, dates, formations, langues, compétences) sont recopiés du profil, jamais générés.
-// Ce qui n'a aucun rapport avec l'offre est écarté du CV (et listé dans `ecartes` pour que l'utilisateur décide).
-// Une compétence est un terme court : les phrases décrivant des tâches (souvent issues d'un CV mal structuré)
-// n'ont pas leur place dans la section Compétences et ne sont jamais traitées comme telles.
+// Chains the steps: keywords → relevance (sorting) → rewriting experience by experience → headline + summary.
+// Facts (positions, companies, dates, education, languages, skills) are copied from the profile, never generated.
+// What is unrelated to the job posting is left out of the CV (and listed in `excluded` for the user to decide).
+// A skill is a short term: sentences describing tasks (often coming from a poorly structured CV) do not belong in the
+// Skills section and are never treated as skills.
 export function prepareProfile(profile: Profile): Profile {
   return { ...profile, skills: splitSkills(profile.skills).filter(isShortSkill) }
 }
 
-// Annulation : chaque appel au modèle vérifie le signal avant de partir et le transmet au moteur.
+// Cancellation: each model call checks the signal before starting and passes it to the engine.
 function withSignal(engine: LlmEngine, signal: AbortSignal | undefined): LlmEngine {
   if (!signal) return engine
   return {
@@ -108,7 +108,8 @@ export async function tailorCv(
   const report = options.onStep ?? (() => undefined)
   const engine = withSignal(rawEngine, options.signal)
   const profile = prepareProfile(rawProfile)
-  // L'analyse d'une offre ne dépend pas du profil : si elle est déjà connue (relance, autre profil), on la réutilise.
+  // The analysis of a job posting does not depend on the profile:
+  // if it is already known (retry, other profile), it is reused.
   let analysis = options.analysis
   if (!analysis) {
     report({ key: 'analyse', label: 'Analyse de l’offre' })
@@ -123,14 +124,14 @@ export async function tailorCv(
 
   const experienceIndices = keptIndexes(relevance.experiences)
   const educationIndices = keptIndexes(relevance.education)
-  // Une compétence n'est jamais écartée, quoi qu'en dise le modèle, si l'offre la cite mot pour mot ou si elle
-  // apparaît dans une expérience conservée (RGAA, SEO…) : elle y est attestée.
+  // A skill is never excluded, whatever the model says, if the job posting quotes it word
+  // for word or if it appears in a kept experience (RGAA, SEO…): it is evidenced there.
   const keptText = normalize(
     experienceIndices
       .flatMap((i) => (profile.experiences[i] ? [experienceText(profile.experiences[i])] : []))
       .join('\n'),
   )
-  // Les savoir-être (rigueur, autonomie, travail en équipe…) servent dans tous les métiers : toujours conservés.
+  // Soft skills (rigour, autonomy, teamwork…) are useful in every job: always kept.
   const cited = new Set(
     profile.skills.flatMap((c, i) =>
       isSoftSkill(c) || isSkillCited(c, normalizedTerms) || isSkillCited(c, [keptText]) ? [i] : [],
@@ -138,8 +139,8 @@ export async function tailorCv(
   )
   const skillIndices = keptIndexes(relevance.skills, cited)
 
-  // Ordre chronologique du profil conservé dans le CV ; la pertinence règle le niveau de détail.
-  // Séquentiel volontairement : un modèle local ne traite qu'une requête à la fois.
+  // Chronological order of the profile kept in the CV; relevance sets the level of detail.
+  // Sequential on purpose: a local model handles one request at a time.
   const experiences: TailoredExperience[] = []
   for (const index of experienceIndices) {
     const experience = profile.experiences[index]
@@ -155,7 +156,7 @@ export async function tailorCv(
       })
       bullets = await rewriteExperience(engine, experience, analysis, maxPoints)
     } else {
-      // Mode rapide (défaut) : sélection des puces d'origine les plus proches de l'offre, sans appel au modèle.
+      // Fast mode (default): the original bullets closest to the job posting are selected, without calling the model.
       bullets = selectBullets(
         experience,
         [...analysis.keywords, ...analysis.requiredSkills, analysis.targetTitle],
@@ -192,13 +193,13 @@ export async function tailorCv(
   const excludedEducation = profile.education.filter((_, i) => !educationIndices.includes(i))
   const hasExcluded = excludedExperiences.length > 0 || excludedSkills.length > 0 || excludedEducation.length > 0
 
-  // Couverture des exigences de l'offre par le profil (réutilisée plus bas pour les compétences clés).
+  // Coverage of the job posting requirements by the profile (reused below for the key skills).
   const coverage = analyzeCoverage(profile, analysis)
 
-  // L'accroche ne doit parler que de ce qui répond à l'offre. Ni l'ancienne accroche du profil (écrite pour un autre
-  // métier), ni les tâches sans rapport : elles donnaient « transformer des maquettes en sites web » à une offre de
-  // recrutement. Le modèle ne reçoit que les savoir-être, les exigences attestées et les réalisations qui recoupent
-  // des termes de l'offre.
+  // The summary must only talk about what answers the job posting. Neither the old summary of the profile (written for
+  // another job) nor unrelated tasks: they gave « transformer des maquettes en sites web » to a recruitment job
+  // posting. The model only receives the soft skills, the evidenced requirements and the achievements matching terms
+  // of the job posting.
   const nearbyTerms = [...analysis.requiredSkills, ...analysis.softSkills, ...analysis.keywords, analysis.targetTitle]
   const summaryInput = {
     skills: withoutDuplicates([...coverage.evidenced.filter(isShortSkill), ...keptSkills.filter(isSoftSkill)]),
@@ -209,9 +210,9 @@ export async function tailorCv(
   report({ key: 'accroche', label: 'Rédaction de l’accroche' })
   const written = await writeSummary(engine, summaryInput, analysis)
 
-  // Garde-fou en code (le prompt seul ne suffit pas, notamment face à une offre piégée) : un titre ou une
-  // accroche qui cite un terme de l'offre absent du profil, un nombre inconnu ou un élément écarté
-  // est remplacé par une valeur issue du profil.
+  // Guard in code (the prompt alone is not enough, especially against a booby-trapped job posting): a headline or a
+  // summary quoting a job posting term absent from the profile, an unknown number or an excluded item is replaced by a
+  // value taken from the profile.
   const source = verificationText(profile)
   const forbiddenTerms = [
     ...[...analysis.keywords, ...analysis.requiredSkills].filter(
@@ -220,8 +221,8 @@ export async function tailorCv(
     ...excludedSkills,
     ...excludedExperiences.flatMap((e) => [e.position, e.company]),
   ]
-  // Titre : celui de l'offre visée (nettoyé de « H/F », du contrat et du nom de l'entreprise), comme le veut l'usage
-  // pour passer le premier tri. Jamais rédigé par le modèle. Repli : titre du profil, puis poste conservé le plus pertinent.
+  // Headline: the target job posting title (without « H/F », contract and company name), as is customary to pass the
+  // first screening. Never written by the model. Fallback: profile headline, then the most relevant kept position.
   const rank = (index: number) => relevance.experiences[index] ?? 0
   const main = [...experiences].sort((a, b) => rank(b.sourceIndex ?? 0) - rank(a.sourceIndex ?? 0))[0]
   const title =
@@ -229,8 +230,8 @@ export async function tailorCv(
     (hasExcluded ? main?.position : (profile.headline ?? main?.position)) ||
     ''
   const proposed = boundSummary(written.summary)
-  // Vocabulaire autorisé : celui de l'offre et les données confiées au modèle. Un mot qui n'en vient pas (« maquettes »,
-  // « atelier ») est une dérive vers le reste du profil ; au plus un écart est toléré.
+  // Allowed vocabulary: that of the job posting and of the data given to the model. A word coming from elsewhere
+  // (« maquettes », « atelier ») is a drift towards the rest of the profile; at most one deviation is tolerated.
   const vocabulary = [jobPosting.rawText, ...nearbyTerms, ...summaryInput.skills, ...summaryInput.achievements].join(
     ' ',
   )
@@ -239,8 +240,8 @@ export async function tailorCv(
     isBulletFaithful(proposed, source, forbiddenTerms) &&
     durationsAreFaithful(proposed, source) &&
     unsupportedWords(proposed, vocabulary).length <= 1
-  // Repli : phrase de qualités attestées demandées par l'offre, puis autres savoir-être du profil. Jamais l'ancienne
-  // accroche du profil, souvent rédigée pour un autre métier.
+  // Fallback: sentence of evidenced qualities requested by the job posting, then other soft skills of the profile.
+  // Never the old summary of the profile, often written for another job.
   const evidencedSoftSkills = summaryInput.skills.filter(isSoftSkill).slice(0, 4)
   const softSkillsFallbackSummary = softSkillsSentence(evidencedSoftSkills)
   const shortEvidenced = coverage.evidenced.filter((t) => t.split(/\s+/).length <= 3).slice(0, 4)
@@ -249,16 +250,16 @@ export async function tailorCv(
   const summary = summaryIsFaithful ? proposed : softSkillsFallbackSummary || jobFallbackSummary
 
   const listed = prioritizeSkills(keptSkills, jobTerms)
-  // Compétences clés : celles que demande l'offre et que le profil atteste, avec la formulation de l'offre (c'est
-  // elle que cherche un ATS). Retirées de la liste générale pour ne pas apparaître deux fois.
+  // Key skills: those requested by the job posting and evidenced by the profile, worded as in the job posting (it is
+  // what an ATS looks for). Removed from the general list so as not to appear twice.
   const shortRequested = coverage.evidenced.filter(isShortSkill).map(formatSkill)
-  // Les qualités demandées (« autonomie », « sens du conseil ») vont dans la ligne Savoir-être, pas parmi les outils.
+  // Requested qualities (« autonomie », « sens du conseil ») go on the soft skills line, not among the tools.
   const keySkills = shortRequested
     .filter((t) => !isSoftSkill(t))
     .filter((t, i, all) => all.findIndex((u) => u.toLowerCase() === t.toLowerCase()) === i)
     .slice(0, MAX_KEY_SKILLS)
-  const general = listed.filter((c) => !dejaListee(c, keySkills) || isSoftSkill(c))
-  // Lisibilité : savoir-être d'abord, puis outils et techniques, plafonnés.
+  const general = listed.filter((c) => !isAlreadyListed(c, keySkills) || isSoftSkill(c))
+  // Readability: soft skills first, then tools and techniques, capped.
   const requestedSoftSkills = shortRequested.filter(isSoftSkill)
   const softSkills = withoutDuplicates([...requestedSoftSkills, ...general.filter(isSoftSkill)]).slice(
     0,

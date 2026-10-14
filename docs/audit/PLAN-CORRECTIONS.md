@@ -36,7 +36,8 @@ Reste dans ces étapes :
   - 5.5 valeurs textuelles : codes d'erreur (`annule`, `fichier-illisible`…), identifiants des modèles de CV
     (`classique`… : migration des réglages), états (`en-cours`, `indisponible`…), étapes (`analyse`…), types de bloc,
     canaux IPC. À faire avec l'interface (étape 7) : elle compare certains codes sans contrôle de type.
-  - Commentaires et noms de tests du core encore en français.
+  - Commentaires et noms de tests du core : traduits en anglais (fait). Les exemples français cités entre « » sont
+    des données réelles (extraits de CV et d'annonces) et restent tels quels, comme le contenu des prompts.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 

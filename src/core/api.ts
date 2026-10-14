@@ -20,9 +20,9 @@ import { LOCAL_HOSTS, parseServiceUrl } from './serviceUrl'
 
 export { isLocalService } from './serviceUrl'
 
-// Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
+// IPC contract shared by `src/main` (handlers), `src/preload` (bridge) and `src/renderer` (calls).
 
-// Une URL de service est une destination de données personnelles (et de la clé API) : on la valide.
+// A service URL is where personal data (and the API key) go: it is validated.
 const serviceUrl = z
   .string()
   .max(2048)
@@ -39,9 +39,9 @@ export const settingsSchema = z.object({
   ollamaUrl: serviceUrl.default('http://localhost:11434/v1'),
   apiUrl: safeApiUrl.default('https://api.openai.com/v1'),
   apiModel: z.string().max(200).default(''),
-  /** Reformuler les puces avec le modèle (plus lent). Par défaut : sélection des puces, sans modèle. */
+  /** Rewrite the bullets with the model (slower). Default: bullets are selected, without the model. */
   rewriteBullets: z.boolean().default(false),
-  /** Modèle de mise en page du CV exporté (voir `core/export/modeles.ts`). */
+  /** Layout template of the exported CV (see `core/export/templates.ts`). */
   cvTemplate: z.enum(TEMPLATE_IDS).default('classique'),
   localModelPath: z
     .string()
@@ -50,21 +50,21 @@ export const settingsSchema = z.object({
     .optional(),
 })
 
-/** Origine (schéma + hôte + port) d'une URL de service, pour détecter un changement de destination. */
+/** Origin (scheme + host + port) of a service URL, to detect a change of destination. */
 export function urlOrigin(value: string): string | null {
   return parseServiceUrl(value)?.origin ?? null
 }
 export type Settings = z.infer<typeof settingsSchema>
 
 export interface SettingsState extends Settings {
-  /** La clé elle-même ne quitte jamais le process principal. */
+  /** The key itself never leaves the main process. */
   hasApiKey: boolean
 }
 
 export interface SavedProfile {
   id: number
   profile: Profile
-  /** Nom du fichier d'origine, connu seulement au moment de l'import. */
+  /** Name of the original file, only known at import time. */
   fileName?: string
 }
 
@@ -76,16 +76,16 @@ export interface GeneratedCv {
   cv: TailoredCv
 }
 
-/** Ce que l'annonce demande, rapproché du CV : affiché sur la carte de confirmation, avant toute création. */
+/** What the job posting asks for, compared with the CV: shown on the confirmation card, before any creation. */
 export interface JobPostingPreview {
-  /** Compétences et qualités recherchées par l'employeur (8 au plus), dans l'ordre de l'annonce. */
+  /** Skills and qualities the employer is looking for (8 at most), in the order of the posting. */
   soughtSkills: string[]
-  /** Type de contrat et temps de travail, s'ils sont écrits dans l'annonce (« CDI · temps plein »). */
+  /** Contract type and working time, when the posting states them (« CDI · temps plein »). */
   contractType?: string
   requirements: Requirements
 }
 
-/** Fichier déposé dans la fenêtre : le preload en retrouve le chemin, le renderer ne le voit jamais. */
+/** File dropped on the window: the preload finds its path, the renderer never sees it. */
 export interface DroppedFile {
   readonly name: string
   readonly size: number
@@ -98,7 +98,7 @@ export interface LocalModelState {
   sizeBytes: number
   path: string
   installed: boolean
-  /** Adapté à la mémoire détectée sur cette machine. */
+  /** Suited to the memory detected on this computer. */
   recommended: boolean
   compatible: boolean
 }
@@ -115,98 +115,101 @@ export interface ModelsState {
   ramGb: number
   vramGb: number
   models: LocalModelState[]
-  /** Téléchargement en cours (ou dernier état connu pendant celui-ci). */
+  /** Download in progress (or last known state during it). */
   download: ModelDownloadProgress | null
 }
 
-/** Où en est la mise à jour de l'application (releases GitHub). */
+/** Where the application update stands (GitHub releases). */
 export interface UpdateState {
-  /** Version en cours d'exécution. */
+  /** Running version. */
   version: string
   /**
-   * `indisponible` : application non installée (développement). `prete` : téléchargée, installée à la fermeture.
-   * `erreur` : vérification impossible (hors ligne, dépôt inaccessible).
+   * `indisponible`: application not installed (development). `prete`: downloaded, installed on quit.
+   * `erreur`: check impossible (offline, repository unreachable).
    */
   status: 'indisponible' | 'inactif' | 'verification' | 'a-jour' | 'telechargement' | 'prete' | 'erreur'
   newVersion?: string
-  /** Avancement du téléchargement, de 0 à 100. */
+  /** Download progress, from 0 to 100. */
   percent?: number
-  /** Message technique de la dernière erreur. */
+  /** Technical message of the last error. */
   message?: string
-  /** Horodatage (ms) de la dernière vérification aboutie. */
+  /** Timestamp (ms) of the last successful check. */
   checkedAt?: number
 }
 
-/** Étape en cours d'une tâche longue (import du CV, analyse d'offre, adaptation) : le renderer l'affiche. */
+/** Current step of a long task (CV import, job posting analysis, tailoring): the renderer shows it. */
 export interface TaskProgress {
   task: 'import' | 'offre' | 'adaptation' | 'accroche'
-  /** Étape stable de l'adaptation (l'interface la traduit en langage courant). */
+  /** Stable tailoring step (the interface turns it into plain words). */
   key?: StepKey
-  /** Libellé lisible, ex. « Réécriture des expériences ». */
+  /** Readable label, e.g. « Réécriture des expériences ». */
   label: string
   current?: number
   total?: number
-  /** Où tourne le modèle embarqué : sur le processeur, le calcul est bien plus lent. */
+  /** Where the local model runs: on the processor, computing is much slower. */
   compute?: 'gpu' | 'cpu'
 }
 
-/** Méthodes requête/réponse, implémentées par le service du process principal. */
+/** Request/response methods, implemented by the main process service. */
 export interface ApiService {
-  /** Ouvre le sélecteur de fichier (PDF/DOCX), extrait le profil et l'enregistre. `null` si annulé. */
+  /** Opens the file picker (PDF/DOCX), extracts the profile and saves it. `null` if cancelled. */
   importCv(): Promise<SavedProfile | null>
-  /** Même traitement pour un fichier déposé dans la fenêtre, désigné par son chemin. */
+  /** Same processing for a file dropped on the window, given by its path. */
   importDroppedCv(path: string): Promise<SavedProfile>
   getProfile(): Promise<SavedProfile | null>
   saveProfile(profile: Profile): Promise<SavedProfile>
   fetchJobPosting(url: string): Promise<JobPosting>
   parseJobPostingText(text: string): Promise<JobPosting>
-  /** Analyse l'annonce avec le modèle (résultat mémorisé pour `adapterCv`) et la rapproche du profil enregistré. */
+  /** Analyses the job posting with the model (result kept for `tailorCv`) and compares it with the saved profile. */
   previewJobPosting(jobPosting: JobPosting): Promise<JobPostingPreview>
-  /** Adapte le profil enregistré à l'offre, puis enregistre l'offre et le CV obtenu. */
+  /** Tailors the saved profile to the job posting, then saves the posting and the resulting CV. */
   tailorCv(jobPosting: JobPosting): Promise<GeneratedCv>
-  /** Interrompt l'adaptation en cours : `adapterCv` échoue alors avec le code `annule`. */
+  /** Stops the tailoring in progress: `tailorCv` then fails with the `annule` code. */
   cancelTailoring(): Promise<void>
   getSettings(): Promise<SettingsState>
   saveSettings(settings: Settings): Promise<SettingsState>
-  /** Enregistre le CV validé (coordonnées du profil actif) via un sélecteur de fichier. Chemin écrit, ou `null` si annulé. */
+  /**
+   * Saves the approved CV (contact details of the active profile)
+   * through a file picker. Written path, or `null` if cancelled.
+   */
   exportCv(cv: TailoredCv, format: ExportFormat, templateId?: string): Promise<string | null>
-  /** HTML complet du CV mis en page avec un modèle (photo comprise), à afficher dans un cadre isolé. */
+  /** Complete HTML of the CV laid out with a template (photo included), to show in an isolated frame. */
   templateHtml(cv: TailoredCv, templateId: string): Promise<string>
-  /** Ouvre un CV exporté pendant cette session (tout autre chemin est refusé). */
+  /** Opens a CV exported during this session (any other path is refused). */
   openFile(path: string): Promise<void>
-  /** Montre dans l'explorateur un CV exporté pendant cette session (tout autre chemin est refusé). */
+  /** Shows in the file explorer a CV exported during this session (any other path is refused). */
   revealInFolder(path: string): Promise<void>
-  /** Accroche générique fondée sur les compétences transversales du profil fourni (même non enregistré). */
+  /** Generic summary based on the transferable skills of the given profile (even if not saved). */
   generateSummary(profile: Profile): Promise<string>
-  /** Chaîne vide : supprime la clé. */
+  /** Empty string: deletes the key. */
   setApiKey(key: string): Promise<SettingsState>
   getModelsState(): Promise<ModelsState>
-  /** Résout quand le fichier est téléchargé, vérifié et sélectionné dans les paramètres. */
+  /** Resolves once the file is downloaded, verified and selected in the settings. */
   downloadModel(id: string): Promise<void>
   cancelDownload(): Promise<void>
   deleteModel(id: string): Promise<void>
-  /** Supprime profil, offres, CV générés et clé API. Les paramètres et modèles sont conservés. */
+  /** Deletes profile, job postings, generated CVs and API key. Settings and models are kept. */
   eraseData(): Promise<void>
   getUpdateState(): Promise<UpdateState>
-  /** Vérifie maintenant ; résout avec l'état obtenu (le téléchargement éventuel continue ensuite). */
+  /** Checks now; resolves with the resulting state (a download, if any, then goes on). */
   checkForUpdate(): Promise<UpdateState>
-  /** Ferme l'application et installe la version déjà téléchargée. */
+  /** Quits the application and installs the version already downloaded. */
   installUpdate(): Promise<void>
 }
 
-/** API complète vue par le renderer. */
+/** Complete API as seen by the renderer. */
 export interface RecvApi extends Omit<ApiService, 'importDroppedCv'> {
   importDroppedCv(fileName: DroppedFile): Promise<SavedProfile>
-  /** Retourne la fonction de désabonnement. */
+  /** Returns the unsubscribe function. */
   onModelProgress(callback: (progress: ModelDownloadProgress) => void): () => void
-  /** Étapes des tâches longues (adaptation…). Retourne la fonction de désabonnement. */
+  /** Steps of long tasks (tailoring…). Returns the unsubscribe function. */
   onTaskProgress(callback: (progress: TaskProgress) => void): () => void
-  /** Changements d'état de la mise à jour. Retourne la fonction de désabonnement. */
+  /** Update state changes. Returns the unsubscribe function. */
   onUpdate(callback: (status: UpdateState) => void): () => void
 }
 
-// Bornes de taille : le renderer n'est pas fiable (les schémas métier eux-mêmes ne sont pas bornés,
-// car ils valident aussi les sorties du LLM).
+// Size limits: the renderer is not trusted (the business schemas themselves are not bounded, since they also
+// validate the LLM outputs).
 const MAX_JSON_SIZE = 500_000
 const bounded = <T extends z.ZodType>(schema: T) =>
   schema.refine((v) => JSON.stringify(v).length <= MAX_JSON_SIZE, 'Données trop volumineuses.')

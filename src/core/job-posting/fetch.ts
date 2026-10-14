@@ -10,7 +10,7 @@ export type JobPostingErrorCode =
   | 'contenu-vide'
   | 'site-protege'
 
-// Sites qui servent un défi anti-robot ou exigent une connexion : inutile d'insister, on guide l'utilisateur.
+// Sites that serve an anti-bot challenge or require a login: no point insisting, the user is guided instead.
 const PROTECTED_SITES: { pattern: RegExp; name: string }[] = [
   { pattern: /(^|\.)indeed\.[a-z.]+$/i, name: 'Indeed' },
   { pattern: /(^|\.)linkedin\.com$/i, name: 'LinkedIn' },
@@ -26,7 +26,7 @@ function protectedSiteError(host: string): JobPostingFetchError | null {
   )
 }
 
-/** Erreur claire : l'UI doit proposer à l'utilisateur de coller le texte de l'offre. */
+/** Clear error: the UI must offer the user to paste the job posting text. */
 export class JobPostingFetchError extends Error {
   readonly code: JobPostingErrorCode
 
@@ -38,12 +38,12 @@ export class JobPostingFetchError extends Error {
 }
 
 export interface FetchOptions {
-  /** Injectable pour les tests (aucune requête réseau réelle). */
+  /** Injectable for tests (no real network request). */
   fetchImpl?: typeof fetch
-  /** Repli pour les pages rendues en JS : retourne le HTML après rendu (fourni par `src/main`). */
+  /** Fallback for pages rendered in JS: returns the HTML after rendering (provided by `src/main`). */
   renderHtml?: (url: string) => Promise<string>
-  delaiMs?: number
-  /** User-Agent à présenter : beaucoup de sites refusent (401/403) l'agent par défaut de Node. */
+  delayMs?: number
+  /** User-Agent to present: many sites refuse (401/403) Node's default agent. */
   userAgent?: string
 }
 
@@ -95,12 +95,12 @@ function validateUrl(raw: string): URL {
   return url
 }
 
-async function downloadHtml(url: URL, fetchImpl: typeof fetch, delaiMs: number, userAgent?: string): Promise<string> {
+async function downloadHtml(url: URL, fetchImpl: typeof fetch, delayMs: number, userAgent?: string): Promise<string> {
   let response: Response
   try {
     response = await fetchImpl(url, {
       redirect: 'follow',
-      signal: AbortSignal.timeout(delaiMs),
+      signal: AbortSignal.timeout(delayMs),
       headers: {
         Accept: 'text/html,application/xhtml+xml',
         'Accept-Language': 'fr,en;q=0.8',
@@ -120,7 +120,7 @@ async function downloadHtml(url: URL, fetchImpl: typeof fetch, delaiMs: number, 
   return readBoundedText(response)
 }
 
-/** Une page d'offre légitime pèse quelques centaines de Ko : au-delà, on refuse plutôt que de tout charger. */
+/** A legitimate job posting page weighs a few hundred KB: beyond that, it is refused rather than fully loaded. */
 export const MAX_PAGE_BYTES = 5 * 1024 * 1024
 
 async function readBoundedText(response: Response): Promise<string> {
@@ -151,16 +151,16 @@ async function readBoundedText(response: Response): Promise<string> {
 }
 
 /**
- * Récupère une offre depuis une URL : `fetch` + Readability, puis repli
- * par rendu navigateur si la page est vide. Lève toujours `ErreurRecuperationOffre`.
+ * Fetches a job posting from a URL: `fetch` + Readability, then falls back to browser rendering if the page is empty.
+ * Always throws `JobPostingFetchError`.
  */
 export async function fetchJobPosting(rawUrl: string, options: FetchOptions = {}): Promise<JobPosting> {
-  const { fetchImpl = fetch, renderHtml, delaiMs = 15_000, userAgent } = options
+  const { fetchImpl = fetch, renderHtml, delayMs = 15_000, userAgent } = options
   const url = validateUrl(rawUrl)
 
   let fetchError: JobPostingFetchError | undefined
   try {
-    const jobPosting = extractJobPostingFromHtml(await downloadHtml(url, fetchImpl, delaiMs, userAgent))
+    const jobPosting = extractJobPostingFromHtml(await downloadHtml(url, fetchImpl, delayMs, userAgent))
     if (jobPosting) return jobPosting
   } catch (e) {
     if (!(e instanceof JobPostingFetchError)) throw e

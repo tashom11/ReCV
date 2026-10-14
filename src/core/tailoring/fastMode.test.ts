@@ -19,8 +19,8 @@ const experience: Experience = {
   ],
 }
 
-describe('selectionnerPoints (sans modèle)', () => {
-  it('garde les puces les plus proches de l’offre, dans leur ordre d’origine', () => {
+describe('selectBullets (without the model)', () => {
+  it('keeps the bullets closest to the job posting, in their original order', () => {
     const selectedIndexes = selectBullets(experience, ['ponçage', 'peinture vernis', 'carrosserie'], 3)
     expect(selectedIndexes).toEqual([
       'Débosselage et redressage de carrosseries',
@@ -29,12 +29,12 @@ describe('selectionnerPoints (sans modèle)', () => {
     ])
   })
 
-  it('renvoie tout si le nombre de puces tient dans la limite, sans rien inventer', () => {
+  it('returns everything if the number of bullets fits the limit, without making anything up', () => {
     expect(selectBullets(experience, ['x'], 10)).toEqual(experience.achievements)
   })
 })
 
-describe('adapterCv : mode rapide par défaut', () => {
+describe('tailorCv: fast mode by default', () => {
   const profile: Profile = {
     links: [],
     headline: 'Carrossier peintre',
@@ -50,7 +50,7 @@ describe('adapterCv : mode rapide par défaut', () => {
     summary: { summary: '' },
   }
 
-  it('n’appelle pas le modèle pour réécrire les expériences', async () => {
+  it('does not call the model to rewrite the experiences', async () => {
     const m = new MockEngine(responses)
     const cv = await tailorCv(m, profile, jobPosting)
     expect(m.requests.map((r) => r.name)).toEqual(['keywords', 'relevance', 'summary'])
@@ -58,7 +58,7 @@ describe('adapterCv : mode rapide par défaut', () => {
     expect(cv.experiences[0]?.bullets).toHaveLength(3)
   })
 
-  it('réutilise une analyse déjà connue (aucun appel « motsCles »)', async () => {
+  it('reuses an analysis already known (no « keywords » call)', async () => {
     const m = new MockEngine(responses)
     const known = {
       targetTitle: 'Carrossier peintre',
@@ -72,7 +72,7 @@ describe('adapterCv : mode rapide par défaut', () => {
     expect(m.requests.map((r) => r.name)).not.toContain('keywords')
   })
 
-  it('signale l’analyse calculée pour qu’elle soit mémorisée', async () => {
+  it('reports the computed analysis so that it is kept', async () => {
     const m = new MockEngine(responses)
     let received: unknown
     await tailorCv(m, profile, jobPosting, { onAnalysis: (a) => (received = a) })
@@ -80,8 +80,8 @@ describe('adapterCv : mode rapide par défaut', () => {
   })
 })
 
-describe('réponses compactes', () => {
-  it('borne la liste des mots-clés dans le schéma (grammaire) et tronque une réponse trop longue', () => {
+describe('compact answers', () => {
+  it('bounds the keyword list in the schema (grammar) and truncates an answer that is too long', () => {
     const grammar = JSON.stringify(toGrammarSchema(jobAnalysisSchema))
     expect(grammar).toContain('"maxItems":8')
     expect(grammar).toContain('"maxLength":40')
@@ -90,7 +90,7 @@ describe('réponses compactes', () => {
     expect(boundedValue.keywords[0]).toHaveLength(40)
   })
 
-  it('convertit les indices utiles en niveaux, sans rien retirer si la liste est vide ou invalide', () => {
+  it('converts useful indices into levels, removing nothing if the list is empty or invalid', () => {
     expect(skillLevels([0, 2], 4)).toEqual([1, 0, 1, 0])
     expect(skillLevels([], 3)).toEqual([1, 1, 1])
     expect(skillLevels([9, -1], 3)).toEqual([1, 1, 1])

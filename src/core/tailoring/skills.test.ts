@@ -14,8 +14,8 @@ import {
   splitSoftAndHardSkills,
 } from './skills'
 
-describe('estCompetenceCourte', () => {
-  it('accepte des termes, refuse les phrases d’activités', () => {
+describe('isShortSkill', () => {
+  it('accepts terms, refuses activity sentences', () => {
     for (const ok of [
       'Rigueur',
       'WordPress / CMS',
@@ -35,8 +35,8 @@ describe('estCompetenceCourte', () => {
   })
 })
 
-describe('savoir-être et mise en forme', () => {
-  it('reconnaît les qualités transversales, y compris avec apostrophe typographique', () => {
+describe('soft skills and formatting', () => {
+  it('recognises transferable qualities, typographic apostrophe included', () => {
     for (const c of [
       'Rigueur',
       'Autonomie',
@@ -56,16 +56,16 @@ describe('savoir-être et mise en forme', () => {
     })
   })
 
-  it('met une majuscule en tête et éclate les listes de termes courts', () => {
+  it('capitalises the first letter and splits lists of short terms', () => {
     expect(formatSkill('  création   digitale ')).toBe('Création digitale')
     expect(splitSkills(['SEO, RGAA, LLM, CRM'])).toEqual(['SEO', 'RGAA', 'LLM', 'CRM'])
-    // Éléments trop longs pour être des termes : la liste est conservée telle quelle (puis filtrée comme phrase).
+    // Items too long to be terms: the list is kept as it is (then filtered as a sentence).
     const tooLong = 'Création de contenus éditoriaux et multimédias, supports numériques associés aux sites internet'
     expect(splitSkills([tooLong])).toEqual([tooLong])
   })
 })
 
-describe('extraction : les phrases ne deviennent pas des compétences', () => {
+describe('extraction: sentences do not become skills', () => {
   const cv = 'Compétences : Rigueur, SEO, RGAA. Installation et maintenance de matériel informatique.'
   const profile: Profile = {
     links: [],
@@ -75,12 +75,12 @@ describe('extraction : les phrases ne deviennent pas des compétences', () => {
     languages: [],
   }
 
-  it('retire les phrases et éclate les listes', () => {
+  it('removes sentences and splits lists', () => {
     expect(sanitizeProfile(profile, cv).skills).toEqual(['Rigueur', 'SEO', 'RGAA'])
   })
 })
 
-describe('adapterCv : profil dont les compétences contiennent des phrases', () => {
+describe('tailorCv: profile whose skills contain sentences', () => {
   const profile: Profile = {
     links: [],
     headline: 'Technicien informatique',
@@ -111,12 +111,12 @@ describe('adapterCv : profil dont les compétences contiennent des phrases', () 
         keywords: ['WordPress', 'création de contenus', 'webmastering'],
         requiredSkills: ['Collaboration avec le design'],
       },
-      // Le modèle ne retient que le terme technique : les savoir-être doivent être gardés quand même.
+      // The model only keeps the technical term: soft skills must be kept anyway.
       relevance: { usefulSkills: [2] },
       summary: { summary: '' },
     })
 
-  it('ne garde que des compétences courtes, savoir-être conservés', async () => {
+  it('only keeps short skills, soft skills kept', async () => {
     const cv = await tailorCv(engine(), profile, jobPosting)
     const allOfThem = [...cv.keySkills, ...cv.skills]
     expect(allOfThem.every(isShortSkill)).toBe(true)
@@ -124,14 +124,14 @@ describe('adapterCv : profil dont les compétences contiennent des phrases', () 
     expect(allOfThem.join(' ')).not.toMatch(/maintenance|back-end/)
   })
 
-  it('place en compétences clés celles que demande l’offre et que le profil atteste', async () => {
+  it('puts in key skills those requested by the job posting and evidenced by the profile', async () => {
     const cv = await tailorCv(engine(), profile, jobPosting)
     expect(cv.keySkills).toEqual(expect.arrayContaining(['WordPress']))
-    // Pas de doublon entre compétences clés et autres compétences.
+    // No duplicate between key skills and other skills.
     expect(cv.skills).not.toContain('WordPress')
   })
 
-  it('l’export structure les compétences en lignes étiquetées', async () => {
+  it('the export structures the skills into labelled lines', async () => {
     const cv = tailoredCvSchema.parse({
       headline: 'Chargé de création digitale',
       summary: '',
@@ -148,8 +148,8 @@ describe('adapterCv : profil dont les compétences contiennent des phrases', () 
   })
 })
 
-describe('phraseQualites', () => {
-  it('compose une phrase correcte : adjectifs convertis en noms, élisions respectées', () => {
+describe('softSkillsSentence', () => {
+  it('composes a correct sentence: adjectives turned into nouns, elisions respected', () => {
     expect(softSkillsSentence(['Adaptable', 'Travail en équipe', 'Autonomie', 'Rigueur'])).toBe(
       'Je fais preuve d’adaptabilité, d’esprit d’équipe, d’autonomie et de rigueur.',
     )

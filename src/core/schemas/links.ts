@@ -1,5 +1,5 @@
-// Un lien professionnel est une adresse web (site, LinkedIn, GitHub, portfolio…). Un modèle d'extraction y range
-// parfois des noms d'entreprises ou d'autres mots : seuls les vrais liens sont conservés.
+// A professional link is a web address (site, LinkedIn, GitHub, portfolio…). An extraction model sometimes puts
+// company names or other words there: only real links are kept.
 
 const LINK_PATTERN = /^(?:https?:\/\/|www\.)\S+$|^[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.[a-z]{2,}(?:\/\S*)?$/iu
 

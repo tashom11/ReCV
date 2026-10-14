@@ -2,7 +2,7 @@ import type { JobPosting, Profile, TailoredCv } from '../schemas'
 import type { StepKey } from '../steps'
 import type { JobAnalysis } from '../tailoring/jobAnalysis'
 
-/** Étape d'un traitement long, pour l'affichage de la progression. */
+/** Step of a long task, to display progress. */
 export interface TailoringStep {
   key?: StepKey
   label: string
@@ -12,27 +12,27 @@ export interface TailoringStep {
 
 export interface TailoringOptions {
   onStep?: (label: TailoringStep) => void
-  /** Reformuler les puces avec le modèle (lent). Par défaut : sélection des puces d'origine, sans modèle. */
+  /** Rewrite the bullets with the model (slow). Default: original bullets are selected, without the model. */
   rewrite?: boolean
-  /** Analyse de l'offre déjà connue (elle ne dépend pas du profil) : évite l'appel au modèle. */
+  /** Job posting analysis already known (it does not depend on the profile): avoids calling the model. */
   analysis?: JobAnalysis
-  /** Reçoit l'analyse calculée, pour la mémoriser. */
+  /** Receives the computed analysis, to keep it. */
   onAnalysis?: (analysis: JobAnalysis) => void
-  /** Annulation : vérifiée entre les étapes et transmise au moteur. */
+  /** Cancellation: checked between steps and passed to the engine. */
   signal?: AbortSignal
 }
 
 export interface LlmProvider {
   extractProfile(cvText: string): Promise<Profile>
   extractJobPosting(jobPostingText: string): Promise<JobPosting>
-  /** Exigences de l'offre (compétences, qualités, prérequis) : première étape de l'adaptation, réutilisable. */
+  /** Requirements of the job posting (skills, qualities, prerequisites): first tailoring step, reusable. */
   analyzeJobPosting(jobPosting: JobPosting): Promise<JobAnalysis>
   tailorCv(profile: Profile, jobPosting: JobPosting, options?: TailoringOptions): Promise<TailoredCv>
-  /** Accroche générique du profil, fondée sur ses seules compétences transversales (savoir-être). */
+  /** Generic profile summary, based only on its transferable skills (soft skills). */
   generateSummary(profile: Profile): Promise<string>
-  /** Où tourne le calcul (modèle embarqué uniquement). */
+  /** Where computing runs (local model only). */
   computeMode?(): 'gpu' | 'cpu' | null
-  /** Libère les ressources natives (modèle local) ; absent pour les fournisseurs distants. */
+  /** Frees native resources (local model); absent for remote providers. */
   release?(): Promise<void>
 }
 

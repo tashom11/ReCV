@@ -5,31 +5,31 @@ import { boundSummary, tailorCv } from './pipeline'
 import { harmonizeExperiences } from './relevance'
 import { cleanBullet } from './rewriting'
 
-describe('harmoniserExperiences', () => {
+describe('harmonizeExperiences', () => {
   const positions = [
     { position: 'Développeur web front' },
     { position: 'Développeur Web Front' },
     { position: 'Carrossier' },
   ]
 
-  it('donne la même note aux expériences au même intitulé de poste', () => {
+  it('gives the same score to experiences with the same job title', () => {
     expect(harmonizeExperiences([0, 1, 0], positions)).toEqual([1, 1, 0])
   })
 
-  it('propage la note la plus haute entre expériences du même domaine', () => {
+  it('spreads the highest score among experiences of the same field', () => {
     const experiences = [{ position: 'Intégrateur' }, { position: 'Webmaster' }, { position: 'Carrossier' }]
     expect(
       harmonizeExperiences([0, 2, 0], experiences, ['développement web', 'Développement web', 'carrosserie']),
     ).toEqual([2, 2, 0])
   })
 
-  it('ne change rien si les expériences n’ont ni poste ni domaine en commun', () => {
+  it('changes nothing if the experiences share neither position nor field', () => {
     const experiences = [{ position: 'A' }, { position: 'B' }]
     expect(harmonizeExperiences([2, 0], experiences, ['x', 'y'])).toEqual([2, 0])
   })
 })
 
-describe('adapterCv : titre, durées et compétences attestées', () => {
+describe('tailorCv: headline, durations and evidenced skills', () => {
   const profile: Profile = {
     headline: 'Développeur web front',
     summary: 'Accroche d’origine',
@@ -65,32 +65,32 @@ describe('adapterCv : titre, durées et compétences attestées', () => {
       summary: { summary },
     })
 
-  it('le titre du CV est celui de l’offre, jamais rédigé par le modèle ; l’accroche ne s’en réclame pas', async () => {
+  it('the CV headline is the job posting title, never written by the model; the summary does not claim it', async () => {
     const cv = await tailorCv(engine('Community Manager expérimenté.'), profile, jobPosting)
     expect(cv.headline).toBe('Community Manager')
-    // Rejetée (le poste visé n'est pas à affirmer) : phrase de qualités attestées, jamais l'ancienne accroche.
+    // Rejected (the target position is not to be claimed): sentence of evidenced qualities, never the old summary.
     expect(cv.summary).not.toMatch(/expérimenté/)
     expect(cv.summary).toBe('Je fais preuve de rigueur.')
   })
 
-  it('rejette une durée déduite des dates (« 1 an »)', async () => {
+  it('rejects a duration inferred from the dates (« 1 an »)', async () => {
     const cv = await tailorCv(engine('Développeur web avec 1 an d’expérience en SEO.'), profile, jobPosting)
     expect(cv.summary).not.toMatch(/1 an/)
   })
 
-  it('accepte une accroche fidèle sans durée', async () => {
+  it('accepts a faithful summary without duration', async () => {
     const faithful = 'Je fais preuve de rigueur pour la gestion éditoriale et l’animation des réseaux sociaux.'
     const cv = await tailorCv(engine(faithful), profile, jobPosting)
     expect(cv.summary).toBe(faithful)
   })
 
-  it('conserve une compétence attestée dans une expérience conservée, même jugée sans rapport', async () => {
+  it('keeps a skill evidenced in a kept experience, even if judged unrelated', async () => {
     const cv = await tailorCv(engine('Développeur web front.'), profile, jobPosting)
     expect(cv.skills).toEqual(expect.arrayContaining(['SEO', 'RGAA', 'Rigueur']))
     expect(cv.excluded.skills).toEqual(['PHP'])
   })
 
-  it('nettoie l’intitulé de l’offre (genre, entreprise, contrat) pour en faire le titre', async () => {
+  it('cleans the job posting title (gender, company, contract) to make the headline', async () => {
     const rawJobPosting: JobPosting = {
       jobTitle: 'Community Manager (H/F) - Inéa - CDD',
       company: 'Inéa',
@@ -101,7 +101,7 @@ describe('adapterCv : titre, durées et compétences attestées', () => {
   })
 })
 
-describe('adapterCv : aucune expérience jugée pertinente', () => {
+describe('tailorCv: no experience judged relevant', () => {
   const profile: Profile = {
     headline: 'Développeur web / Carrossier peintre',
     links: [],
@@ -121,7 +121,7 @@ describe('adapterCv : aucune expérience jugée pertinente', () => {
     ],
   }
 
-  it('met en avant le domaine le plus proche (choix relatif) au lieu de tout garder', async () => {
+  it('highlights the closest field (relative choice) instead of keeping everything', async () => {
     const m = new MockEngine({
       keywords: { targetTitle: 'Community Manager', keywords: [] },
       relevance: zeroScores,
@@ -135,7 +135,7 @@ describe('adapterCv : aucune expérience jugée pertinente', () => {
     expect(cv.headline).toBe('Community Manager')
   })
 
-  it('garde tout si le choix est incohérent', async () => {
+  it('keeps everything if the choice is inconsistent', async () => {
     const m = new MockEngine({
       keywords: { targetTitle: 'Community Manager', keywords: [] },
       relevance: zeroScores,
@@ -148,15 +148,15 @@ describe('adapterCv : aucune expérience jugée pertinente', () => {
   })
 })
 
-describe('nettoyerPoint / borneAccroche (sorties négligées d’un petit modèle)', () => {
-  it('retire la ponctuation parasite et abandonne les puces sans mot', () => {
+describe('cleanBullet / boundSummary (sloppy outputs of a small model)', () => {
+  it('removes stray punctuation and drops bullets without words', () => {
     expect(cleanBullet(',Collaboration avec les équipes design')).toBe('Collaboration avec les équipes design')
     expect(cleanBullet('"Optimisation des performances",')).toBe('Optimisation des performances')
     expect(cleanBullet('],')).toBe('')
     expect(cleanBullet('  ')).toBe('')
   })
 
-  it('coupe une accroche trop longue à la dernière phrase complète', () => {
+  it('cuts a summary that is too long at the last complete sentence', () => {
     const sentence = 'Développeur web attentif au SEO et à l’accessibilité des interfaces. '
     const tooLong = sentence.repeat(10)
     const boundedValue = boundSummary(tooLong)
@@ -167,8 +167,8 @@ describe('nettoyerPoint / borneAccroche (sorties négligées d’un petit modèl
   })
 })
 
-describe('adapterCv : signalement des étapes', () => {
-  it('signale chaque étape, avec la progression expérience par expérience', async () => {
+describe('tailorCv: step reporting', () => {
+  it('reports every step, with progress experience by experience', async () => {
     const profile: Profile = {
       links: [],
       experiences: [
@@ -198,7 +198,7 @@ describe('adapterCv : signalement des étapes', () => {
   })
 })
 
-describe('adapterCv : compétences composées', () => {
+describe('tailorCv: compound skills', () => {
   const profile: Profile = {
     links: [],
     experiences: [
@@ -217,7 +217,7 @@ describe('adapterCv : compétences composées', () => {
     rawText: 'Gestion des véhicules confiés, ponçage, peinture. Rigueur exigée.',
   }
 
-  it('ne valide pas « Gestion & créa. de landing pages » sur le seul mot « gestion »', async () => {
+  it('does not validate « Gestion & créa. de landing pages » on the word « gestion » alone', async () => {
     const m = new MockEngine({
       keywords: { targetTitle: 'Carrossier peintre', keywords: ['ponçage'] },
       relevance: {

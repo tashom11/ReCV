@@ -7,8 +7,8 @@ import { isBulletFaithful } from './rewriting'
 import { containsWord, experienceText, normalize } from './text'
 import { unsupportedWords } from './vocabulary'
 
-// Bornes minimales : avec une grammaire JSON, un modèle peut sinon répondre par la sortie la plus courte
-// valide (« [] » et « "" »). `min` les exclut de la grammaire elle-même.
+// Minimum bounds: with a JSON grammar, a model may otherwise answer with the shortest valid output (« [] » and
+// « "" »). `min` excludes them from the grammar itself.
 export const profileSummarySchema = z.object({
   transferableSkills: z.array(z.string().min(2)).min(1),
   summary: z.string().min(15),
@@ -31,7 +31,7 @@ function listWithDe(elements: string[]): string {
   return `${withDe.slice(0, -1).join(', ')} et ${withDe[withDe.length - 1]}`
 }
 
-// Première personne exigée ; toute désignation à la troisième personne est rejetée.
+// First person required; any third-person wording is rejected.
 const FIRST_PERSON_PATTERN = /(?:^|[^\p{L}])(?:je|mon|ma|mes)(?![\p{L}])|(?:^|[^\p{L}])j['’]/iu
 const THIRD_PERSON_PATTERN = /(?:^|[^\p{L}])(?:il|elle|le candidat|la candidate|sa|son|ses)(?![\p{L}])/iu
 
@@ -45,11 +45,11 @@ function sourceText(profile: Profile): string {
 }
 
 /**
- * Accroche générique fondée sur les seules compétences TRANSVERSALES du profil : elle ne cite aucun savoir-faire
- * de métier, qui pourrait ne pas correspondre aux offres visées. Le modèle propose, le code vérifie :
- * - une compétence n'est retenue que si elle figure mot pour mot dans le profil ;
- * - l'accroche est rejetée si elle cite une compétence de métier, un poste, un employeur ou un chiffre ;
- * - sinon, repli sur une phrase composée uniquement des compétences retenues.
+ * Generic summary based only on the TRANSFERABLE skills of the profile: it quotes no job-specific know-how, which
+ * might not match the targeted job postings. The model proposes, the code checks:
+ * - a skill is kept only if it appears word for word in the profile;
+ * - the summary is rejected if it quotes a job-specific skill, a position, an employer or a figure;
+ * - otherwise, fallback to a sentence made only of the kept skills.
  */
 export async function generateProfileSummary(engine: LlmEngine, profile: Profile): Promise<string> {
   const content = {
@@ -86,7 +86,7 @@ export async function generateProfileSummary(engine: LlmEngine, profile: Profile
     !/\d/.test(proposed) &&
     isBulletFaithful(proposed, source, forbidden) &&
     unsupportedWords(proposed, source).length === 0
-  // Apostrophes typographiques, comme dans la phrase de repli.
+  // Typographic apostrophes, as in the fallback sentence.
   if (valid) return proposed.replace(/'/g, '’')
   return `Je fais preuve ${listWithDe(selected.slice(0, 5).map((c) => c.toLowerCase()))}.`
 }

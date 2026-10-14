@@ -1,5 +1,5 @@
-// Catalogue des modèles embarqués (GGUF quantifiés Q4_K_M, dépôts « unsloth » sur Hugging Face).
-// La taille et l'empreinte SHA-256 proviennent des métadonnées LFS du dépôt : le fichier est vérifié après téléchargement.
+// Catalogue of local models (Q4_K_M quantised GGUF, « unsloth » repositories on Hugging Face).
+// Size and SHA-256 digest come from the repository LFS metadata: the file is verified after download.
 
 export interface LocalModel {
   id: string
@@ -10,8 +10,8 @@ export interface LocalModel {
   sizeBytes: number
   sha256: string
   /**
-   * Mémoire à partir de laquelle le modèle est confortable : VRAM (GPU, poids + contexte) ou RAM système (CPU).
-   * Sur CPU un modèle de 9B génère quelques jetons par seconde : seul le GPU le rend utilisable.
+   * Memory from which the model runs comfortably: VRAM (GPU, weights + context) or system RAM (CPU).
+   * On CPU a 9B model generates a few tokens per second: only the GPU makes it usable.
    */
   minRamGb: number
   minVramGb: number
@@ -65,7 +65,7 @@ export function isModelCompatible(model: LocalModel, { ramGb, vramGb }: Resource
   return vramGb >= model.minVramGb || ramGb >= model.minRamGb
 }
 
-/** Le plus gros modèle supporté ; à défaut, le plus petit (mieux vaut lent que rien). */
+/** The largest supported model; failing that, the smallest (better slow than nothing). */
 export function recommendModel(resources: Resources): LocalModel {
   const compatibleModels = LOCAL_MODELS.filter((m) => isModelCompatible(m, resources))
   const chosen = compatibleModels[compatibleModels.length - 1] ?? LOCAL_MODELS[0]

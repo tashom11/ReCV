@@ -12,12 +12,12 @@ const WORKING_TIME: { pattern: RegExp; name: string }[] = [
 ]
 
 /**
- * Type de contrat et temps de travail cités dans le texte de l'annonce (« CDI · temps plein »).
- * Repérage par motifs, sans modèle : rien n'est déduit, seul ce qui est écrit est repris.
+ * Contract type and working time quoted in the job posting text (« CDI · temps plein »).
+ * Found by patterns, without the model: nothing is inferred, only what is written is kept.
  */
 export function detectContractType(text: string): string | undefined {
   const contractType = CONTRACTS.find((c) => c.pattern.test(text))?.name
-  const temps = WORKING_TIME.find((t) => t.pattern.test(text))?.name
-  const parts = [contractType, temps].filter((p): p is string => p !== undefined)
+  const workingTime = WORKING_TIME.find((t) => t.pattern.test(text))?.name
+  const parts = [contractType, workingTime].filter((p): p is string => p !== undefined)
   return parts.length > 0 ? parts.join(' · ') : undefined
 }

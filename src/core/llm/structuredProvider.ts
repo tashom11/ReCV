@@ -6,7 +6,7 @@ import type { LlmEngine } from './engine'
 import { extractJobPosting, extractProfile } from './extraction'
 import type { LlmProvider, TailoringOptions } from './provider'
 
-// Implémentation commune à Ollama, API (BYOK) et modèle local : seul le moteur change.
+// Implementation shared by Ollama, API (BYOK) and local model: only the engine changes.
 export class StructuredProvider implements LlmProvider {
   constructor(private readonly engine: LlmEngine) {}
 

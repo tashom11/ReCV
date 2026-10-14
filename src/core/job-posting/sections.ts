@@ -1,9 +1,9 @@
 import { cleanJobPostingText, isHeading, prepareJobPostingText } from './text'
 
 /**
- * Rubriques d'une offre. La rubrique « profil recherché » est la plus utile pour adapter un CV : c'est là que
- * l'employeur liste formation, expérience, outils et qualités attendus. Elle ne doit jamais être noyée (ni tronquée)
- * dans le reste de l'annonce.
+ * Sections of a job posting. The « profil recherché » (candidate profile) section is the most useful to tailor a CV:
+ * that is where the employer lists the expected education, experience, tools and qualities. It must never be drowned
+ * (nor truncated) in the rest of the posting.
  */
 export interface JobPostingSections {
   profile: string
@@ -32,7 +32,7 @@ export function extractSections(text: string): JobPostingSections {
       currentStep = 'missions'
       continue
     }
-    // Un autre titre de rubrique referme la rubrique en cours (retour au « reste »).
+    // Another section heading closes the current section (back to the « rest »).
     if (isHeading(line, true) && currentStep !== 'rest') currentStep = 'rest'
     sections[currentStep].push(line)
   }
@@ -52,8 +52,8 @@ const MAX_PROFILE_LENGTH = 2000
 const MAX_MISSIONS_LENGTH = 2200
 
 /**
- * Texte confié au modèle pour analyser l'offre : la rubrique « profil recherché » en premier et en entier (jusqu'à
- * 2 000 caractères), puis missions et contexte plafonnés. Sans rubrique reconnue : texte nettoyé et plafonné.
+ * Text given to the model to analyse the job posting: the « profil recherché » section first and in full (up to
+ * 2,000 characters), then missions and context, capped. Without a recognised section: cleaned and capped text.
  */
 export function prepareAnalysisText(text: string): string {
   const { profile, missions, rest } = extractSections(text)

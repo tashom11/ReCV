@@ -1,2 +1,2 @@
-// Logique métier pure : aucun import Electron ni API Node propre à l'UI.
+// Pure business logic: no Electron import nor UI-specific Node API.
 export {}

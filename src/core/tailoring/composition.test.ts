@@ -31,8 +31,8 @@ const tailored: TailoredCv = tailoredCvSchema.parse({
   },
 })
 
-describe('composerCv', () => {
-  it('par défaut, le CV ne contient que le sélection adaptée et vide « ecartes »', () => {
+describe('composeCv', () => {
+  it('by default, the CV only contains the tailored selection and empties « excluded »', () => {
     const cv = composeCv(profile, tailored, initialChoices(tailored), [['Ponçage soigné']])
     expect(cv.experiences.map((e) => e.company)).toEqual(['Dupont'])
     expect(cv.skills).toEqual(['Rigueur', 'Sens du détail'])
@@ -40,7 +40,7 @@ describe('composerCv', () => {
     expect(cv.excluded).toEqual({ experiences: [], skills: [], education: [] })
   })
 
-  it('réintègre ce que l’utilisateur choisit, dans l’ordre du profil, avec les points d’origine', () => {
+  it('reinstates what the user chooses, in profile order, with the original bullets', () => {
     const choice = initialChoices(tailored)
     choice.reinstate.experiences = [true]
     choice.reinstate.skills = [true]
@@ -52,19 +52,19 @@ describe('composerCv', () => {
     expect(cv.education.map((f) => f.degree)).toEqual(['BAC +2', 'BAC PRO'])
   })
 
-  it('refuser les points adaptés restaure les réalisations de la bonne expérience (via indice)', () => {
+  it('refusing the tailored bullets restores the achievements of the right experience (via sourceIndex)', () => {
     const choice = initialChoices(tailored)
     choice.experiences = [false]
     const cv = composeCv(profile, tailored, choice, [['Ponçage soigné']])
     expect(cv.experiences[0]?.bullets).toEqual(['Ponçage', 'Peinture'])
   })
 
-  it('retire les lignes vides des points édités à la main', () => {
+  it('removes empty lines from hand-edited bullets', () => {
     const cv = composeCv(profile, tailored, initialChoices(tailored), [['  Point  ', '', '   ']])
     expect(cv.experiences[0]?.bullets).toEqual(['Point'])
   })
 
-  it('décocher la sélection de compétences restaure toutes celles du profil', () => {
+  it('unticking the skill selection restores all those of the profile', () => {
     const choice = initialChoices(tailored)
     choice.skills = false
     expect(composeCv(profile, tailored, choice, [['x']]).skills).toEqual(profile.skills)

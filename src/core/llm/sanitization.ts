@@ -2,11 +2,10 @@ import { type Profile, profileSchema } from '../schemas'
 import { filterLinks } from '../schemas/links'
 import { isShortSkill, splitSkills } from '../tailoring/skills'
 
-// Un modèle qui extrait un CV peut inventer des entrées (une « expérience » faite d'une ligne « Permis B –
-// Disponibilité immédiate »), ou en créer à partir d'une simple compétence. Ce contrôle en code garde uniquement
-// ce qui est attesté dans le texte du CV.
+// A model extracting a CV may make up entries (an « experience » made of a « Permis B – Disponibilité immédiate »
+// line), or create some from a mere skill. This check in code keeps only what is evidenced in the CV text.
 
-/** Minuscules sans accents ni ligatures. */
+/** Lower case without accents nor ligatures. */
 function simplify(text: string): string {
   return text
     .normalize('NFKD')
@@ -14,7 +13,7 @@ function simplify(text: string): string {
     .toLowerCase()
 }
 
-/** Texte réduit à ses lettres et chiffres : insensible aux espaces, tirets, retours à la ligne de l'extraction PDF. */
+/** Text reduced to its letters and digits: insensitive to spaces, hyphens and line breaks of PDF extraction. */
 function compact(text: string): string {
   return simplify(text).replace(/[^\p{L}\p{N}]/gu, '')
 }
@@ -23,36 +22,36 @@ function significantWords(value: string): string[] {
   return simplify(value).match(/[\p{L}\p{N}]{3,}/gu) ?? []
 }
 
-/** Vrai si au moins 75 % des mots significatifs de `valeur` figurent dans le CV (vrai si rien à vérifier). */
+/** True if at least 75 % of the significant words of `value` are in the CV (true if there is nothing to check). */
 function isInSource(value: string | undefined, compactSource: string): boolean {
   const words = significantWords(value ?? '')
   if (words.length === 0) return true
   return words.filter((word) => compactSource.includes(word)).length / words.length >= 0.75
 }
 
-/** Un « poste » identique à l'intitulé d'une formation est un diplôme rangé à tort dans les expériences. */
+/** A « position » identical to an education title is a degree wrongly filed among the experiences. */
 function isDegree(position: string | undefined, education: Profile['education']): boolean {
   const key = compact(position ?? '')
   return key !== '' && education.some((f) => compact(f.degree ?? '') === key)
 }
 
-const vide = (value: string | undefined) => !value || value.trim() === ''
+const empty = (value: string | undefined) => !value || value.trim() === ''
 
 /**
- * Retire du profil extrait ce qui n'est pas attesté dans `texteCv` :
- * - expérience sans entreprise ni période (poste fantôme, ligne diverse prise pour une expérience), ou dont le
- *   poste ou l'entreprise n'apparaît pas dans le CV ;
- * - formation, langue, compétence, e-mail ou téléphone absents du CV ;
- * - doublons et valeurs vides.
+ * Removes from the extracted profile what is not evidenced in `cvText`:
+ * - experience with neither company nor dates (ghost position, miscellaneous line taken for an experience), or whose
+ *   position or company does not appear in the CV;
+ * - education, language, skill, e-mail or phone absent from the CV;
+ * - duplicates and empty values.
  */
 export function sanitizeProfile(profile: Profile, cvText: string): Profile {
   const source = compact(cvText)
   const sourceDigits = cvText.replace(/\D/g, '')
 
-  // Doublons (casse et accents ignorés) : la première occurrence est conservée.
+  // Duplicates (case and accents ignored): the first occurrence is kept.
   const seenKeys = new Set<string>()
   const skills = splitSkills(profile.skills.map((c) => c.trim()))
-    // Une compétence est un terme court : les phrases décrivant des tâches n'en sont pas.
+    // A skill is a short term: sentences describing tasks are not skills.
     .filter((c) => c !== '' && isShortSkill(c) && isInSource(c, source))
     .filter((c) => {
       const key = simplify(c)
@@ -61,7 +60,7 @@ export function sanitizeProfile(profile: Profile, cvText: string): Profile {
       return true
     })
 
-  const emailEvidenced = !vide(profile.email) && source.includes(compact(profile.email ?? ''))
+  const emailEvidenced = !empty(profile.email) && source.includes(compact(profile.email ?? ''))
   const phoneDigits = (profile.phone ?? '').replace(/\D/g, '')
   const phoneEvidenced = phoneDigits.length >= 6 && sourceDigits.includes(phoneDigits)
 
@@ -73,16 +72,16 @@ export function sanitizeProfile(profile: Profile, cvText: string): Profile {
     headline: isInSource(profile.headline, source) ? profile.headline : undefined,
     experiences: profile.experiences.filter(
       (e) =>
-        !vide(e.position) &&
+        !empty(e.position) &&
         !isDegree(e.position, profile.education) &&
-        (!vide(e.company) || !vide(e.dateRange)) &&
+        (!empty(e.company) || !empty(e.dateRange)) &&
         isInSource(e.position, source) &&
         isInSource(e.company, source),
     ),
     education: profile.education.filter(
-      (f) => (!vide(f.degree) || !vide(f.school)) && isInSource(f.degree, source) && isInSource(f.school, source),
+      (f) => (!empty(f.degree) || !empty(f.school)) && isInSource(f.degree, source) && isInSource(f.school, source),
     ),
-    languages: profile.languages.filter((l) => !vide(l.name) && isInSource(l.name, source)),
+    languages: profile.languages.filter((l) => !empty(l.name) && isInSource(l.name, source)),
     skills: skills,
     links: filterLinks(profile.links),
   })

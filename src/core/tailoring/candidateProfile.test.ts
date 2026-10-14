@@ -26,8 +26,8 @@ const JOB_POSTING = [
   'Poste en CDD de remplacement.',
 ].join('\n')
 
-describe('extraireSections', () => {
-  it('isole la rubrique « profil recherché » (titre dupliqué, deux-points compris)', () => {
+describe('extractSections', () => {
+  it('isolates the « profil recherché » section (duplicated heading, colon included)', () => {
     const s = extractSections(JOB_POSTING)
     expect(s.profile).toContain('LinkedIn Recruiter')
     expect(s.profile).toContain('Formation Bac +3')
@@ -35,20 +35,20 @@ describe('extraireSections', () => {
     expect(s.missions).toContain('Analyser les besoins des managers')
   })
 
-  it('place le profil recherché en tête du texte confié au modèle, sans le tronquer', () => {
+  it('puts the candidate profile at the top of the text given to the model, without truncating it', () => {
     const text = prepareAnalysisText(JOB_POSTING)
     expect(text.startsWith('PROFIL RECHERCHÉ :')).toBe(true)
     expect(text.indexOf('PROFIL RECHERCHÉ')).toBeLessThan(text.indexOf('MISSIONS ET CONTEXTE'))
     expect(text).toContain('CRM candidats')
   })
 
-  it('sans rubrique reconnue : texte nettoyé simple', () => {
+  it('without a recognised section: plain cleaned text', () => {
     expect(prepareAnalysisText('Offre courte sans rubriques.')).toBe('Offre courte sans rubriques.')
   })
 })
 
-describe('prérequis', () => {
-  it('lit le niveau d’études', () => {
+describe('prerequisites', () => {
+  it('reads the education level', () => {
     expect(educationLevel('Bac +3 à Bac +5')).toBe(3)
     expect(educationLevel('BAC +2')).toBe(2)
     expect(educationLevel('Master en communication')).toBe(5)
@@ -75,7 +75,7 @@ describe('prérequis', () => {
     requiredExperience: '2 ans minimum en recrutement',
   }
 
-  it('compare formation et expérience exigées au profil', () => {
+  it('compares the required education and experience with the profile', () => {
     const { requirements } = analyzeCoverage(profile, analysis)
     expect(requirements.education).toEqual({
       required: 'Bac +3 à Bac +5',
@@ -85,7 +85,7 @@ describe('prérequis', () => {
     expect(requirements.experience).toEqual({ required: '2 ans minimum en recrutement', status: 'not-found' })
   })
 
-  it('reconnaît un niveau suffisant et une expérience du domaine', () => {
+  it('recognises a sufficient level and an experience in the field', () => {
     const strong: Profile = {
       ...profile,
       education: [{ degree: 'Master RH', school: 'Université' }],
@@ -96,7 +96,7 @@ describe('prérequis', () => {
     expect(requirements.experience?.status).toBe('found')
   })
 
-  it('qualités et outils du profil recherché sont demandés ; intitulé et contexte sont écartés', () => {
+  it('qualities and tools of the candidate profile are requested; job title and context are left out', () => {
     const c = analyzeCoverage(profile, {
       ...analysis,
       keywords: ['Chargé de sourcing', 'Remplacement', 'stratégie', 'vivier de candidats'],
@@ -106,20 +106,20 @@ describe('prérequis', () => {
     const all = [...c.evidenced, ...c.missing]
     expect(all).not.toContain('Chargé de sourcing')
     expect(all).not.toContain('Remplacement')
-    // Mot isolé vague non attesté : non proposé.
+    // Vague isolated word, not evidenced: not offered.
     expect(all).not.toContain('stratégie')
   })
 })
 
-describe('savoir-être demandés et mise en forme', () => {
-  it('reconnaît les qualités typiques d’un profil recherché', () => {
+describe('requested soft skills and formatting', () => {
+  it('recognises the typical qualities of a candidate profile', () => {
     for (const q of ['Orienté résultats', 'Assertif', 'Sens du conseil', 'Aisance relationnelle', 'Adaptable']) {
       expect(isSoftSkill(q)).toBe(true)
     }
     for (const t of ['LinkedIn Recruiter', 'CRM candidats', 'Approche directe']) expect(isSoftSkill(t)).toBe(false)
   })
 
-  it('dédoublonne « Adaptable » / « Adaptabilité » sans confondre « Sens du détail » et « Sens du conseil »', () => {
+  it('deduplicates « Adaptable » / « Adaptabilité » without mixing up « Sens du détail » and « Sens du conseil »', () => {
     expect(skillKey('Adaptable')).toBe(skillKey('Adaptabilité'))
     expect(withoutDuplicates(['Adaptable', 'Adaptabilité', 'Sens du détail', 'Sens du conseil'])).toEqual([
       'Adaptable',
@@ -129,7 +129,7 @@ describe('savoir-être demandés et mise en forme', () => {
   })
 })
 
-describe('adapterCv : profil recherché', () => {
+describe('tailorCv: candidate profile', () => {
   const profile: Profile = {
     links: [],
     headline: 'Développeur web',
@@ -152,7 +152,7 @@ describe('adapterCv : profil recherché', () => {
       summary: { summary: '' },
     })
 
-  it('place outils demandés en compétences clés et qualités demandées parmi les savoir-être, une fois cochés', async () => {
+  it('puts requested tools in key skills and requested qualities among soft skills, once ticked', async () => {
     const cv = await tailorCv(engine(), profile, jobPosting)
     expect(cv.headline).toBe('Chargé de sourcing et de recrutement')
     expect(cv.requested.missing).toEqual(
@@ -172,7 +172,7 @@ describe('adapterCv : profil recherché', () => {
     expect([...final.keySkills, ...final.skills]).not.toContain('Remplacement')
   })
 
-  it('donne le profil recherché au modèle d’analyse, en premier', async () => {
+  it('gives the candidate profile to the analysis model, first', async () => {
     const m = engine()
     await tailorCv(m, profile, jobPosting)
     const request = m.requests.find((r) => r.name === 'keywords')

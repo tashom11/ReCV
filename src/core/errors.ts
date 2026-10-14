@@ -1,7 +1,7 @@
-/** Cas d'erreur que l'interface distingue pour proposer la bonne action (les autres restent un message brut). */
+/** Error cases the interface tells apart to offer the right action (the others stay a raw message). */
 export type ErrorCode = 'annule' | 'fichier-illisible' | 'moteur-absent' | 'ecriture-impossible' | 'profil-absent'
 
-/** Erreur dont le code traverse l'IPC : l'interface en tire un titre, une explication et une action. */
+/** Error whose code crosses the IPC: the interface derives a title, an explanation and an action from it. */
 export class CodedError extends Error {
   readonly code: ErrorCode
 

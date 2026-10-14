@@ -11,9 +11,9 @@ export interface OllamaOptions {
 
 export function createOllamaProvider({ model, baseUrl = DEFAULT_OLLAMA_URL }: OllamaOptions): StructuredProvider {
   const ollama = createOpenAICompatible({ name: 'ollama', baseURL: baseUrl, supportsStructuredOutputs: true })
-  // Réflexion désactivée (qwen3…) : 2 à 3 fois plus rapide, sans perte sur ces tâches d'extraction/réécriture.
+  // Thinking disabled (qwen3…): 2 to 3 times faster, with no loss on these extraction/rewriting tasks.
   const engine = new AiSdkEngine(ollama.chatModel(model), {
-    optionsFournisseur: { ollama: { reasoningEffort: 'none' } },
+    providerOptions: { ollama: { reasoningEffort: 'none' } },
   })
   return new StructuredProvider(engine)
 }
@@ -23,7 +23,7 @@ export interface ApiOptions {
   baseUrl: string
   apiKey: string
   model: string
-  /** À désactiver pour une API qui refuse `response_format: json_schema` (repli sur le mode JSON simple). */
+  /** To disable for an API that refuses `response_format: json_schema` (falls back to plain JSON mode). */
   structuredOutputs?: boolean
 }
 

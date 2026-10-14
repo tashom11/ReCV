@@ -14,7 +14,7 @@ import {
 import type { Block, CvDocument } from './cvDocument'
 import { findTemplate, type TemplateId } from './templates'
 
-// Tailles en demi-points (docx).
+// Sizes in half-points (docx).
 const BODY_SIZE = 21
 const TITLE_SIZE = 40
 
@@ -58,7 +58,7 @@ function blockParagraphs(style: Style, block: Block): Paragraph[] {
   }
 }
 
-/** Décode une image « data:image/…;base64,… » ; `null` si le format n'est pas pris en charge. */
+/** Decodes a « data:image/…;base64,… » image; `null` if the format is not supported. */
 function decodePhoto(dataUrl: string): { data: Buffer; type: 'jpg' | 'png' } | null {
   const match = /^data:image\/(png|jpe?g);base64,(.+)$/i.exec(dataUrl)
   if (!match?.[2]) return null
@@ -69,8 +69,8 @@ function decodePhoto(dataUrl: string): { data: Buffer; type: 'jpg' | 'png' } | n
 }
 
 /**
- * DOCX lisible par un ATS : vrais styles de titres, listes natives, aucun tableau ni zone de texte.
- * La photo (facultative) est une image flottante en haut à droite, sans incidence sur le texte.
+ * DOCX readable by an ATS: real heading styles, native lists, no table nor text box.
+ * The (optional) photo is a floating image at the top right, with no effect on the text.
  */
 export async function generateDocxCv(model: CvDocument, templateId?: TemplateId): Promise<Buffer> {
   const chosen = findTemplate(templateId)

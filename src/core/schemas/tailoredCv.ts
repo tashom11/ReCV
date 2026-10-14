@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { educationSchema, languageSchema } from './profile'
 
 export const tailoredExperienceSchema = z.object({
-  /** Position de l'expérience dans le profil d'origine (ordre et mise en regard « avant / après »). */
+  /** Position of the experience in the original profile (order and « before / after » comparison). */
   sourceIndex: z.number().int().nonnegative().optional(),
   position: z.string(),
   company: z.string(),
@@ -12,8 +12,8 @@ export const tailoredExperienceSchema = z.object({
 })
 export type TailoredExperience = z.infer<typeof tailoredExperienceSchema>
 
-// Éléments du profil jugés sans rapport avec l'offre : absents du CV, mais proposés à l'utilisateur
-// pour qu'il puisse les réintégrer. Les expériences y gardent leurs réalisations d'origine.
+// Profile items judged unrelated to the job posting: absent from the CV, but offered to the user so they can be
+// reinstated. Experiences keep their original achievements there.
 export const excludedSchema = z.object({
   experiences: z.array(tailoredExperienceSchema).default([]),
   skills: z.array(z.string()).default([]),
@@ -21,9 +21,9 @@ export const excludedSchema = z.object({
 })
 export type Excluded = z.infer<typeof excludedSchema>
 
-// Compétences demandées par l'offre, rapprochées du profil. `manquantes` n'est JAMAIS ajouté au CV automatiquement :
-// l'utilisateur coche celles qu'il maîtrise réellement.
-// Prérequis cités par l'offre (formation, expérience), comparés au profil : information pour l'utilisateur.
+// Skills requested by the job posting, compared with the profile. `missing` is NEVER added to the CV automatically:
+// the user ticks those they really master.
+// Prerequisites quoted by the job posting (education, experience), compared with the profile: information for the user.
 export const requirementsSchema = z.object({
   education: z
     .object({
@@ -52,7 +52,9 @@ export const tailoredCvSchema = z.object({
   headline: z.string(),
   summary: z.string(),
   experiences: z.array(tailoredExperienceSchema).default([]),
-  /** Compétences demandées par l'offre que le profil atteste (ou que l'utilisateur déclare) : en tête du CV. */
+  /**
+   * Skills requested by the job posting that the profile evidences (or that the user declares): at the top of the CV.
+   */
   keySkills: z.array(z.string()).default([]),
   skills: z.array(z.string()).default([]),
   education: z.array(educationSchema).default([]),

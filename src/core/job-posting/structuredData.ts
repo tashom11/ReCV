@@ -38,8 +38,8 @@ function locationClause(jobLocation: unknown): string | undefined {
 }
 
 /**
- * Données structurées `JobPosting` (schema.org) de la page, quand le site les publie (Welcome to the Jungle,
- * beaucoup de jobboards : c'est ce que lit Google for Jobs). Plus fiables et plus propres qu'une extraction de texte.
+ * Structured `JobPosting` data (schema.org) of the page, when the site publishes it (Welcome to the Jungle, many job
+ * boards: it is what Google for Jobs reads). More reliable and cleaner than a text extraction.
  */
 export function extractStructuredJobPosting(html: string): StructuredJobPosting | null {
   const { document } = parseHTML(html) as unknown as {
@@ -61,7 +61,7 @@ export function extractStructuredJobPosting(html: string): StructuredJobPosting 
       title,
       company: isObject(organisation) ? text(organisation.name) : text(organisation),
       location: locationClause(position.jobLocation),
-      // La description est du HTML (parfois échappé en entités) : on la convertit en texte structuré.
+      // The description is HTML (sometimes escaped as entities): it is converted to structured text.
       description: htmlToText(description),
     }
   }

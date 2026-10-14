@@ -1,6 +1,6 @@
-// Sans dépendance (pas de zod) : importé tel quel par le preload sandboxé.
+// Dependency-free (no zod): imported as is by the sandboxed preload.
 
-/** Canaux IPC (un par méthode de l'API). */
+/** IPC channels (one per API method). */
 export const CHANNELS = {
   importCv: 'cv:importer',
   importDroppedCv: 'cv:importer-depose',
@@ -32,11 +32,11 @@ export const CHANNELS = {
   updateStatus: 'mise-a-jour:changement',
 } as const
 
-/** Enveloppe sérialisable : les erreurs traversent l'IPC avec un message lisible. */
+/** Serialisable envelope: errors cross the IPC with a readable message. */
 export type IpcResult<T> = { ok: true; value: T } | { ok: false; message: string; code?: string }
 
-// Le pont de contexte d'Electron ne transmet d'une erreur que son message : les propriétés ajoutées (le code)
-// sont perdues en route. Le code voyage donc en tête du message, et l'interface le sépare à l'arrivée.
+// Electron's context bridge only passes an error's message: added properties (the code) are lost on the way. So the
+// code travels at the start of the message, and the interface splits it off on arrival.
 const CODE_PATTERN = /^\[\[([a-z-]+)\]\] /
 
 export function encodeError(message: string, code?: string): string {
