@@ -7,22 +7,22 @@ import { MockProvider } from './mockProvider'
 const cvText = readFileSync(resolve(import.meta.dirname, '../../../fixtures/cv-exemple.txt'), 'utf-8')
 const jobPostingText = readFileSync(resolve(import.meta.dirname, '../../../fixtures/offre-exemple.txt'), 'utf-8')
 
-describe('FournisseurMock', () => {
-  it('extraireProfil renvoie un Profil valide', async () => {
+describe('MockProvider', () => {
+  it('extractProfile returns a valid Profile', async () => {
     const provider = new MockProvider()
     const profile = await provider.extractProfile(cvText)
     expect(() => profileSchema.parse(profile)).not.toThrow()
     expect(profile.experiences.length).toBeGreaterThan(0)
   })
 
-  it('extraireOffre renvoie une Offre valide dont le texte brut est fidèle à l’entrée', async () => {
+  it('extractJobPosting returns a valid JobPosting whose raw text matches the input', async () => {
     const provider = new MockProvider()
     const jobPosting = await provider.extractJobPosting(jobPostingText)
     expect(() => jobPostingSchema.parse(jobPosting)).not.toThrow()
     expect(jobPosting.rawText).toBe(jobPostingText)
   })
 
-  it('adapterCv renvoie un CvAdapte valide construit à partir du profil fourni', async () => {
+  it('tailorCv returns a valid TailoredCv built from the given profile', async () => {
     const provider = new MockProvider()
     const profile = await provider.extractProfile(cvText)
     const jobPosting = await provider.extractJobPosting(jobPostingText)

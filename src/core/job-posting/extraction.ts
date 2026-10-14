@@ -4,10 +4,10 @@ import { type JobPosting, jobPostingSchema } from '../schemas/jobPosting'
 import { extractStructuredJobPosting } from './structuredData'
 import { cleanJobPostingText, htmlToText } from './text'
 
-/** Sous ce seuil de caractères, on considère la page comme vide (rendue en JS). */
+/** Below this number of characters, the page is considered empty (rendered in JS). */
 export const MIN_TEXT_LENGTH = 200
 
-// Le cœur n'a pas la lib DOM : on ne type que ce qu'on utilise.
+// The core has no DOM lib: only what is used is typed.
 interface MinimalDocument {
   title: string
   querySelector(selector: string): { getAttribute(name: string): string | null } | null
@@ -19,11 +19,11 @@ function meta(document: MinimalDocument, selector: string): string | undefined {
 }
 
 /**
- * Extrait le contenu principal d'une page HTML d'offre d'emploi.
- * Retourne `null` si aucun texte exploitable n'est trouvé.
+ * Extracts the main content of a job posting HTML page.
+ * Returns `null` if no usable text is found.
  */
 export function extractJobPostingFromHtml(html: string): JobPosting | null {
-  // 1. Données structurées (JobPosting) : intitulé, entreprise, lieu et description propres.
+  // 1. Structured data (JobPosting): clean title, company, location and description.
   const structured = extractStructuredJobPosting(html)
   if (structured) {
     const text = cleanJobPostingText(structured.description)
@@ -37,7 +37,7 @@ export function extractJobPostingFromHtml(html: string): JobPosting | null {
     }
   }
 
-  // 2. Repli : contenu principal de la page (Readability), en conservant la structure en blocs.
+  // 2. Fallback: main content of the page (Readability), keeping the block structure.
   const { document } = parseHTML(html)
 
   const metaTitle = meta(document, 'meta[property="og:title"]')

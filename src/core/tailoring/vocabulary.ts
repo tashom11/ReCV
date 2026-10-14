@@ -1,6 +1,6 @@
 import { normalize } from './text'
 
-// Mots neutres qu'une accroche peut employer sans qu'ils figurent dans le profil.
+// Neutral words a summary may use without them being in the profile.
 export const NEUTRAL_WORDS = new Set([
   'professionnel',
   'professionnelle',
@@ -61,7 +61,7 @@ export const NEUTRAL_WORDS = new Set([
   'dispose',
   'veille',
   'veiller',
-  // Verbes et compléments courants d'une phrase de présentation (aucun ne décrit une qualité).
+  // Common verbs and complements of a self-presentation sentence (none of them describes a quality).
   'nouveaux',
   'nouvelles',
   'nouveau',
@@ -112,7 +112,7 @@ export const NEUTRAL_WORDS = new Set([
   'differentes',
 ])
 
-// Racine grossière pour rapprocher « rigoureux » de « Rigueur », « autonome » de « Autonomie »…
+// Rough root to bring « rigoureux » close to « Rigueur », « autonome » to « Autonomie »…
 export function root(word: string): string {
   return word.replace(/^rigoureu/, 'rigueu').slice(0, 5)
 }
@@ -122,8 +122,8 @@ function words(text: string): string[] {
 }
 
 /**
- * Mots significatifs de l'accroche qui n'ont aucun équivalent dans le profil (ni mot neutre) : un tel mot est
- * une qualité ou une notion que le modèle a ajoutée (« Leader visionnaire »), donc une invention.
+ * Significant words of the summary with no equivalent in the profile (nor neutral word): such a word is a quality or
+ * a notion the model added (« Leader visionnaire »), hence a fabrication.
  */
 export function unsupportedWords(summary: string, source: string): string[] {
   const sourceRoots = new Set(words(source).map(root))

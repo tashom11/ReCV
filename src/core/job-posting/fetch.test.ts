@@ -22,8 +22,8 @@ function htmlResponse(body: string, init: ResponseInit = {}): Response {
   return new Response(body, { headers: { 'content-type': 'text/html; charset=utf-8' }, ...init })
 }
 
-describe('extraireOffreDepuisHtml', () => {
-  it('extrait le titre, l’entreprise et le texte principal', () => {
+describe('extractJobPostingFromHtml', () => {
+  it('extracts the title, the company and the main text', () => {
     const jobPosting = extractJobPostingFromHtml(JOB_POSTING_HTML)
     expect(jobPosting).not.toBeNull()
     expect(jobPosting?.jobTitle).toContain('Développeur React')
@@ -31,13 +31,13 @@ describe('extraireOffreDepuisHtml', () => {
     expect(jobPosting?.rawText).toContain('TypeScript et React')
   })
 
-  it('retourne null pour une page sans contenu (rendue en JS)', () => {
+  it('returns null for a page without content (rendered in JS)', () => {
     expect(extractJobPostingFromHtml(EMPTY_JS_HTML)).toBeNull()
   })
 })
 
-describe('recupererOffre', () => {
-  it('rejette une URL invalide ou non http(s)', async () => {
+describe('fetchJobPosting', () => {
+  it('rejects an invalid or non-http(s) URL', async () => {
     await expect(fetchJobPosting('pas une url')).rejects.toMatchObject({ code: 'url-invalide' })
     await expect(fetchJobPosting('file:///etc/passwd')).rejects.toMatchObject({ code: 'url-invalide' })
   })
@@ -76,7 +76,7 @@ describe('recupererOffre', () => {
     expect(jobPosting.rawText).toContain('développeur confirmé')
   })
 
-  it('utilise le rendu navigateur quand la page statique est vide', async () => {
+  it('uses browser rendering when the static page is empty', async () => {
     const fetchImpl = vi.fn(async () => htmlResponse(EMPTY_JS_HTML)) as unknown as typeof fetch
     const renderHtml = vi.fn(async () => JOB_POSTING_HTML)
     const jobPosting = await fetchJobPosting('https://exemple.test/offre', { fetchImpl, renderHtml })
@@ -84,7 +84,7 @@ describe('recupererOffre', () => {
     expect(jobPosting.company).toBe('Acme')
   })
 
-  it('lève une erreur claire si tout échoue (page vide, repli en échec)', async () => {
+  it('throws a clear error if everything fails (empty page, failed fallback)', async () => {
     const fetchImpl = vi.fn(async () => htmlResponse(EMPTY_JS_HTML)) as unknown as typeof fetch
     const renderHtml = vi.fn(async () => {
       throw new Error('boom')
@@ -95,7 +95,7 @@ describe('recupererOffre', () => {
     await expect(promise).rejects.toThrow(/Collez le texte/)
   })
 
-  it('signale une erreur HTTP et tente tout de même le repli', async () => {
+  it('reports an HTTP error and still tries the fallback', async () => {
     const fetchImpl = vi.fn(async () => htmlResponse('', { status: 403 })) as unknown as typeof fetch
     const renderHtml = vi.fn(async () => JOB_POSTING_HTML)
     const jobPosting = await fetchJobPosting('https://exemple.test/offre', { fetchImpl, renderHtml })
@@ -106,7 +106,7 @@ describe('recupererOffre', () => {
     })
   })
 
-  it('explique clairement qu’un site protégé (Indeed, LinkedIn…) demande de coller le texte', async () => {
+  it('clearly explains that a protected site (Indeed, LinkedIn…) requires pasting the text', async () => {
     const fetchImpl = vi.fn(async () => htmlResponse('', { status: 403 })) as unknown as typeof fetch
     const renderHtml = vi.fn(async () => EMPTY_JS_HTML)
     for (const url of ['https://fr.indeed.com/viewjob?jk=abc', 'https://www.linkedin.com/jobs/view/1']) {
@@ -117,14 +117,14 @@ describe('recupererOffre', () => {
     }
   })
 
-  it('ne confond pas un site quelconque avec un site protégé', async () => {
+  it('does not mistake an ordinary site for a protected one', async () => {
     const fetchImpl = vi.fn(async () => htmlResponse('', { status: 403 })) as unknown as typeof fetch
     await expect(fetchJobPosting('https://exemple-indeedlike.test/offre', { fetchImpl })).rejects.toMatchObject({
       code: 'http',
     })
   })
 
-  it('signale une erreur réseau', async () => {
+  it('reports a network error', async () => {
     const fetchImpl = vi.fn(async () => {
       throw new TypeError('fetch failed')
     }) as unknown as typeof fetch
@@ -133,7 +133,7 @@ describe('recupererOffre', () => {
     })
   })
 
-  it('refuse un contenu non HTML', async () => {
+  it('refuses non-HTML content', async () => {
     const fetchImpl = vi.fn(
       async () => new Response('%PDF', { headers: { 'content-type': 'application/pdf' } }),
     ) as unknown as typeof fetch

@@ -4,7 +4,7 @@ import type { LlmEngine } from './engine'
 import { JOB_POSTING_EXTRACTION_PROMPT, PROFILE_EXTRACTION_PROMPT, wrapInTag } from './prompts'
 import { sanitizeProfile } from './sanitization'
 
-// Le texte brut est recopié en code : inutile (et risqué) de le faire régénérer par le LLM.
+// The raw text is copied in code: no need (and risky) to have the LLM regenerate it.
 const JOB_POSTING_HEADER_LENGTH = 1500
 
 const extractedJobPostingSchema = jobPostingSchema.omit({ rawText: true })
@@ -16,7 +16,7 @@ export async function extractProfile(engine: LlmEngine, cvText: string): Promise
     system: PROFILE_EXTRACTION_PROMPT,
     user: wrapInTag('cv', cvText),
   })
-  // Le modèle peut inventer des entrées : on ne garde que ce qui est attesté dans le texte du CV.
+  // The model may make up entries: only what is evidenced in the CV text is kept.
   return sanitizeProfile(extracted, cvText)
 }
 
@@ -25,7 +25,7 @@ export async function extractJobPosting(engine: LlmEngine, jobPostingText: strin
     name: 'extractJobPosting',
     schema: extractedJobPostingSchema,
     system: JOB_POSTING_EXTRACTION_PROMPT,
-    // Intitulé, entreprise et lieu figurent en tête d'annonce : inutile de faire lire (lentement) tout le texte.
+    // Title, company and location are at the top of the posting: no need to have the whole text read (slowly).
     user: wrapInTag('offre', prepareJobPostingText(jobPostingText, JOB_POSTING_HEADER_LENGTH)),
   })
   return jobPostingSchema.parse({ ...extracted, rawText: jobPostingText })

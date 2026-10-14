@@ -16,8 +16,8 @@ Réécris l'expérience fournie en au plus ${maxPoints} puces ("bullets") :
 
 ${NO_FABRICATION_RULES}`
 
-// Un petit modèle peut laisser de la ponctuation JSON dans une puce (« ,Collaboration… », « ], »).
-// On retire ces résidus aux extrémités ; une puce sans mot exploitable est abandonnée (chaîne vide).
+// A small model may leave JSON punctuation in a bullet (« ,Collaboration… », « ], »).
+// These leftovers are removed at both ends; a bullet without a usable word is dropped (empty string).
 export function cleanBullet(bullet: string): string {
   const cleaned = bullet
     .replace(/^[\s,;:.\][{}()"'`•*–—-]+/u, '')
@@ -26,14 +26,14 @@ export function cleanBullet(bullet: string): string {
   return /\p{L}{3,}/u.test(cleaned) ? cleaned : ''
 }
 
-// Points d'origine du profil, utilisés si le LLM ne renvoie rien d'exploitable.
+// Original bullets of the profile, used if the LLM returns nothing usable.
 export function originalBullets(experience: Experience): string[] {
   if (experience.achievements.length > 0) return experience.achievements
   return experience.description ? [experience.description] : []
 }
 
-// Garde-fou : rejette une puce qui cite un terme de l'offre absent de l'expérience,
-// ou un nombre absent de la source (chiffre inventé).
+// Guard: rejects a bullet quoting a job posting term absent from the
+// experience, or a number absent from the source (made-up figure).
 export function isBulletFaithful(bullet: string, sourceText: string, absentTerms: string[]): boolean {
   const text = normalize(bullet)
   if (absentTerms.some((term) => containsWord(text, normalize(term)))) return false
@@ -41,15 +41,15 @@ export function isBulletFaithful(bullet: string, sourceText: string, absentTerms
   return numbers(bullet).every((count) => sourceNumbers.has(count))
 }
 
-// Racines de mots (5 premières lettres, sans accents) : « ponçage »/« poncer » se rejoignent.
+// Word roots (first 5 letters, without accents): « ponçage »/« poncer » meet.
 function wordRoots(text: string): string[] {
   return (normalize(text).match(/[\p{L}\p{N}]{4,}/gu) ?? []).map((word) => word.slice(0, 5))
 }
 
 /**
- * Sélection des puces SANS modèle : on garde les `max` puces d'origine les plus proches des termes de l'offre
- * (recoupement de racines de mots), dans leur ordre d'origine. Instantané, et rien ne peut être inventé.
- * C'est le mode par défaut ; la reformulation par le modèle (`reecrireExperience`) est optionnelle.
+ * Bullet selection WITHOUT the model: the `max` original bullets closest to the job posting terms are kept (matching
+ * word roots), in their original order. Instant, and nothing can be made up.
+ * This is the default mode; rewording by the model (`rewriteExperience`) is optional.
  */
 export function selectBullets(experience: Experience, terms: string[], max: number): string[] {
   const original = originalBullets(experience)
@@ -66,7 +66,7 @@ export function selectBullets(experience: Experience, terms: string[], max: numb
   return original.filter((_, rank) => selectedIndexes.has(rank))
 }
 
-/** Puces d'origine qui recoupent au moins un terme de l'offre (les plus proches d'abord), au plus `max`. */
+/** Original bullets matching at least one job posting term (closest first), at most `max`. */
 export function bulletsCloseToJob(experience: Experience, terms: string[], max: number): string[] {
   const jobRoots = new Set(terms.flatMap(wordRoots))
   return originalBullets(experience)
@@ -77,7 +77,7 @@ export function bulletsCloseToJob(experience: Experience, terms: string[], max: 
     .map((e) => e.bullet)
 }
 
-// Étape 3 : réécriture d'UNE expérience (appelée expérience par expérience).
+// Step 3: rewriting ONE experience (called experience by experience).
 export async function rewriteExperience(
   engine: LlmEngine,
   experience: Experience,
@@ -86,7 +86,7 @@ export async function rewriteExperience(
 ): Promise<string[]> {
   if (originalBullets(experience).length === 0) return []
   const source = experienceText(experience)
-  // Le LLM ne reçoit que les mots-clés que l'expérience contient déjà.
+  // The LLM only receives the keywords the experience already contains.
   const analysis = restrictAnalysis(fullAnalysis, source)
   const absentTerms = [...fullAnalysis.keywords, ...fullAnalysis.requiredSkills].filter(
     (term) => !analysis.keywords.includes(term) && !analysis.requiredSkills.includes(term),

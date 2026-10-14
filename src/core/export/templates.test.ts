@@ -25,8 +25,8 @@ const cv = tailoredCvSchema.parse({
   education: [{ degree: 'BAC +2', school: 'École du Code' }],
 })
 
-describe('catalogue de modèles', () => {
-  it('propose au moins trois modèles, identifiés et décrits', () => {
+describe('template catalogue', () => {
+  it('offers at least three templates, with an id and a description', () => {
     expect(CV_TEMPLATES.length).toBeGreaterThanOrEqual(3)
     expect(CV_TEMPLATES.map((m) => m.id)).toEqual([...TEMPLATE_IDS])
     for (const m of CV_TEMPLATES) {
@@ -35,7 +35,7 @@ describe('catalogue de modèles', () => {
     }
   })
 
-  it('retombe sur le modèle classique pour un identifiant inconnu', () => {
+  it('falls back to the classic template for an unknown id', () => {
     expect(findTemplate('inconnu').id).toBe('classique')
     expect(findTemplate(undefined).id).toBe('classique')
   })
@@ -45,10 +45,10 @@ describe.each(TEMPLATE_IDS)('modèle %s', (id) => {
   const model = buildCvDocument(profile, cv)
   const html = generateHtmlCv(model, id)
 
-  it('reste compatible ATS : texte réel, titres standards, aucun tableau ni SVG', () => {
+  it('stays ATS-friendly: real text, standard titles, no table nor SVG', () => {
     expect(html).not.toMatch(/<table|<svg|<canvas|<script/i)
     if (findTemplate(id).layout === 'lateral') {
-      // Colonne latérale : sous-titre et liste, le contenu principal restant avant la colonne dans le code.
+      // Sidebar column: subtitle and list, the main content staying before the column in the code.
       expect(html).toContain('<h3>Compétences clés</h3><ul><li>LinkedIn Recruiter</li>')
       expect(html.indexOf('<h2>Expérience professionnelle</h2>')).toBeLessThan(html.indexOf('<h2>Compétences</h2>'))
     } else {
@@ -58,11 +58,11 @@ describe.each(TEMPLATE_IDS)('modèle %s', (id) => {
     expect(html).toContain(`data-modele="${id}"`)
   })
 
-  it('n’espace jamais les lettres (l’extraction ATS lirait « p r o f i l »)', () => {
+  it('never spaces letters out (ATS extraction would read « p r o f i l »)', () => {
     expect(findTemplate(id).css).not.toMatch(/letter-spacing\s*:\s*[^;0]/)
   })
 
-  it('n’affiche pas de nom d’entreprise parmi les coordonnées ni de diplôme parmi les expériences', () => {
+  it('shows no company name among the contact details nor any degree among the experiences', () => {
     const dirty = buildCvDocument(
       { ...profile, links: ['Webagence', 'linkedin.com/in/julien'] },
       {
@@ -76,13 +76,13 @@ describe.each(TEMPLATE_IDS)('modèle %s', (id) => {
     expect(rendered.match(/<h3>BAC \+2<\/h3>/g)).toHaveLength(1)
   })
 
-  it('affiche la photo quand le profil en a une, sinon rien', () => {
+  it('shows the photo when the profile has one, nothing otherwise', () => {
     expect(html).toContain('<img class="photo"')
     const without = generateHtmlCv(buildCvDocument({ ...profile, photo: undefined }, cv), id)
     expect(without).not.toContain('<img')
   })
 
-  it('produit un DOCX relisible, avec la photo comme image et sans tableau', async () => {
+  it('produces a readable DOCX, with the photo as an image and no table', async () => {
     const buffer = await generateDocxCv(model, id)
     const { value } = await mammoth.extractRawText({ buffer })
     expect(value).toContain('Julien Moreau')
@@ -93,24 +93,24 @@ describe.each(TEMPLATE_IDS)('modèle %s', (id) => {
   })
 })
 
-describe('photo du profil', () => {
-  it('n’est jamais demandée au modèle de langage (absente du schéma d’extraction)', () => {
+describe('profile photo', () => {
+  it('is never asked of the language model (absent from the extraction schema)', () => {
     expect(Object.keys(profileExtractionSchema.shape)).not.toContain('photo')
     expect(Object.keys(profileSchema.shape)).toContain('photo')
   })
 
-  it('n’accepte que des images PNG, JPEG ou WebP', () => {
+  it('only accepts PNG, JPEG or WebP images', () => {
     expect(profileSchema.safeParse({ photo: PHOTO }).success).toBe(true)
     expect(profileSchema.safeParse({ photo: 'data:text/html;base64,PGgxPg==' }).success).toBe(false)
     expect(profileSchema.safeParse({ photo: 'https://exemple.fr/moi.jpg' }).success).toBe(false)
   })
 
-  it('refuse une image démesurée', () => {
+  it('refuses an oversized image', () => {
     const huge = `data:image/jpeg;base64,${'A'.repeat(310_000)}`
     expect(profileSchema.safeParse({ photo: huge }).success).toBe(false)
   })
 
-  it('l’assainissement d’un profil extrait ne fabrique pas de photo', () => {
+  it('sanitising an extracted profile does not make up a photo', () => {
     const extracted = profileExtractionSchema.parse({ fullName: 'Julien' })
     expect(sanitizeProfile(extracted as Profile, 'Julien').photo).toBeUndefined()
   })

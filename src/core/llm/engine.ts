@@ -1,23 +1,23 @@
 import type { z } from 'zod'
 
 export interface ObjectRequest<T> {
-  /** Nom de l'étape (journalisation, messages d'erreur, réponses du MoteurMock). */
+  /** Step name (logging, error messages, MockEngine replies). */
   name: string
   schema: z.ZodType<T>
   system: string
   user: string
-  /** Température d'échantillonnage (défaut 0,2). 0 pour les étapes de jugement, qui doivent être reproductibles. */
+  /** Sampling temperature (default 0.2). 0 for judgement steps, which must be reproducible. */
   temperature?: number
-  /** Interrompt la génération (annulation par l'utilisateur). */
+  /** Stops the generation (cancelled by the user). */
   signal?: AbortSignal
 }
 
-// Primitive commune à tous les backends : produire un objet validé par un schéma Zod.
-// Les prompts et les étapes d'adaptation sont écrits une seule fois au-dessus de cette interface.
+// Primitive shared by all backends: produce an object validated by a Zod schema.
+// Prompts and tailoring steps are written once, on top of this interface.
 export interface LlmEngine {
   generateObject<T>(request: ObjectRequest<T>): Promise<T>
-  /** Libère les ressources natives, si le moteur en détient. */
+  /** Frees native resources, if the engine holds any. */
   release?(): Promise<void>
-  /** Où tourne le calcul (modèle embarqué uniquement) ; `null` tant que le modèle n'est pas chargé. */
+  /** Where computing runs (local model only); `null` as long as the model is not loaded. */
   computeMode?(): 'gpu' | 'cpu' | null
 }

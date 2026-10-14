@@ -25,7 +25,7 @@ export const languageSchema = z.object({
 })
 export type Language = z.infer<typeof languageSchema>
 
-// Photo facultative : image réduite, stockée en « data:image/jpeg;base64,… ». Jamais envoyée au modèle de langage.
+// Optional photo: reduced image, stored as « data:image/jpeg;base64,… ». Never sent to the language model.
 export const photoSchema = z
   .string()
   .max(300_000)
@@ -46,6 +46,6 @@ export const profileSchema = z.object({
   photo: photoSchema.optional(),
 })
 
-/** Ce que le modèle extrait d'un CV : la photo n'en fait pas partie (elle est ajoutée par l'utilisateur). */
+/** What the model extracts from a CV: the photo is not part of it (the user adds it). */
 export const profileExtractionSchema = profileSchema.omit({ photo: true })
 export type Profile = z.infer<typeof profileSchema>

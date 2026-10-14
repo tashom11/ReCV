@@ -1,22 +1,22 @@
 import { normalize } from './text'
 
-// Une compétence est un TERME court (« Rigueur », « WordPress / CMS », « Sens du détail »), pas une phrase décrivant
-// une tâche (« Installation et maintenance de matériel informatique »). Les phrases n'ont pas leur place dans la
-// section Compétences d'un CV (elles appartiennent aux réalisations d'une expérience).
+// A skill is a short TERM (« Rigueur », « WordPress / CMS », « Sens du détail »), not a sentence describing a task
+// (« Installation et maintenance de matériel informatique »). Sentences do not belong in the Skills section of a CV
+// (they belong to the achievements of an experience).
 const MAX_WORDS = 5
 const MAX_CHARACTERS = 50
 
-/** Vrai si `texte` a la forme d'une compétence : court, sans ponctuation de phrase. */
+/** True if `text` looks like a skill: short, without sentence punctuation. */
 export function isShortSkill(text: string): boolean {
   const t = text.trim()
   if (t === '' || t.length > MAX_CHARACTERS || /[.;!?]$/.test(t)) return false
-  // « & », « / », « - » seuls ne comptent pas comme des mots.
+  // « & », « / », « - » alone do not count as words.
   const words = t.split(/\s+/).filter((m) => /[\p{L}\p{N}]/u.test(m))
   return words.length <= MAX_WORDS
 }
 
-// Savoir-être et qualités professionnelles : utiles dans n'importe quel métier, donc toujours conservés.
-// Racines (sans accents) comparées au début des mots de la compétence.
+// Soft skills and professional qualities: useful in any job, so always kept.
+// Roots (without accents) compared with the start of the skill's words.
 const SOFT_SKILL_ROOTS = [
   'rigueur',
   'rigoureu',
@@ -80,20 +80,20 @@ const SOFT_SKILL_ROOTS = [
   'responsabilit',
 ]
 
-/** Vrai pour une qualité transversale (rigueur, autonomie, travail en équipe…). */
+/** True for a transferable quality (rigueur, autonomie, travail en équipe…). */
 export function isSoftSkill(skill: string): boolean {
-  // Apostrophes (droites ou typographiques) → espace : « d’apprentissage » devient « d apprentissage ».
+  // Apostrophes (straight or typographic) → space: « d’apprentissage » becomes « d apprentissage ».
   const c = normalize(skill).replace(/['’]/g, ' ')
   return SOFT_SKILL_ROOTS.some((root) => c.startsWith(root) || c.includes(` ${root}`))
 }
 
-/** « création digitale » → « Création digitale » ; espaces normalisés. */
+/** « création digitale » → « Création digitale »; normalised spaces. */
 export function formatSkill(term: string): string {
   const t = term.replace(/\s+/g, ' ').trim()
   return t === '' ? t : t.charAt(0).toLocaleUpperCase('fr-FR') + t.slice(1)
 }
 
-/** Sépare une liste de compétences en savoir-être et outils/techniques, en conservant l'ordre. */
+/** Splits a list of skills into soft skills and tools/techniques, keeping the order. */
 export function splitSoftAndHardSkills(skills: string[]): { softSkills: string[]; hardSkills: string[] } {
   return {
     softSkills: skills.filter(isSoftSkill),
@@ -102,8 +102,8 @@ export function splitSoftAndHardSkills(skills: string[]): { softSkills: string[]
 }
 
 /**
- * « SEO, RGAA, LLM, CRM » → quatre compétences. Une liste n'est éclatée que si chacun de ses éléments est lui-même un
- * terme court (≤ 3 mots) ; une enumération de phrases longues reste telle quelle.
+ * « SEO, RGAA, LLM, CRM » → four skills. A list is only split if each of its items is itself a short term (≤ 3
+ * words); an enumeration of long sentences stays as it is.
  */
 export function splitSkills(skills: string[]): string[] {
   return skills.flatMap((c) => {
@@ -118,15 +118,15 @@ export function splitSkills(skills: string[]): string[] {
 }
 
 /**
- * Clé de dédoublonnage : un mot seul est ramené à sa racine (« Adaptable » = « Adaptabilité »), une expression est
- * conservée entière (« Sens du détail » ≠ « Sens du conseil »).
+ * Deduplication key: a single word is reduced to its root (« Adaptable » = « Adaptabilité »), a phrase is kept whole
+ * (« Sens du détail » ≠ « Sens du conseil »).
  */
 export function skillKey(skill: string): string {
   const n = normalize(skill).replace(/['’]/g, ' ').trim()
   return /s/.test(n) ? n : n.slice(0, 5)
 }
 
-/** Retire les doublons (même clé), en conservant la première occurrence. */
+/** Removes duplicates (same key), keeping the first occurrence. */
 export function withoutDuplicates(list: string[]): string[] {
   const seenKeys = new Set<string>()
   return list.filter((c) => {
@@ -137,7 +137,7 @@ export function withoutDuplicates(list: string[]): string[] {
   })
 }
 
-// Adjectifs et expressions courants d'un « profil recherché » → forme nominale utilisable après « je fais preuve de ».
+// Common adjectives and phrases of a « profil recherché » → noun form usable after « je fais preuve de ».
 const SOFT_SKILL_NAMES: Record<string, string> = {
   adaptable: 'adaptabilité',
   autonome: 'autonomie',
@@ -170,8 +170,8 @@ const SOFT_SKILL_NAMES: Record<string, string> = {
 }
 
 /**
- * « Je fais preuve d'autonomie, d'adaptabilité et de rigueur. » : phrase de repli composée uniquement de qualités
- * attestées, à la première personne, sans accord de genre. Chaîne vide si la liste est vide.
+ * « Je fais preuve d'autonomie, d'adaptabilité et de rigueur. »: fallback sentence made only of evidenced qualities,
+ * in the first person, without gender agreement. Empty string if the list is empty.
  */
 export function softSkillsSentence(softSkills: string[]): string {
   const elements = softSkills

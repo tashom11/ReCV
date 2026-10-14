@@ -2,7 +2,7 @@ import type { LlmEngine, ObjectRequest } from './engine'
 
 type MockReply = unknown | ((request: ObjectRequest<unknown>) => unknown)
 
-// Réponses scriptées par nom d'étape, pour les tests : aucun appel LLM réel.
+// Replies scripted by step name, for tests: no real LLM call.
 export class MockEngine implements LlmEngine {
   readonly requests: ObjectRequest<unknown>[] = []
 

@@ -2,8 +2,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { type Block, type CvDocument, SECTION_TITLES, type Section } from './cvDocument'
 import { findTemplate, type TemplateId } from './templates'
 
-// Mise en page ATS : une seule colonne, texte réel, pas de tableau ni d'icône, titres de section standards.
-// Le style vient du modèle choisi (voir modeles.ts) ; la structure est identique pour tous.
+// ATS layout: a single column, real text, no table nor icon, standard section titles.
+// The style comes from the chosen template (see templates.ts); the structure is the same for all.
 
 function BlockHtml({ block }: { block: Block }) {
   switch (block.type) {
@@ -40,7 +40,7 @@ function BlockHtml({ block }: { block: Block }) {
 
 const SIDEBAR_TITLES: string[] = [SECTION_TITLES.skills, SECTION_TITLES.languages]
 
-/** Compétences en colonne étroite : « Étiquette : a, b, c » devient un sous-titre suivi d'une liste. */
+/** Skills in a narrow column: « Étiquette : a, b, c » becomes a subtitle followed by a list. */
 function SidebarBlock({ block }: { block: Block }) {
   if (block.type === 'paragraphe') {
     const separation = block.text.indexOf(' : ')

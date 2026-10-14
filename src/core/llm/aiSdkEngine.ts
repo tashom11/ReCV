@@ -6,20 +6,20 @@ type SdkProviderOptions = NonNullable<Parameters<typeof generateText>[0]['provid
 
 export interface AiSdkEngineOptions {
   attempts?: number
-  /** Options propres au fournisseur, ex. `{ ollama: { reasoningEffort: 'none' } }`. */
-  optionsFournisseur?: SdkProviderOptions
+  /** Provider-specific options, e.g. `{ ollama: { reasoningEffort: 'none' } }`. */
+  providerOptions?: SdkProviderOptions
 }
 
 const JSON_REMINDER =
   "\n\nTa réponse précédente n'était pas un JSON valide pour le schéma attendu. Réponds uniquement avec l'objet JSON demandé."
 
-// Schéma envoyé au modèle en mode « sortie » : les listes avec `.default([])` y sont obligatoires.
-// (En mode « entrée », utilisé par défaut par le SDK, elles sont facultatives et le modèle les omet.)
+// Schema sent to the model in « output » mode: lists with `.default([])` are required there.
+// (In « input » mode, used by default by the SDK, they are optional and the model leaves them out.)
 function schemaForModel<T>(schema: z.ZodType<T>) {
   return jsonSchema<T>(z.toJSONSchema(schema, { io: 'output' }) as Parameters<typeof jsonSchema>[0])
 }
 
-// Backend Vercel AI SDK : Ollama et API OpenAI-compatibles (BYOK).
+// Vercel AI SDK backend: Ollama and OpenAI-compatible APIs (BYOK).
 export class AiSdkEngine implements LlmEngine {
   constructor(
     private readonly model: LanguageModel,
@@ -38,14 +38,14 @@ export class AiSdkEngine implements LlmEngine {
           output: Output.object({ schema: schemaForModel(schema) }),
           temperature: temperature ?? 0.2,
           ...(temperature === 0 ? { seed: 42 } : {}),
-          providerOptions: this.options.optionsFournisseur,
+          providerOptions: this.options.providerOptions,
           abortSignal: signal,
         })
-        // Validation Zod systématique : le JSON Schema seul ne garantit pas les types côté modèle.
+        // Systematic Zod validation: the JSON Schema alone does not guarantee the types on the model side.
         return schema.parse(output)
       } catch (error) {
         if (signal?.aborted) throw error
-        // Seules les sorties invalides justifient une relance ; les erreurs réseau/API remontent telles quelles.
+        // Only invalid outputs justify a retry; network/API errors are passed on as they are.
         if (!NoObjectGeneratedError.isInstance(error) && !(error instanceof z.ZodError)) throw error
         lastError = error
       }

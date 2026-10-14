@@ -1,8 +1,8 @@
-// Modèles de CV : une même structure (titres de section standards, texte réel) habillée de plusieurs styles.
-// Aucun modèle n'utilise de tableau, de texte dans une image ni d'espacement de lettres (qui fait lire « p r o f i l »
-// aux logiciels de recrutement, ATS). Les modèles « latéral » rangent compétences et langues dans une colonne de côté
-// en PDF ; dans le code HTML, le contenu principal reste en premier : l'ordre de lecture est identique.
-// La photo, facultative, est une image décorative ignorée par ces logiciels.
+// CV templates: one structure (standard section titles, real text) dressed in several styles.
+// No template uses tables, text in images or letter spacing (which makes recruiting software, ATS, read
+// « p r o f i l »). The « sidebar » templates put skills and languages in a side column in the PDF; in the HTML
+// code, the main content comes first: the reading order is the same.
+// The optional photo is a decorative image, ignored by that software.
 
 export const TEMPLATE_IDS = ['classique', 'moderne', 'elegant', 'bandeau', 'lateral', 'pastel'] as const
 export type TemplateId = (typeof TEMPLATE_IDS)[number]
@@ -11,26 +11,26 @@ export interface CvTemplate {
   id: TemplateId
   name: string
   description: string
-  /** Pastille de couleur du modèle (aperçu dans la galerie). */
+  /** Colour swatch of the template (preview in the gallery). */
   color: string
-  /** `lateral` : compétences et langues dans une colonne de côté (PDF) ; le DOCX reste en une colonne. */
+  /** `lateral`: skills and languages in a side column (PDF); the DOCX stays single-column. */
   layout: 'simple' | 'lateral'
-  /** Jetons du rendu DOCX (le HTML/PDF utilise `css`). */
+  /** DOCX rendering tokens (HTML/PDF uses `css`). */
   docx: {
     font: string
-    /** Couleur d'accent hexadécimale sans « # » (titres de section, nom). */
+    /** Hexadecimal accent colour without « # » (section titles, name). */
     accent: string
-    /** Couleur du texte courant. */
+    /** Body text colour. */
     text: string
     header: 'gauche' | 'centre'
-    /** En-tête sur fond coloré (nom en blanc). */
+    /** Header on a coloured background (name in white). */
     banner?: string
     coloredSectionTitles: boolean
   }
   css: string
 }
 
-// Base commune : mise en page A4 à marges définies par @page (impression) ou par le corps (aperçu écran).
+// Common base: A4 layout with margins set by @page (print) or by the body (screen preview).
 const BASE = `
   @page { size: A4; margin: 14mm 16mm; }
   * { box-sizing: border-box; }
@@ -96,8 +96,8 @@ const BANNER = `
   .meta { color: #64748b; font-size: 9.5pt; }
 `
 
-// Modèles à colonne latérale : le fond de la colonne est peint par le fond de la page (répété sur chaque page
-// imprimée) ; les marges verticales viennent de @page, les marges horizontales des colonnes.
+// Sidebar templates: the column background is painted by the page background (repeated on every printed page);
+// vertical margins come from @page, horizontal ones from the columns.
 const SIDEBAR_BASE = `
   @page { size: A4; margin: 12mm 0; }
   @media screen { body { padding: 12mm 0; } }

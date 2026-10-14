@@ -9,37 +9,37 @@ import {
 } from './index'
 
 describe('experienceSchema', () => {
-  it('accepte une expérience minimale valide', () => {
+  it('accepts a minimal valid experience', () => {
     expect(() => experienceSchema.parse({ position: 'Développeur', company: 'Acme' })).not.toThrow()
   })
 
-  it('rejette une expérience sans poste', () => {
+  it('rejects an experience without position', () => {
     expect(() => experienceSchema.parse({ company: 'Acme' })).toThrow()
   })
 })
 
-describe('formationSchema', () => {
-  it('accepte une formation minimale valide', () => {
+describe('educationSchema', () => {
+  it('accepts a minimal valid education entry', () => {
     expect(() => educationSchema.parse({ degree: 'Master', school: 'Université X' })).not.toThrow()
   })
 
-  it('rejette une formation sans établissement', () => {
+  it('rejects an education entry without school', () => {
     expect(() => educationSchema.parse({ degree: 'Master' })).toThrow()
   })
 })
 
-describe('langueSchema', () => {
-  it('accepte une langue minimale valide', () => {
+describe('languageSchema', () => {
+  it('accepts a minimal valid language', () => {
     expect(() => languageSchema.parse({ name: 'Français' })).not.toThrow()
   })
 
-  it('rejette une langue sans nom', () => {
+  it('rejects a language without name', () => {
     expect(() => languageSchema.parse({ level: 'Courant' })).toThrow()
   })
 })
 
-describe('profilSchema', () => {
-  it('accepte un profil vide et applique les valeurs par défaut', () => {
+describe('profileSchema', () => {
+  it('accepts an empty profile and applies the defaults', () => {
     const profile = profileSchema.parse({})
     expect(profile.experiences).toEqual([])
     expect(profile.skills).toEqual([])
@@ -47,27 +47,27 @@ describe('profilSchema', () => {
     expect(profile.languages).toEqual([])
   })
 
-  it('rejette un profil avec une expérience invalide', () => {
+  it('rejects a profile with an invalid experience', () => {
     expect(() => profileSchema.parse({ experiences: [{ position: 'Développeur' }] })).toThrow()
   })
 })
 
-describe('offreSchema', () => {
-  it('accepte une offre minimale valide', () => {
+describe('jobPostingSchema', () => {
+  it('accepts a minimal valid job posting', () => {
     expect(() => jobPostingSchema.parse({ jobTitle: 'Développeur', rawText: 'Texte de l’offre' })).not.toThrow()
   })
 
-  it('rejette une offre sans texteBrut', () => {
+  it('rejects a job posting without rawText', () => {
     expect(() => jobPostingSchema.parse({ jobTitle: 'Développeur' })).toThrow()
   })
 })
 
-describe('cvAdapteSchema', () => {
-  it('accepte un CV adapté minimal valide', () => {
+describe('tailoredCvSchema', () => {
+  it('accepts a minimal valid tailored CV', () => {
     expect(() => tailoredCvSchema.parse({ headline: 'Développeur', summary: 'Accroche' })).not.toThrow()
   })
 
-  it('rejette un CV adapté sans titre', () => {
+  it('rejects a tailored CV without headline', () => {
     expect(() => tailoredCvSchema.parse({ summary: 'Accroche' })).toThrow()
   })
 })

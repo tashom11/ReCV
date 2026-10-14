@@ -57,7 +57,7 @@ export const cannedProfile: Profile = {
   ],
 }
 
-// Ne fait aucune extraction réelle : renvoie des données codées en dur, valides par schéma.
+// Does no real extraction: returns hard-coded data, valid against the schemas.
 export class MockProvider implements LlmProvider {
   async extractProfile(_cvText: string): Promise<Profile> {
     return cannedProfile

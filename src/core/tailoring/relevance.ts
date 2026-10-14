@@ -5,9 +5,9 @@ import type { Experience, Profile } from '../schemas'
 import type { JobAnalysis } from './jobAnalysis'
 import { normalize } from './text'
 
-// Réponse volontairement COMPACTE (sur CPU, le temps d'une étape est celui de la réponse). Pour les expériences
-// et formations : un domaine de 2 à 4 mots, puis une note ; pour les compétences : la seule liste des indices utiles
-// (au lieu d'un objet par compétence, ~15 fois plus long).
+// Deliberately COMPACT answer (on CPU, the time of a step is that of the answer). For experiences and education: a
+// 2-to-4-word field, then a score; for skills: only the list of useful indices (instead of one object per skill,
+// ~15 times longer).
 const scoreSchema = z.object({
   index: z.number(),
   domain: z.string().max(40).default(''),
@@ -20,7 +20,7 @@ export const relevanceSchema = z.object({
   usefulSkills: z.array(z.number()).default([]),
 })
 
-/** 0 = sans rapport avec le poste visé, 1 = transférable / général, 2 = directement lié. */
+/** 0 = unrelated to the target position, 1 = transferable / general, 2 = directly related. */
 export type RelevanceLevel = 0 | 1 | 2
 
 export interface Relevance {
@@ -41,7 +41,7 @@ Juge uniquement d'après les données fournies.
 
 ${NO_FABRICATION_RULES}`
 
-// Garde-fou : une note manquante, hors bornes ou non entière n'élimine jamais un élément (niveau neutre 1).
+// Guard: a missing, out-of-range or non-integer score never removes an item (neutral level 1).
 export function normalizeLevels(scores: { index: number; relevance: number }[], size: number): RelevanceLevel[] {
   const levels: RelevanceLevel[] = Array.from({ length: size }, () => 1)
   for (const { index, relevance } of scores) {
@@ -51,16 +51,16 @@ export function normalizeLevels(scores: { index: number; relevance: number }[], 
   return levels
 }
 
-/** Indices utiles → niveaux ; une liste vide ou entièrement invalide ne retire rien (niveau neutre partout). */
+/** Useful indices → levels; an empty or fully invalid list removes nothing (neutral level everywhere). */
 export function skillLevels(useful: number[], size: number): RelevanceLevel[] {
   const validated = new Set(useful.filter((i) => Number.isInteger(i) && i >= 0 && i < size))
   if (validated.size === 0) return Array.from({ length: size }, () => 1)
   return Array.from({ length: size }, (_, i) => (validated.has(i) ? 1 : 0))
 }
 
-// Garde-fou de cohérence : deux expériences du même domaine (ou au même intitulé de poste) ne peuvent pas être
-// pertinentes d'un côté et pas de l'autre (Webagence / Agence Pixel : « Développeur web front »).
-// Chaque groupe prend la note la plus haute.
+// Consistency guard: two experiences of the same field (or with the same job title) cannot be relevant on one side
+// and not on the other (Webagence / Agence Pixel: « Développeur web front »).
+// Each group takes the highest score.
 export function harmonizeExperiences(
   levels: RelevanceLevel[],
   experiences: Pick<Experience, 'position'>[],
@@ -71,7 +71,7 @@ export function harmonizeExperiences(
       experiences[i] ? `poste:${normalize(experiences[i].position)}` : '',
       domains[i] ? `domaine:${normalize(domains[i])}` : '',
     ].filter(Boolean)
-  // On propage le maximum entre éléments partageant une clé, jusqu'à stabilité.
+  // The maximum is spread among items sharing a key, until it is stable.
   const result = [...levels]
   for (let changed = true; changed; ) {
     changed = false
@@ -98,8 +98,8 @@ Réponds avec "choice" : l'indice du domaine le plus proche.
 
 ${NO_FABRICATION_RULES}`
 
-// Repli quand aucune expérience n'a été jugée pertinente : plutôt que de tout garder (et de remettre en avant
-// un métier sans aucun rapport), on demande un choix RELATIF, plus simple et plus stable qu'une note absolue.
+// Fallback when no experience was judged relevant: rather than keeping everything (and highlighting again an
+// unrelated job), a RELATIVE choice is asked, simpler and more stable than an absolute score.
 async function findClosestDomain(
   engine: LlmEngine,
   analysis: JobAnalysis,
@@ -126,7 +126,7 @@ async function findClosestDomain(
 const MAX_ACHIEVEMENTS_SENT = 4
 const MAX_ACHIEVEMENT_CHARACTERS = 140
 
-// Étape 2 : pertinence de chaque élément du profil par rapport au poste visé (une seule requête).
+// Step 2: relevance of each profile item to the target position (a single request).
 export async function evaluateRelevance(
   engine: LlmEngine,
   profile: Profile,
@@ -136,7 +136,7 @@ export async function evaluateRelevance(
   if (experiences.length + education.length + skills.length === 0) {
     return { experiences: [], education: [], skills: [] }
   }
-  // Entrée allégée : le jugement s'appuie sur l'intitulé et les premières réalisations, pas sur tout le CV.
+  // Lighter input: the judgement relies on the title and the first achievements, not on the whole CV.
   const content = {
     experiences: experiences.map((e, index) => ({
       index,
@@ -160,7 +160,7 @@ export async function evaluateRelevance(
     experiences,
     domains,
   )
-  // Aucune expérience jugée pertinente : on met en avant le domaine le plus proche plutôt que tout garder.
+  // No experience judged relevant: the closest field is highlighted rather than keeping everything.
   if (experiences.length >= 2 && Math.max(0, ...experienceLevels) === 0) {
     const closest = await findClosestDomain(engine, analysis, domains, experiences)
     if (closest !== null) {
@@ -177,9 +177,9 @@ export async function evaluateRelevance(
 }
 
 /**
- * Indices à conserver : tout sauf le niveau 0. Si rien ne survit (offre sans rapport avec aucun
- * élément, ou réponse du modèle incohérente), on garde tout plutôt que de produire une section vide.
- * `imposes` : indices toujours conservés (ex. compétence citée mot pour mot dans l'offre).
+ * Indices to keep: everything except level 0. If nothing survives (job posting unrelated to every item, or
+ * inconsistent model answer), everything is kept rather than producing an empty section.
+ * `forced`: indices always kept (e.g. a skill quoted word for word in the job posting).
  */
 export function keptIndexes(levels: RelevanceLevel[], forced: ReadonlySet<number> = new Set()): number[] {
   const keptIndices = levels.map((_, i) => i).filter((i) => (levels[i] ?? 0) > 0 || forced.has(i))

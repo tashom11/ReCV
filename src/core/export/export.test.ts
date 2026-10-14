@@ -28,10 +28,10 @@ const cv = tailoredCvSchema.parse({
   languages: [{ name: 'Français', level: 'natif' }],
 })
 
-describe('construireModele', () => {
+describe('buildCvDocument', () => {
   const model = buildCvDocument(profile, cv)
 
-  it('ordonne les sections avec des titres standards', () => {
+  it('orders the sections with standard titles', () => {
     expect(model.sections.map((s) => s.title)).toEqual([
       SECTION_TITLES.profile,
       SECTION_TITLES.skills,
@@ -41,39 +41,39 @@ describe('construireModele', () => {
     ])
   })
 
-  it('reprend les coordonnées du profil', () => {
+  it('takes the contact details from the profile', () => {
     expect(model.contact).toEqual(['claire@exemple.fr', '06 12 34 56 78', 'Lyon'])
   })
 
-  it('omet les sections vides', () => {
-    const vide = buildCvDocument(profile, { ...cv, summary: ' ', skills: [], education: [], languages: [] })
-    expect(vide.sections.map((s) => s.title)).toEqual([SECTION_TITLES.experience])
+  it('leaves out empty sections', () => {
+    const empty = buildCvDocument(profile, { ...cv, summary: ' ', skills: [], education: [], languages: [] })
+    expect(empty.sections.map((s) => s.title)).toEqual([SECTION_TITLES.experience])
   })
 
-  it('produit un nom de fichier sûr', () => {
+  it('produces a safe file name', () => {
     expect(cvFileName(model, 'pdf')).toBe('CV-Claire-Dubois.pdf')
     expect(cvFileName({ ...model, name: 'Éloïse O’Brien / Ñ' }, 'docx')).toBe('CV-Eloise-O-Brien-N.docx')
     expect(cvFileName({ ...model, name: '' }, 'pdf')).toBe('CV.pdf')
   })
 })
 
-describe('genererHtmlCv', () => {
+describe('generateHtmlCv', () => {
   const html = generateHtmlCv(buildCvDocument(profile, cv))
 
-  it('contient le texte réel, sans tableau ni image', () => {
+  it('contains real text, without table nor image', () => {
     expect(html).toContain('Claire Dubois')
     expect(html).toContain('Migration vers TypeScript')
     expect(html).not.toMatch(/<table|<img|<svg/)
   })
 
-  it('échappe le contenu', () => {
+  it('escapes the content', () => {
     expect(html).toContain('&lt;3')
     expect(html).not.toContain('<3.')
   })
 })
 
-describe('genererDocxCv', () => {
-  it('produit un DOCX relisible contenant les sections et les puces', async () => {
+describe('generateDocxCv', () => {
+  it('produces a readable DOCX with the sections and the bullets', async () => {
     const buffer = await generateDocxCv(buildCvDocument(profile, cv))
     expect(buffer.subarray(0, 2).toString()).toBe('PK')
     const { value } = await mammoth.extractRawText({ buffer })

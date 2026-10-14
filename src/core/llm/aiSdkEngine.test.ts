@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { AiSdkEngine } from './aiSdkEngine'
 
-// Modèle simulé du SDK : renvoie successivement les textes fournis, sans aucun appel réseau.
+// Simulated SDK model: returns the given texts one after the other, without any network call.
 function simulatedModel(responses: string[]) {
   let call = 0
   return new MockLanguageModelV4({
@@ -22,20 +22,20 @@ function simulatedModel(responses: string[]) {
 const schema = z.object({ title: z.string() })
 const request = { name: 'essai', schema, system: 'système', user: 'utilisateur' }
 
-describe('MoteurAiSdk', () => {
-  it('renvoie l’objet validé', async () => {
+describe('AiSdkEngine', () => {
+  it('returns the validated object', async () => {
     const model = simulatedModel(['{"title":"Dev"}'])
     await expect(new AiSdkEngine(model).generateObject(request)).resolves.toEqual({ title: 'Dev' })
     expect(model.doGenerateCalls).toHaveLength(1)
   })
 
-  it('relance une fois après une sortie invalide', async () => {
+  it('retries once after an invalid output', async () => {
     const model = simulatedModel(['pas du json', '{"title":"Dev"}'])
     await expect(new AiSdkEngine(model).generateObject(request)).resolves.toEqual({ title: 'Dev' })
     expect(model.doGenerateCalls).toHaveLength(2)
   })
 
-  it('échoue avec un message clair après deux sorties invalides', async () => {
+  it('fails with a clear message after two invalid outputs', async () => {
     const model = simulatedModel(['{"autre":1}'])
     await expect(new AiSdkEngine(model).generateObject(request)).rejects.toThrow(/Étape « essai ».*2 tentatives/)
     expect(model.doGenerateCalls).toHaveLength(2)

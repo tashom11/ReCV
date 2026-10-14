@@ -45,12 +45,12 @@ const base: Profile = {
   languages: [{ name: 'Français' }, { name: 'Anglais' }],
 }
 
-describe('assainirProfil', () => {
-  it('conserve un profil entièrement attesté dans le CV', () => {
+describe('sanitizeProfile', () => {
+  it('keeps a profile fully evidenced in the CV', () => {
     expect(sanitizeProfile(base, CV)).toEqual(base)
   })
 
-  it('ne garde pour liens que de vraies adresses web, pas des noms d’entreprises', () => {
+  it('only keeps real web addresses as links, not company names', () => {
     const profile: Profile = {
       ...base,
       links: ['Agence Pixel', 'Carrosserie Dupont', 'julien-moreau.exemple.dev', 'https://github.com/x'],
@@ -58,7 +58,7 @@ describe('assainirProfil', () => {
     expect(sanitizeProfile(profile, CV).links).toEqual(['julien-moreau.exemple.dev', 'https://github.com/x'])
   })
 
-  it('retire un diplôme rangé à tort dans les expériences', () => {
+  it('removes a degree wrongly filed among the experiences', () => {
     const profile: Profile = {
       ...base,
       experiences: [
@@ -69,7 +69,7 @@ describe('assainirProfil', () => {
     expect(sanitizeProfile(profile, CV).experiences).toEqual(base.experiences)
   })
 
-  it('retire la « expérience » faite d’une ligne diverse (permis, disponibilité, site)', () => {
+  it('removes an « experience » made of a miscellaneous line (licence, availability, website)', () => {
     const profile: Profile = {
       ...base,
       experiences: [
@@ -85,7 +85,7 @@ describe('assainirProfil', () => {
     expect(sanitizeProfile(profile, CV).experiences).toHaveLength(2)
   })
 
-  it('retire une expérience sans entreprise ni période (poste tiré d’une compétence)', () => {
+  it('removes an experience with neither company nor dates (position taken from a skill)', () => {
     const profile: Profile = {
       ...base,
       experiences: [
@@ -104,7 +104,7 @@ describe('assainirProfil', () => {
     ])
   })
 
-  it('retire une expérience dont l’entreprise ou le poste n’apparaît pas dans le CV', () => {
+  it('removes an experience whose company or position does not appear in the CV', () => {
     const profile: Profile = {
       ...base,
       experiences: [
@@ -115,7 +115,7 @@ describe('assainirProfil', () => {
     expect(sanitizeProfile(profile, CV).experiences).toHaveLength(2)
   })
 
-  it('retire formations, langues, compétences, e-mail et téléphone inventés', () => {
+  it('removes made-up education, languages, skills, e-mail and phone', () => {
     const profile: Profile = {
       ...base,
       email: 'inconnu@exemple.fr',
@@ -132,7 +132,7 @@ describe('assainirProfil', () => {
     expect(net.skills).toEqual(base.skills)
   })
 
-  it('tolère les artefacts d’extraction PDF (retours à la ligne, tirets, casse, accents)', () => {
+  it('tolerates PDF extraction artefacts (line breaks, hyphens, case, accents)', () => {
     const cvPdf = 'AGENCE\nPIXEL\nDEVELOPPEUR WEB\nFRONT 2021-2022'
     const profile: Profile = {
       links: [],

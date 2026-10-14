@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { detectContractType } from './contractType'
 
-describe('repererContrat', () => {
-  it('reprend le contrat et le temps de travail écrits dans l’annonce', () => {
+describe('detectContractType', () => {
+  it('takes the contract and working time written in the job posting', () => {
     expect(detectContractType('Poste en CDI, à temps plein, basé à Arras.')).toBe('CDI · temps plein')
     expect(detectContractType('Contrat à durée déterminée de 6 mois, temps partiel (24 h).')).toBe(
       'CDD · temps partiel',
@@ -11,9 +11,9 @@ describe('repererContrat', () => {
     expect(detectContractType('Temps complet')).toBe('temps plein')
   })
 
-  it('ne déduit rien quand l’annonce ne dit rien', () => {
+  it('infers nothing when the job posting says nothing', () => {
     expect(detectContractType('Nous recherchons une personne organisée et souriante.')).toBeUndefined()
-    // « stagiaire » ou « CDIsation » ne sont pas des types de contrat.
+    // « stagiaire » or « CDIsation » are not contract types.
     expect(detectContractType('Vous encadrez les stagiaires du service.')).toBeUndefined()
   })
 })

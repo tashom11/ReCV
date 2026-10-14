@@ -3,7 +3,7 @@ import type { LlmEngine } from '../llm/engine'
 import { NO_FABRICATION_RULES, wrapInTag } from '../llm/prompts'
 import type { JobAnalysis } from './jobAnalysis'
 
-// Le titre du CV n'est pas rédigé par le modèle : il reprend l'intitulé de l'offre, nettoyé en code (voir pipeline.ts).
+// The CV headline is not written by the model: it takes the job posting title, cleaned in code (see pipeline.ts).
 export const summarySchema = z.object({ summary: z.string() })
 export type Summary = z.infer<typeof summarySchema>
 
@@ -17,12 +17,12 @@ Rédige l'"summary" du profil fourni : 2 à 3 phrases (400 caractères maximum),
 
 ${NO_FABRICATION_RULES}`
 
-// Étape 4 : accroche, rédigée à partir des seuls éléments conservés.
-/** Ce que le modèle a le droit de mobiliser : uniquement ce qui répond à l'offre (le reste du profil est omis). */
+// Step 4: summary, written from the kept items only.
+/** What the model may use: only what answers the job posting (the rest of the profile is left out). */
 export interface SummaryInput {
-  /** Savoir-être du profil et compétences demandées par l'offre que le profil atteste. */
+  /** Soft skills of the profile and skills requested by the job posting that the profile evidences. */
   skills: string[]
-  /** Réalisations qui recoupent des termes de l'offre : jamais les autres tâches du profil. */
+  /** Achievements matching job posting terms: never the other tasks of the profile. */
   achievements: string[]
 }
 

@@ -1,6 +1,6 @@
 import { parseHTML } from 'linkedom'
 
-// Le cœur n'a pas la lib DOM : on ne type que ce qu'on utilise.
+// The core has no DOM lib: only what is used is typed.
 interface DomNode {
   nodeType: number
   nodeName: string
@@ -45,18 +45,18 @@ function normalizeText(text: string): string {
       .replace(/\r\n?/g, '\n')
       .replace(/[ \t ]+/g, ' ')
       .replace(/ ?\n ?/g, '\n')
-      // Puce dont le contenu est un bloc (<li><p>…</p></li>) : « - » et texte sur la même ligne.
+      // Bullet whose content is a block (<li><p>…</p></li>): « - » and text on the same line.
       .replace(/^- *\n+/gm, '- ')
       .replace(/\n{3,}/g, '\n\n')
-      // Puces consécutives : pas de ligne vide entre deux éléments d'une même liste.
+      // Consecutive bullets: no blank line between two items of the same list.
       .replace(/^(- [^\n]*)\n\n(?=- )/gm, '$1\n')
       .trim()
   )
 }
 
 /**
- * Texte d'un fragment HTML en conservant la structure : retour à la ligne entre blocs, puces « - » pour les
- * listes. `textContent` seul colle les blocs voisins (« contesteAutonomie »), ce qui gêne le modèle.
+ * Text of an HTML fragment keeping its structure: line breaks between blocks, « - » bullets for lists.
+ * `textContent` alone glues neighbouring blocks together (« contesteAutonomie »), which confuses the model.
  */
 export function htmlToText(html: string): string {
   const { document } = parseHTML(`<!doctype html><html><body><div>${html}</div></body></html>`)
@@ -67,7 +67,7 @@ export function htmlToText(html: string): string {
       chunks.push(node.textContent ?? '')
       return
     }
-    // Document (9) ou fragment (11) : on descend simplement dans les enfants.
+    // Document (9) or fragment (11): simply walk down the children.
     if (node.nodeType === 9 || node.nodeType === 11) {
       for (const child of Array.from(node.childNodes)) visit(child)
       return
@@ -85,9 +85,9 @@ export function htmlToText(html: string): string {
   return normalizeText(chunks.join(''))
 }
 
-// --- Nettoyage d'une offre avant de la confier au modèle -------------------------------------------------
+// --- Cleaning a job posting before handing it to the model -----------------------------------------------
 
-// Rubriques sans intérêt pour adapter un CV : déroulé du recrutement, avantages, mentions légales…
+// Sections of no interest to tailor a CV: recruitment process, benefits, legal notices…
 const NOISE_HEADINGS = [
   /^(le |notre )?(d[ée]roulement|processus|process|d[ée]roul[ée]) (des |de |du )?(entretiens?|recrutement|s[ée]lection)/i,
   /^[ée]tapes? (du|de) (recrutement|processus)/i,
@@ -105,25 +105,25 @@ const NOISE_HEADINGS = [
   /^(à|a) propos (de nous|de l.entreprise)$/i,
   /^postuler\b|^partager (cette )?offre|^(offres?|jobs?) similaires?/i,
 ]
-// Lignes isolées à retirer où qu'elles soient.
+// Isolated lines to remove wherever they are.
 const NOISE_LINES =
   /(cette annonce est r[ée]dig[ée]e au masculin|toutes nos offres sont ouvertes aux personnes en situation de handicap|(la )?m[êe]me qualit[ée] de traitement|cookies?\b)/i
 
-// Retire les pictogrammes et symboles de tête (« ❄️Pourquoi… », « 🎯 Tes missions »).
+// Removes leading pictograms and symbols (« ❄️Pourquoi… », « 🎯 Tes missions »).
 const withoutSymbols = (line: string) => line.trim().replace(/^[^\p{L}\p{N}]+/u, '')
 
-// Une ligne « titre de rubrique » : courte, sans ponctuation finale.
+// A « section heading » line: short, without final punctuation.
 export function isHeading(line: string, allowColon = false): boolean {
   const raw = line.trim()
-  // Une puce n'est jamais un titre ; une ligne avec parenthèses ou chiffres (« Entretien final (~30 min) »)
-  // est un contenu ; un titre tient en quelques mots.
+  // A bullet is never a heading; a line with brackets or digits (« Entretien final (~30 min) ») is content; a heading
+  // fits in a few words.
   if (/^[-•*–—]\s/.test(raw) || /[()\d]/.test(raw)) return false
   const l = withoutSymbols(raw)
   const finalPunctuation = allowColon ? /[.!?;,]$/ : /[.!?;,:]$/
   return l.length > 0 && l.length <= 70 && l.split(/\s+/).length <= 8 && !finalPunctuation.test(l) && /^\p{Lu}/u.test(l)
 }
 
-/** Retire les rubriques de bruit et les lignes de mentions standard ; conserve missions, profil, compétences. */
+/** Removes noise sections and standard notice lines; keeps missions, profile, skills. */
 export function cleanJobPostingText(text: string): string {
   const output: string[] = []
   let skipping = false
@@ -133,7 +133,7 @@ export function cleanJobPostingText(text: string): string {
       skipping = true
       continue
     }
-    // Une nouvelle rubrique (qui n'est pas du bruit) met fin au bloc ignoré.
+    // A new section (that is not noise) ends the skipped block.
     if (skipping && isHeading(l)) skipping = false
     if (skipping || NOISE_LINES.test(l)) continue
     output.push(line)
@@ -141,10 +141,10 @@ export function cleanJobPostingText(text: string): string {
   return normalizeText(output.join('\n'))
 }
 
-/** Longueur maximale confiée au modèle : le début d'une offre contient l'essentiel (missions, profil). */
+/** Maximum length given to the model: the start of a job posting contains the essentials (missions, profile). */
 export const MAX_ANALYSIS_LENGTH = 4500
 
-/** Texte nettoyé puis tronqué à une limite de ligne : c'est lui que lit le modèle (jamais plus de ~1 200 jetons). */
+/** Text cleaned then truncated at a line boundary: it is what the model reads (never more than ~1,200 tokens). */
 export function prepareJobPostingText(text: string, max = MAX_ANALYSIS_LENGTH): string {
   const cleaned = cleanJobPostingText(text)
   if (cleaned.length <= max) return cleaned
@@ -153,15 +153,15 @@ export function prepareJobPostingText(text: string, max = MAX_ANALYSIS_LENGTH): 
   return (lineEnd > max * 0.6 ? cut.slice(0, lineEnd) : cut).trim()
 }
 
-// --- Intitulé d'offre → titre de CV --------------------------------------------------------------------
+// --- Job posting title → CV headline ----------------------------------------------------------------
 
 const GENDER_MARKS = /\s*[([]?\s*\b(?:[hfmwd]\s*[/.-]\s*){1,3}[hfmwdx]\b\s*[)\]]?/giu
 const CONTRACT_WORDS =
   /^(?:cdi|cdd|stage|alternance|apprentissage|freelance|ind[ée]pendant|int[ée]rim|temps (?:plein|partiel)|full[ -]?time|part[ -]?time)\b/iu
 
 /**
- * Intitulé d'offre prêt à servir de titre de CV : retire les mentions « (H/F) », le nom de l'entreprise et le type de
- * contrat souvent accolés au titre (« Consultant SEO (H/F) - Eskimoz - CDI » → « Consultant SEO »).
+ * Job posting title ready to serve as a CV headline: removes the « (H/F) » mentions, the company name and the contract
+ * type often attached to the title (« Consultant SEO (H/F) - Eskimoz - CDI » → « Consultant SEO »).
  */
 export function cleanJobTitle(title: string, company?: string): string {
   const withoutGender = title.replace(GENDER_MARKS, ' ')

@@ -3,7 +3,7 @@ import { MockEngine } from '../llm/mockEngine'
 import type { JobPosting, Profile } from '../schemas'
 import { tailorCv } from './pipeline'
 
-// Cas réel : CV de développeur web (avec un passé de carrossier) face à une offre de carrossier peintre.
+// Real case: CV of a web developer (who used to be a car body painter) against a car body painter job posting.
 const profile: Profile = {
   fullName: 'Julien Moreau',
   headline: 'Développeur web / Carrossier peintre',
@@ -58,8 +58,8 @@ function engine(summary: { summary: string }, skills = [0, 0, 1, 1]) {
   })
 }
 
-describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
-  it('ne garde que le métier visé et liste le reste dans « ecartes »', async () => {
+describe('tailorCv: leaves out what is unrelated to the job posting', () => {
+  it('only keeps the target trade and lists the rest in « excluded »', async () => {
     const cv = await tailorCv(
       engine({ summary: 'Carrossier peintre rigoureux, attentif aux délais.' }),
       profile,
@@ -78,25 +78,26 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
     expect(cv.summary).toBe('Carrossier peintre rigoureux, attentif aux délais.')
   })
 
-  it('ne transmet rien du domaine écarté au modèle qui rédige l’accroche', async () => {
+  it('passes nothing of the excluded field to the model writing the summary', async () => {
     const m = engine({ summary: 'Carrossier peintre.' })
     await tailorCv(m, profile, jobPosting)
     const writing = m.requests.find((r) => r.name === 'summary')
     expect(writing?.user).not.toMatch(/Webagence|HTML|WordPress|développement web|Développeur web/i)
-    // Seuls les savoir-être et les réalisations qui recoupent l'offre sont transmis : ni postes, ni employeurs.
+    // Only the soft skills and the achievements matching the job
+    // posting are passed on: neither positions nor employers.
     expect(writing?.user).not.toMatch(/Dupont|Carrossier peintre"/)
     expect(writing?.user).toContain('Rigueur')
   })
 
-  it('remplace une accroche qui réintroduit le domaine écarté (jamais celle du profil d’origine) ; le titre vient du profil', async () => {
+  it("replaces a summary that brings the excluded field back (never the original profile's); the headline comes from the profile", async () => {
     const cv = await tailorCv(engine({ summary: 'Carrossier peintre et expert HTML / CSS.' }), profile, jobPosting)
     expect(cv.headline).toBe('Carrossier peintre')
-    // Rejetée : repli sur une phrase de qualités attestées (jamais l'ancienne accroche du profil).
+    // Rejected: falls back to a sentence of evidenced qualities (never the old summary of the profile).
     expect(cv.summary).toMatch(/^Je fais preuve de /)
     expect(cv.summary).not.toMatch(/HTML|WordPress/)
   })
 
-  it('garde une compétence citée mot pour mot dans l’offre, même jugée sans rapport', async () => {
+  it('keeps a skill quoted word for word in the job posting, even if judged unrelated', async () => {
     const jobPostingWithCss: JobPosting = {
       ...jobPosting,
       rawText: `${jobPosting.rawText} Notions de WordPress appréciées.`,
@@ -106,7 +107,7 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
     expect(cv.excluded.skills).toEqual(['HTML / CSS'])
   })
 
-  it('ne vide jamais une section : tout est conservé si tout est jugé sans rapport', async () => {
+  it('never empties a section: everything is kept if everything is judged unrelated', async () => {
     const m = new MockEngine({
       keywords: { targetTitle: 'Astronaute', keywords: [] },
       relevance: {

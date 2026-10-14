@@ -4,10 +4,11 @@ import type { JobAnalysis } from './jobAnalysis'
 import { containsWord, experienceText, normalize } from './text'
 
 /**
- * Compétences demandées par l'offre, rapprochées du profil : c'est ce que cherche d'abord le recruteur (ou son ATS).
- * - `evidenced` : déjà présentes dans le profil (compétences, expériences, titre) : on peut les afficher telles quelles ;
- * - `missing` : demandées mais absentes du profil. Le CV ne les ajoute JAMAIS de lui-même : c'est à l'utilisateur
- *   de dire s'il les maîtrise.
+ * Skills requested by the job posting, compared with the profile:
+ * it is what the recruiter (or their ATS) looks for first.
+ * - `evidenced`: already in the profile (skills, experiences, title): they can be shown as they are;
+ * - `missing`: requested but absent from the profile. The CV NEVER adds them by itself: it is up to the user to say
+ *   whether they master them.
  */
 export interface JobCoverage {
   evidenced: string[]
@@ -15,7 +16,7 @@ export interface JobCoverage {
   requirements: Requirements
 }
 
-// Mots d'introduction qui ne désignent pas la compétence elle-même (« Maîtrise de WordPress » → « WordPress »).
+// Introductory words that do not name the skill itself (« Maîtrise de WordPress » → « WordPress »).
 const GENERIC_WORDS = new Set([
   'maitrise',
   'maitriser',
@@ -68,11 +69,11 @@ export function analyzeCoverage(profile: Profile, analysis: JobAnalysis): JobCov
     ].join('\n'),
   )
   const sourceRoots = new Set((source.match(/[\p{L}\p{N}]{3,}/gu) ?? []).map(root))
-  // L'intitulé du poste n'est pas une compétence à cocher (avec ou sans « (H/F) »).
+  // The job title is not a skill to tick (with or without « (H/F) »).
   const titles = new Set([normalize(analysis.targetTitle), normalize(cleanJobTitle(analysis.targetTitle))])
 
-  // Ni l'intitulé du poste (ou un morceau : « Chargé de sourcing » pour « Chargé de sourcing et de recrutement »),
-  // ni le contexte du contrat : ce ne sont pas des compétences.
+  // Neither the job title (or a piece of it: « Chargé de sourcing » for « Chargé de sourcing et de recrutement ») nor
+  // the contract context: they are not skills.
   const fullTitle = normalize(cleanJobTitle(analysis.targetTitle))
   const isContext = (t: string) => {
     const n = normalize(t)
@@ -80,7 +81,7 @@ export function analyzeCoverage(profile: Profile, analysis: JobAnalysis): JobCov
   }
 
   const seenTerms = new Set<string>()
-  // Qualités et outils demandés dans le « profil recherché » d'abord : ce sont les exigences explicites.
+  // Qualities and tools requested in the « profil recherché » first: they are the explicit requirements.
   const explicit = new Set([...analysis.requiredSkills, ...analysis.softSkills].map((t) => normalize(t.trim())))
   const terms = [...analysis.requiredSkills, ...analysis.softSkills, ...analysis.keywords]
     .map((t) => t.trim())
@@ -103,16 +104,16 @@ export function analyzeCoverage(profile: Profile, analysis: JobAnalysis): JobCov
       evidenced.push(term)
       continue
     }
-    // Un mot-clé isolé non attesté (« stratégie », « entretien », « commercial ») est trop vague pour être proposé
-    // comme compétence à ajouter ; seuls les outils et qualités explicitement demandés le sont.
+    // An isolated keyword that is not evidenced (« stratégie », « entretien », « commercial ») is
+    // too vague to be offered as a skill to add; only explicitly requested tools and qualities are.
     const isolatedWord = term.split(/\s+/).length === 1
-    // (Un nom d'outil s'écrit avec une majuscule ou des chiffres : « Ahrefs », « GA4 », « n8n » ne sont pas écartés.)
+    // (A tool name is written with a capital letter or digits: « Ahrefs », « GA4 », « n8n » are not left out.)
     const looksLikeCommonNoun = term === term.toLowerCase() && !/\d/.test(term)
     if (isolatedWord && !explicit.has(normalize(term)) && looksLikeCommonNoun) continue
     missing.push(term)
   }
-  // Un terme générique inclus dans un terme plus précis de la liste (« audit » dans « audit sémantique ») n'apporte
-  // rien : on garde le plus précis.
+  // A generic term included in a more precise term of the list (« audit » in « audit sémantique ») adds nothing: the
+  // more precise one is kept.
   const withoutRedundancy = (list: string[]) =>
     list.filter((t) => !list.some((other) => other !== t && containsWord(normalize(other), normalize(t))))
   return {
@@ -122,11 +123,11 @@ export function analyzeCoverage(profile: Profile, analysis: JobAnalysis): JobCov
   }
 }
 
-// Mots de contexte (contrat, remplacement…) que le modèle range parfois parmi les « mots-clés ».
+// Context words (contract, replacement…) that the model sometimes files among the « keywords ».
 const CONTRACT_CONTEXT =
   /^(remplacement|cdi|cdd|interim|intérim|stage|alternance|temps (plein|partiel)|teletravail|télétravail|poste (a|à) pourvoir|poste base|deplacements?|déplacements?|reseaux? commerciaux?|secteur [\p{L} ]+)$/iu
 
-/** Niveau d'études « équivalent Bac + N » d'un texte (« Bac +3 à Bac +5 » → 3, « Master » → 5), sinon null. */
+/** Education level « equivalent to Bac + N » of a text (« Bac +3 à Bac +5 » → 3, « Master » → 5), otherwise null. */
 export function educationLevel(text: string): number | null {
   const t = normalize(text)
   const bac = t.match(/bac\s*\+\s*(\d)/)
@@ -154,7 +155,8 @@ function evaluateRequirements(profile: Profile, analysis: JobAnalysis, source: s
   }
 
   if (analysis.requiredExperience.trim() !== '') {
-    // Domaine de l'expérience demandée : on retire durée et mots d'introduction, il reste « recrutement, sourcing… ».
+    // Field of the requested experience: duration and introductory
+    // words are removed, « recrutement, sourcing… » remains.
     const domain = significantWords(analysis.requiredExperience).filter(
       (m) => m.length >= 5 && !/^(minimum|annees?|ans?|experience|environnement|idealement|poste|similaire)$/.test(m),
     )
@@ -167,8 +169,8 @@ function evaluateRequirements(profile: Profile, analysis: JobAnalysis, source: s
   return result
 }
 
-/** Vrai si `terme` est déjà représenté par l'une des compétences listées (inclusion dans un sens ou l'autre). */
-export function dejaListee(term: string, skills: string[]): boolean {
+/** True if `term` is already represented by one of the listed skills (inclusion either way). */
+export function isAlreadyListed(term: string, skills: string[]): boolean {
   const t = normalize(term)
   return skills.some((c) => {
     const n = normalize(c)

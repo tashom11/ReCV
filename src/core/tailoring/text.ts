@@ -1,6 +1,6 @@
 import type { Experience } from '../schemas'
 
-// Comparaisons de texte insensibles à la casse et aux accents, utilisées par les garde-fous anti-invention.
+// Case- and accent-insensitive text comparisons, used by the no-fabrication guards.
 
 export function normalize(text: string): string {
   return text
@@ -10,19 +10,19 @@ export function normalize(text: string): string {
     .trim()
 }
 
-// Vrai si `mot` apparaît dans `texte` comme mot entier (« C » ne correspond pas à « React »).
+// True if `word` appears in `text` as a whole word (« C » does not match « React »).
 export function containsWord(text: string, word: string): boolean {
   if (word.length === 0) return false
   const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}($|[^\\p{L}\\p{N}])`, 'u').test(text)
 }
 
-// Nombres cités (« 50 000 », « 30 % », « 2021 ») réduits à leurs chiffres.
+// Quoted numbers (« 50 000 », « 30 % », « 2021 ») reduced to their digits.
 export function numbers(text: string): string[] {
   return (text.match(/\d[\d\s.,]*/g) ?? []).map((count) => count.replace(/\D/g, ''))
 }
 
-// Tout le texte source d'une expérience : référence pour vérifier ce que le LLM a le droit de citer.
+// All the source text of an experience: reference to check what the LLM may quote.
 export function experienceText(experience: Experience): string {
   return [experience.position, experience.description ?? '', ...experience.achievements].join('\n')
 }

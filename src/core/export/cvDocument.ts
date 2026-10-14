@@ -2,8 +2,8 @@ import type { Profile, TailoredCv } from '../schemas'
 import { filterLinks } from '../schemas/links'
 import { splitSoftAndHardSkills } from '../tailoring/skills'
 
-// Modèle intermédiaire unique : le PDF (HTML) et le DOCX en sont deux rendus,
-// donc même ordre et mêmes titres de section standards (lus par les ATS).
+// Single intermediate model: the PDF (HTML) and the DOCX are two renderings of it, hence the same order and the same
+// standard section titles (read by ATS).
 
 export type Block =
   | { type: 'paragraphe'; text: string }
@@ -19,7 +19,7 @@ export interface CvDocument {
   name: string
   title: string
   contact: string[]
-  /** Photo facultative (data URL), reprise du profil. */
+  /** Optional photo (data URL), taken from the profile. */
   photo?: string
   sections: Section[]
 }
@@ -36,7 +36,7 @@ const isNotEmpty = (value: string | undefined): value is string => !!value?.trim
 const key = (value: string) => value.toLowerCase().replace(/[^\p{L}\p{N}]/gu, '')
 const joinNonEmpty = (...parts: (string | undefined)[]) => parts.filter(isNotEmpty).join(', ')
 
-/** Les coordonnées viennent du profil (le CV adapté n'en contient pas). */
+/** Contact details come from the profile (the tailored CV has none). */
 export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
   const sections: Section[] = []
 
@@ -44,8 +44,8 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
     sections.push({ title: SECTION_TITLES.profile, blocks: [{ type: 'paragraphe', text: cv.summary.trim() }] })
   }
 
-  // Compétences en trois lignes étiquetées, lisibles par un humain comme par un ATS :
-  // compétences clés (celles de l'offre), savoir-être, outils et techniques.
+  // Skills on three labelled lines, readable by a human as well as by an ATS: key skills (those of the job posting),
+  // soft skills, tools and techniques.
   const keys = cv.keySkills.filter(isNotEmpty)
   const { softSkills, hardSkills } = splitSoftAndHardSkills(cv.skills.filter(isNotEmpty))
   const lines = [
@@ -60,7 +60,7 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
     })
   }
 
-  // Un diplôme déjà listé en formation n'est pas une expérience (profil enregistré avant le contrôle d'import).
+  // A degree already listed in education is not an experience (profile saved before the import check).
   const degrees = new Set(cv.education.map((f) => key(f.degree)))
   const experiences = cv.experiences.filter((e) => !degrees.has(key(e.position)))
   if (experiences.length > 0) {
@@ -110,7 +110,7 @@ export function buildCvDocument(profile: Profile, cv: TailoredCv): CvDocument {
   }
 }
 
-/** Nom de fichier sûr (Windows), ex. « CV-Claire-Dubois.pdf ». */
+/** Safe file name (Windows), e.g. « CV-Claire-Dubois.pdf ». */
 export function cvFileName(model: CvDocument, extension: 'pdf' | 'docx'): string {
   const base = model.name
     .normalize('NFD')
