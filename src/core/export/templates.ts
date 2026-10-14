@@ -4,7 +4,7 @@
 // code, the main content comes first: the reading order is the same.
 // The optional photo is a decorative image, ignored by that software.
 
-export const TEMPLATE_IDS = ['classique', 'moderne', 'elegant', 'bandeau', 'lateral', 'pastel'] as const
+export const TEMPLATE_IDS = ['classic', 'modern', 'elegant', 'banner', 'sidebar', 'pastel'] as const
 export type TemplateId = (typeof TEMPLATE_IDS)[number]
 
 export interface CvTemplate {
@@ -14,7 +14,7 @@ export interface CvTemplate {
   /** Colour swatch of the template (preview in the gallery). */
   color: string
   /** `lateral`: skills and languages in a side column (PDF); the DOCX stays single-column. */
-  layout: 'simple' | 'lateral'
+  layout: 'single' | 'sidebar'
   /** DOCX rendering tokens (HTML/PDF uses `css`). */
   docx: {
     font: string
@@ -22,7 +22,7 @@ export interface CvTemplate {
     accent: string
     /** Body text colour. */
     text: string
-    header: 'gauche' | 'centre'
+    header: 'left' | 'center'
     /** Header on a coloured background (name in white). */
     banner?: string
     coloredSectionTitles: boolean
@@ -147,21 +147,21 @@ const PASTEL = `
 
 export const CV_TEMPLATES: readonly CvTemplate[] = [
   {
-    id: 'classique',
+    id: 'classic',
     name: 'Classique',
     description: 'Sobre et neutre, titres soulignés. Le choix le plus universel.',
     color: '#111111',
-    layout: 'simple',
-    docx: { font: 'Calibri', accent: '111111', text: '111111', header: 'gauche', coloredSectionTitles: false },
+    layout: 'single',
+    docx: { font: 'Calibri', accent: '111111', text: '111111', header: 'left', coloredSectionTitles: false },
     css: BASE + CLASSIC,
   },
   {
-    id: 'moderne',
+    id: 'modern',
     name: 'Moderne',
     description: 'Accent bleu, nom en grand, photo ronde. Dynamique sans fioriture.',
     color: '#2563eb',
-    layout: 'simple',
-    docx: { font: 'Calibri', accent: '2563EB', text: '1F2937', header: 'gauche', coloredSectionTitles: true },
+    layout: 'single',
+    docx: { font: 'Calibri', accent: '2563EB', text: '1F2937', header: 'left', coloredSectionTitles: true },
     css: BASE + MODERN,
   },
   {
@@ -169,33 +169,33 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
     name: 'Élégant',
     description: 'Typographie à empattements, en-tête centré, filets fins. Pour les métiers de contact ou de création.',
     color: '#7a5c2e',
-    layout: 'simple',
-    docx: { font: 'Georgia', accent: '7A5C2E', text: '2A2A2A', header: 'centre', coloredSectionTitles: true },
+    layout: 'single',
+    docx: { font: 'Georgia', accent: '7A5C2E', text: '2A2A2A', header: 'center', coloredSectionTitles: true },
     css: BASE + ELEGANT,
   },
   {
-    id: 'bandeau',
+    id: 'banner',
     name: 'Bandeau',
     description: 'En-tête sur fond sombre avec le nom en blanc, rubriques à liseré. Fort impact visuel.',
     color: '#0f172a',
-    layout: 'simple',
+    layout: 'single',
     docx: {
       font: 'Calibri',
       accent: '0F172A',
       text: '1E293B',
-      header: 'gauche',
+      header: 'left',
       banner: '0F172A',
       coloredSectionTitles: true,
     },
     css: BASE + BANNER,
   },
   {
-    id: 'lateral',
+    id: 'sidebar',
     name: 'Latéral',
     description: 'Colonne sombre à gauche (photo, contact, compétences, langues), parcours à droite. Style « Canva ».',
     color: '#1e293b',
-    layout: 'lateral',
-    docx: { font: 'Calibri', accent: '0E7490', text: '1E293B', header: 'gauche', coloredSectionTitles: true },
+    layout: 'sidebar',
+    docx: { font: 'Calibri', accent: '0E7490', text: '1E293B', header: 'left', coloredSectionTitles: true },
     css: BASE + SIDEBAR_BASE + SIDEBAR,
   },
   {
@@ -204,13 +204,13 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
     description:
       'Colonne beige à gauche, typographie douce et accents terracotta. Chaleureux, pour les métiers du contact.',
     color: '#e7d8c4',
-    layout: 'lateral',
-    docx: { font: 'Georgia', accent: 'B4532A', text: '3B3330', header: 'gauche', coloredSectionTitles: true },
+    layout: 'sidebar',
+    docx: { font: 'Georgia', accent: 'B4532A', text: '3B3330', header: 'left', coloredSectionTitles: true },
     css: BASE + SIDEBAR_BASE + PASTEL,
   },
 ]
 
-export const DEFAULT_TEMPLATE: TemplateId = 'classique'
+export const DEFAULT_TEMPLATE: TemplateId = 'classic'
 
 export function findTemplate(id: string | undefined): CvTemplate {
   return CV_TEMPLATES.find((m) => m.id === id) ?? (CV_TEMPLATES[0] as CvTemplate)

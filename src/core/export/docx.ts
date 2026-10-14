@@ -39,11 +39,11 @@ function text(style: Style, content: string, options: { bold?: boolean; size?: n
 
 function blockParagraphs(style: Style, block: Block): Paragraph[] {
   switch (block.type) {
-    case 'paragraphe':
+    case 'paragraph':
       return [new Paragraph({ children: [text(style, block.text)] })]
-    case 'liste':
+    case 'list':
       return block.elements.map((e) => new Paragraph({ children: [text(style, e)], bullet: { level: 0 } }))
-    case 'entree': {
+    case 'entry': {
       const meta = [block.subtitle, block.dateRange].filter(Boolean).join(' | ')
       return [
         new Paragraph({
@@ -78,7 +78,7 @@ export async function generateDocxCv(model: CvDocument, templateId?: TemplateId)
     font: chosen.docx.font,
     accent: chosen.docx.accent,
     text: chosen.docx.text,
-    center: chosen.docx.header === 'centre',
+    center: chosen.docx.header === 'center',
     banner: chosen.docx.banner,
     coloredTitle: chosen.docx.coloredSectionTitles,
   }

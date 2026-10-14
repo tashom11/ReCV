@@ -141,9 +141,9 @@ describe('tailorCv: profile whose skills contain sentences', () => {
     const model = buildCvDocument(profile, cv)
     const section = model.sections.find((s) => s.title === 'Compétences')
     expect(section?.blocks).toEqual([
-      { type: 'paragraphe', text: 'Compétences clés : WordPress, Création de contenus' },
-      { type: 'paragraphe', text: 'Savoir-être : Rigueur, Autonomie' },
-      { type: 'paragraphe', text: 'Outils et techniques : HTML / CSS' },
+      { type: 'paragraph', text: 'Compétences clés : WordPress, Création de contenus' },
+      { type: 'paragraph', text: 'Savoir-être : Rigueur, Autonomie' },
+      { type: 'paragraph', text: 'Outils et techniques : HTML / CSS' },
     ])
   })
 })

@@ -1,0 +1,95 @@
+import type { StepNumber } from '../flow'
+import { Icon } from './icons'
+
+const STEP_NAMES: Record<StepNumber, string> = { 1: 'Mon CV', 2: 'L’annonce', 3: 'Mon nouveau CV' }
+const STEP_NUMBERS: StepNumber[] = [1, 2, 3]
+
+/**
+ * The three steps of the flow, always visible at the top. The state of each step is written in full (done, in progress,
+ * to come); a done step is clickable to go back to it.
+ */
+export function Stepper({
+  currentStep,
+  done,
+  onGoTo,
+  currentStepState = 'en cours',
+  locked = false,
+  reachable = [],
+  stepStates = {},
+}: {
+  currentStep: StepNumber | null
+  done: readonly StepNumber[]
+  onGoTo: (step: StepNumber) => void
+  /** State label of the current step (« en cours », « en préparation »). */
+  currentStepState?: string
+  /** No step is clickable (generation in progress). */
+  locked?: boolean
+  /** Steps one can go back to without them being finished (a CV created but not downloaded yet). */
+  reachable?: readonly StepNumber[]
+  /** State written for a given step, instead of « faite » or « à venir ». */
+  stepStates?: Partial<Record<StepNumber, string>>
+}) {
+  return (
+    <nav aria-label="Étapes" className="min-w-0 flex-1">
+      <ol className="flex items-center gap-3">
+        {STEP_NUMBERS.map((number) => {
+          const isCurrent = number === currentStep
+          const isDone = done.includes(number) && !isCurrent
+          const accessible = !isCurrent && reachable.includes(number)
+          const state = isCurrent ? currentStepState : (stepStates[number] ?? (isDone ? 'faite' : 'à venir'))
+          const clickable = (isDone || accessible) && !locked
+          const content = (
+            <>
+              <span
+                className={`flex size-10 shrink-0 items-center justify-center rounded-full font-bold ${
+                  isCurrent
+                    ? 'bg-encre text-accent ring-4 ring-accent-pale'
+                    : isDone
+                      ? 'bg-marque text-white'
+                      : 'border-2 border-trait-fort bg-surface text-encre-douce'
+                }`}
+              >
+                {isDone ? <Icon name="check" size={20} strokeWidth={3} /> : number}
+              </span>
+              <span className="min-w-0 text-left leading-tight">
+                <span className={`block truncate text-petit ${isDone ? 'font-bold text-marque' : 'text-encre-douce'}`}>
+                  Étape {number} · {state}
+                </span>
+                <span
+                  className={`block truncate font-bold ${isCurrent || isDone || accessible ? 'text-encre' : 'text-encre-douce'} ${
+                    clickable ? 'underline underline-offset-4' : ''
+                  }`}
+                >
+                  {STEP_NAMES[number]}
+                </span>
+              </span>
+            </>
+          )
+          return (
+            <li key={number} className="flex min-w-0 flex-1 items-center gap-3 last:flex-none">
+              {clickable ? (
+                <button
+                  type="button"
+                  onClick={() => onGoTo(number)}
+                  className="flex min-h-11 min-w-0 items-center gap-3 rounded-bouton"
+                >
+                  {content}
+                </button>
+              ) : (
+                <span aria-current={isCurrent ? 'step' : undefined} className="flex min-w-0 items-center gap-3">
+                  {content}
+                </span>
+              )}
+              {number < 3 && (
+                <span
+                  aria-hidden="true"
+                  className={`h-0.5 min-w-4 flex-1 rounded-full ${isDone ? 'bg-marque' : 'bg-trait'}`}
+                />
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
+  )
+}

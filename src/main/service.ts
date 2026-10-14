@@ -79,7 +79,7 @@ async function defaultProvider(settings: Settings, apiKey: string | null): Promi
       if (!settings.apiModel) throw new Error('Aucun modèle indiqué pour le service en ligne.')
       return createApiProvider({ baseUrl: settings.apiUrl, apiKey: apiKey, model: settings.apiModel })
     case 'local': {
-      if (!settings.localModelPath) throw new CodedError('moteur-absent', 'Aucun modèle local sélectionné.')
+      if (!settings.localModelPath) throw new CodedError('engine-missing', 'Aucun modèle local sélectionné.')
       const { createLocalProvider } = await import('@core/llm/localEngine')
       return createLocalProvider({ modelPath: settings.localModelPath })
     }
@@ -128,7 +128,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
 
   const activeProfile = () => {
     const active = getActiveProfile(db)
-    if (!active) throw new CodedError('profil-absent', 'Aucun CV enregistré : importez d’abord votre CV.')
+    if (!active) throw new CodedError('profile-missing', 'Aucun CV enregistré : importez d’abord votre CV.')
     return active
   }
 
@@ -178,7 +178,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     fetchJobPosting: (url: string) => fetchJobPosting(url, { renderHtml: renderHtml, userAgent: deps.userAgent }),
 
     async parseJobPostingText(text: string): Promise<JobPosting> {
-      report({ task: 'offre', label: 'Analyse de l’offre par le modèle' })
+      report({ task: 'job-posting', label: 'Analyse de l’offre par le modèle' })
       return (await provider()).extractJobPosting(text)
     },
 
@@ -187,7 +187,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
       const key = jobPostingKey(jobPosting)
       let analysis = analyses.get(key)
       if (!analysis) {
-        report({ task: 'offre', label: 'Repérage de ce que l’employeur recherche' })
+        report({ task: 'job-posting', label: 'Repérage de ce que l’employeur recherche' })
         analysis = await (await provider()).analyzeJobPosting(jobPosting)
         remember(key, analysis)
       }
@@ -212,14 +212,14 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
       const cancellation = new AbortController()
       runningTailoring = cancellation
       try {
-        report({ task: 'adaptation', key: 'preparation', label: 'Préparation du modèle' })
+        report({ task: 'tailoring', key: 'setup', label: 'Préparation du modèle' })
         const [params, llm] = await Promise.all([settings.read(), provider()])
         const key = jobPostingKey(jobPosting)
         const cv = await llm.tailorCv(active.profile, jobPosting, {
           rewrite: params.rewriteBullets,
           analysis: analyses.get(key),
           onAnalysis: (analysis) => remember(key, analysis),
-          onStep: (e) => report({ task: 'adaptation', ...e, compute: llm.computeMode?.() ?? undefined }),
+          onStep: (e) => report({ task: 'tailoring', ...e, compute: llm.computeMode?.() ?? undefined }),
           signal: cancellation.signal,
         })
         cancellation.signal.throwIfAborted()
@@ -228,7 +228,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
         purgeOldData(db, { keepCreations: KEPT_CREATIONS })
         return { id, jobPostingId: jobPostingId, cv }
       } catch (error) {
-        if (cancellation.signal.aborted) throw new CodedError('annule', 'Création annulée.', { cause: error })
+        if (cancellation.signal.aborted) throw new CodedError('cancelled', 'Création annulée.', { cause: error })
         throw error
       } finally {
         if (runningTailoring === cancellation) runningTailoring = null
@@ -240,7 +240,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     },
 
     async generateSummary(profile: Profile) {
-      report({ task: 'accroche', label: 'Repérage des compétences transversales' })
+      report({ task: 'summary', label: 'Repérage des compétences transversales' })
       return (await provider()).generateSummary(profile)
     },
 
@@ -261,7 +261,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
         await writeFile(path, content)
       } catch (error) {
         const detail = error instanceof Error ? error.message : String(error)
-        throw new CodedError('ecriture-impossible', `Écriture impossible : ${detail}`, { cause: error })
+        throw new CodedError('write-failed', `Écriture impossible : ${detail}`, { cause: error })
       }
       exported.add(resolve(path))
       return path

@@ -42,7 +42,7 @@ export const settingsSchema = z.object({
   /** Rewrite the bullets with the model (slower). Default: bullets are selected, without the model. */
   rewriteBullets: z.boolean().default(false),
   /** Layout template of the exported CV (see `core/export/templates.ts`). */
-  cvTemplate: z.enum(TEMPLATE_IDS).default('classique'),
+  cvTemplate: z.enum(TEMPLATE_IDS).default('classic'),
   localModelPath: z
     .string()
     .max(1024)
@@ -107,7 +107,7 @@ export interface ModelDownloadProgress {
   id: string
   receivedBytes: number
   totalBytes: number
-  status: 'en-cours' | 'verification' | 'termine' | 'erreur' | 'annule'
+  status: 'downloading' | 'verifying' | 'done' | 'error' | 'cancelled'
   message?: string
 }
 
@@ -127,7 +127,7 @@ export interface UpdateState {
    * `indisponible`: application not installed (development). `prete`: downloaded, installed on quit.
    * `erreur`: check impossible (offline, repository unreachable).
    */
-  status: 'indisponible' | 'inactif' | 'verification' | 'a-jour' | 'telechargement' | 'prete' | 'erreur'
+  status: 'unavailable' | 'idle' | 'checking' | 'up-to-date' | 'downloading' | 'ready' | 'error'
   newVersion?: string
   /** Download progress, from 0 to 100. */
   percent?: number
@@ -139,7 +139,7 @@ export interface UpdateState {
 
 /** Current step of a long task (CV import, job posting analysis, tailoring): the renderer shows it. */
 export interface TaskProgress {
-  task: 'import' | 'offre' | 'adaptation' | 'accroche'
+  task: 'import' | 'job-posting' | 'tailoring' | 'summary'
   /** Stable tailoring step (the interface turns it into plain words). */
   key?: StepKey
   /** Readable label, e.g. « Réécriture des expériences ». */

@@ -2,13 +2,13 @@ import type { JobPosting } from '../schemas/jobPosting'
 import { extractJobPostingFromHtml } from './extraction'
 
 export type JobPostingErrorCode =
-  | 'url-invalide'
-  | 'reseau-local'
-  | 'reseau'
+  | 'invalid-url'
+  | 'local-network'
+  | 'network'
   | 'http'
-  | 'contenu-non-html'
-  | 'contenu-vide'
-  | 'site-protege'
+  | 'not-html'
+  | 'empty-content'
+  | 'protected-site'
 
 // Sites that serve an anti-bot challenge or require a login: no point insisting, the user is guided instead.
 const PROTECTED_SITES: { pattern: RegExp; name: string }[] = [
@@ -21,7 +21,7 @@ function protectedSiteError(host: string): JobPostingFetchError | null {
   const site = PROTECTED_SITES.find((s) => s.pattern.test(host))
   if (!site) return null
   return new JobPostingFetchError(
-    'site-protege',
+    'protected-site',
     `${site.name} protège ses pages contre les accès automatiques : ouvrez l’annonce dans votre navigateur, copiez son texte, puis collez-le ici.`,
   )
 }
@@ -84,11 +84,11 @@ function validateUrl(raw: string): URL {
     // tombe sur l'erreur ci-dessous
   }
   if (!url || (url.protocol !== 'http:' && url.protocol !== 'https:')) {
-    throw new JobPostingFetchError('url-invalide', 'Adresse invalide : une URL http(s) est attendue.')
+    throw new JobPostingFetchError('invalid-url', 'Adresse invalide : une URL http(s) est attendue.')
   }
   if (isLocalNetworkHost(url.hostname)) {
     throw new JobPostingFetchError(
-      'reseau-local',
+      'local-network',
       'Cette adresse désigne un appareil de votre ordinateur ou de votre réseau, pas une annonce en ligne.',
     )
   }
@@ -108,14 +108,14 @@ async function downloadHtml(url: URL, fetchImpl: typeof fetch, delayMs: number, 
       },
     })
   } catch {
-    throw new JobPostingFetchError('reseau', `${PASTE_TEXT_MESSAGE} (site injoignable)`)
+    throw new JobPostingFetchError('network', `${PASTE_TEXT_MESSAGE} (site injoignable)`)
   }
   if (!response.ok) {
     throw new JobPostingFetchError('http', `${PASTE_TEXT_MESSAGE} (le site a répondu ${response.status})`)
   }
   const type = response.headers.get('content-type') ?? ''
   if (type && !/html|xml/i.test(type)) {
-    throw new JobPostingFetchError('contenu-non-html', `${PASTE_TEXT_MESSAGE} (contenu non HTML)`)
+    throw new JobPostingFetchError('not-html', `${PASTE_TEXT_MESSAGE} (contenu non HTML)`)
   }
   return readBoundedText(response)
 }
@@ -124,7 +124,7 @@ async function downloadHtml(url: URL, fetchImpl: typeof fetch, delayMs: number, 
 export const MAX_PAGE_BYTES = 5 * 1024 * 1024
 
 async function readBoundedText(response: Response): Promise<string> {
-  const tooLarge = () => new JobPostingFetchError('contenu-non-html', `${PASTE_TEXT_MESSAGE} (page trop volumineuse)`)
+  const tooLarge = () => new JobPostingFetchError('not-html', `${PASTE_TEXT_MESSAGE} (page trop volumineuse)`)
   const posting = Number(response.headers.get('content-length'))
   if (posting > MAX_PAGE_BYTES) throw tooLarge()
   if (!response.body) return response.text()
@@ -145,7 +145,7 @@ async function readBoundedText(response: Response): Promise<string> {
     }
   } catch (e) {
     if (e instanceof JobPostingFetchError) throw e
-    throw new JobPostingFetchError('reseau', `${PASTE_TEXT_MESSAGE} (lecture interrompue)`)
+    throw new JobPostingFetchError('network', `${PASTE_TEXT_MESSAGE} (lecture interrompue)`)
   }
   return Buffer.concat(chunks).toString('utf8')
 }
@@ -179,6 +179,6 @@ export async function fetchJobPosting(rawUrl: string, options: FetchOptions = {}
   throw (
     protectedSiteError(url.hostname) ??
     fetchError ??
-    new JobPostingFetchError('contenu-vide', `${PASTE_TEXT_MESSAGE} (aucun texte trouvé sur la page)`)
+    new JobPostingFetchError('empty-content', `${PASTE_TEXT_MESSAGE} (aucun texte trouvé sur la page)`)
   )
 }

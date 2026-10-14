@@ -5,180 +5,181 @@ import { composeCv, initialChoices } from '@core/tailoring/composition'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { focusScreenTitle, windowTitle } from './accessibility'
 import logo from './assets/logo.png'
-import { EcranAccueil } from './ecrans/Accueil'
-import { type AnnonceLue, EcranAnnonce } from './ecrans/Annonce'
-import { EcranCreation } from './ecrans/Creation'
-import { useMiseAJour } from './ecrans/MisesAJour'
-import { EcranMonCv } from './ecrans/MonCv'
-import { EcranNouveauCv } from './ecrans/NouveauCv'
-import { EcranPreparation } from './ecrans/Preparation'
-import { EcranReglages } from './ecrans/Reglages'
-import { EcranSucces } from './ecrans/Succes'
-import { type DescriptionErreur, decrireErreur, estAnnulation } from './erreurs'
-import { enregistrerDuree, lireEstimation } from './estimation'
+import { describeError, type ErrorDescription, isCancellation } from './errors'
+import { readEstimate, saveDuration } from './estimate'
 import {
-  apresCommencer,
-  enteteDeVue,
-  etapeDeVue,
-  etapesFaites,
-  moteurPret,
-  type NumeroEtape,
-  titreSansMention,
-  type Vue,
-  vueDeEtape,
-  vueInitiale,
-} from './parcours'
-import { Alerte, Bouton, BoutonLien, Etapes, EtatVide, Icone } from './ui'
+  afterStart,
+  doneSteps,
+  engineReady,
+  headerForView,
+  initialView,
+  type StepNumber,
+  stepForView,
+  titleWithoutGender,
+  type View,
+  viewForStep,
+} from './flow'
+import { GeneratingScreen } from './screens/Generating'
+import { JobPostingScreen, type ReadJobPosting } from './screens/JobPosting'
+import { MyCvScreen } from './screens/MyCv'
+import { NewCvScreen } from './screens/NewCv'
+import { SettingsScreen } from './screens/Settings'
+import { SetupScreen } from './screens/Setup'
+import { SuccessScreen } from './screens/Success'
+import { useUpdateState } from './screens/Updates'
+import { WelcomeScreen } from './screens/Welcome'
+import { Alert, Button, EmptyState, Icon, LinkButton, Stepper } from './ui'
 
-interface Resultat {
-  /** Profil au moment de la création : les indices des expériences doivent correspondre. */
-  profil: Profile
-  offre: JobPosting
-  genere: GeneratedCv
+interface Result {
+  /** Profile at the time of creation: the experience indices must match it. */
+  profile: Profile
+  jobPosting: JobPosting
+  generated: GeneratedCv
 }
 
-const CLE_NOM_FICHIER = 'recv.nomFichierCv'
+const FILE_NAME_KEY = 'recv.nomFichierCv'
 
 export default function App() {
-  const [vue, setVue] = useState<Vue | null>(null)
-  // Vue à retrouver en quittant les réglages ou la préparation.
-  const retour = useRef<Vue>('accueil')
-  const [profil, setProfil] = useState<Profile | null>(null)
-  const [nomFichier, setNomFichier] = useState<string | null>(() => localStorage.getItem(CLE_NOM_FICHIER))
-  const [annonce, setAnnonce] = useState<AnnonceLue | null>(null)
-  const [resultat, setResultat] = useState<Resultat | null>(null)
-  const [exporte, setExporte] = useState<string | null>(null)
-  const [erreurCreation, setErreurCreation] = useState<DescriptionErreur | null>(null)
-  const [miseEnPage, setMiseEnPage] = useState(false)
-  const [estimation, setEstimation] = useState(() => lireEstimation(localStorage))
-  const [moteur, setMoteur] = useState<{ pret: boolean; enLigne: boolean }>({ pret: true, enLigne: false })
+  const [view, setView] = useState<View | null>(null)
+  // View to go back to when leaving the settings or the setup.
+  const returnView = useRef<View>('welcome')
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [fileName, setFileName] = useState<string | null>(() => localStorage.getItem(FILE_NAME_KEY))
+  const [posting, setPosting] = useState<ReadJobPosting | null>(null)
+  const [result, setResult] = useState<Result | null>(null)
+  const [exportedPath, setExportedPath] = useState<string | null>(null)
+  const [generationError, setGenerationError] = useState<ErrorDescription | null>(null)
+  const [layingOut, setLayingOut] = useState(false)
+  const [estimate, setEstimate] = useState(() => readEstimate(localStorage))
+  const [engine, setEngine] = useState<{ ready: boolean; online: boolean }>({ ready: true, online: false })
 
-  const miseAJour = useMiseAJour()
+  const update = useUpdateState()
 
-  const verifierMoteur = useCallback(
+  const checkEngine = useCallback(
     () =>
       Promise.all([window.api.getSettings(), window.api.getModelsState()]).then(
         ([p, m]) => {
           // "Online": the CV leaves this computer (online service, or Ollama on another machine).
-          const enLigne = p.provider === 'api' || (p.provider === 'ollama' && !isLocalService(p.ollamaUrl))
-          const etat = { pret: moteurPret(p, m.models), enLigne }
-          setMoteur(etat)
-          return etat
+          const online = p.provider === 'api' || (p.provider === 'ollama' && !isLocalService(p.ollamaUrl))
+          const state = { ready: engineReady(p, m.models), online }
+          setEngine(state)
+          return state
         },
-        () => ({ pret: true, enLigne: false }),
+        () => ({ ready: true, online: false }),
       ),
     [],
   )
 
   useEffect(() => {
-    void verifierMoteur()
+    void checkEngine()
     window.api.getProfile().then(
-      (existant) => {
-        if (existant) setProfil(existant.profile)
-        setVue(vueInitiale(existant !== null))
+      (existing) => {
+        if (existing) setProfile(existing.profile)
+        setView(initialView(existing !== null))
       },
-      () => setVue('accueil'),
+      () => setView('welcome'),
     )
-  }, [verifierMoteur])
+  }, [checkEngine])
 
   // Each screen change is announced: window title, then focus on the title of the new screen
   // (the clicked button has disappeared, the focus would otherwise fall back to the page).
-  const previousView = useRef<Vue | null>(null)
+  const previousView = useRef<View | null>(null)
   useEffect(() => {
-    if (vue === null) return
-    document.title = windowTitle(vue)
+    if (view === null) return
+    document.title = windowTitle(view)
     const isFirstScreen = previousView.current === null
-    previousView.current = vue
+    previousView.current = view
     // Effects run after the DOM is updated: the new title is already there. (No requestAnimationFrame: it is
     // paused while the window is minimised, which users are invited to do during long tasks.)
     if (!isFirstScreen) focusScreenTitle()
-  }, [vue])
+  }, [view])
 
-  const aller = useCallback((suivante: Vue) => {
-    setVue((actuelle) => {
-      if ((suivante === 'reglages' || suivante === 'preparation') && actuelle && actuelle !== suivante) {
-        if (actuelle !== 'reglages' && actuelle !== 'preparation') retour.current = actuelle
+  const goTo = useCallback((nextView: View) => {
+    setView((currentView) => {
+      if ((nextView === 'settings' || nextView === 'setup') && currentView && currentView !== nextView) {
+        if (currentView !== 'settings' && currentView !== 'setup') returnView.current = currentView
       }
-      return suivante
+      return nextView
     })
     window.scrollTo({ top: 0 })
   }, [])
 
-  const preparer = useCallback(() => aller('preparation'), [aller])
+  const goToSetup = useCallback(() => goTo('setup'), [goTo])
 
-  const surProfil = (nouveau: Profile, fichier?: string) => {
-    setProfil(nouveau)
-    if (fichier) {
-      setNomFichier(fichier)
-      localStorage.setItem(CLE_NOM_FICHIER, fichier)
+  const onProfile = (next: Profile, file?: string) => {
+    setProfile(next)
+    if (file) {
+      setFileName(file)
+      localStorage.setItem(FILE_NAME_KEY, file)
     }
   }
 
-  const creer = async () => {
-    if (!annonce || !profil) return
-    const { offre } = annonce
-    const debut = Date.now()
-    setErreurCreation(null)
-    setMiseEnPage(false)
-    aller('creation')
+  const create = async () => {
+    if (!posting || !profile) return
+    const { jobPosting } = posting
+    const start = Date.now()
+    setGenerationError(null)
+    setLayingOut(false)
+    goTo('generating')
     try {
-      const genere = await window.api.tailorCv(offre)
-      enregistrerDuree(localStorage, (Date.now() - debut) / 1000)
-      setEstimation(lireEstimation(localStorage))
-      // Dernière étape annoncée : on prépare l'aperçu avant de montrer le résultat.
-      setMiseEnPage(true)
-      const { cvTemplate: modeleCv } = await window.api.getSettings()
-      const points = genere.cv.experiences.map((e) => e.bullets)
+      const generated = await window.api.tailorCv(jobPosting)
+      saveDuration(localStorage, (Date.now() - start) / 1000)
+      setEstimate(readEstimate(localStorage))
+      // Last announced step: the preview is prepared before showing the result.
+      setLayingOut(true)
+      const { cvTemplate } = await window.api.getSettings()
+      const bullets = generated.cv.experiences.map((e) => e.bullets)
       await window.api
-        .templateHtml(composeCv(profil, genere.cv, initialChoices(genere.cv), points), modeleCv)
+        .templateHtml(composeCv(profile, generated.cv, initialChoices(generated.cv), bullets), cvTemplate)
         .catch(() => '')
-      setResultat({ profil, offre, genere })
-      setExporte(null)
-      aller('resultat')
+      setResult({ profile, jobPosting, generated })
+      setExportedPath(null)
+      goTo('result')
     } catch (e) {
-      // Annulée : retour à l'annonce, sans message. Interrompue : l'annonce est gardée, on peut relancer.
-      if (!estAnnulation(e)) setErreurCreation(decrireErreur('creation', e))
-      aller('annonce')
+      // Cancelled: back to the job posting, without a message. Interrupted: the job posting is kept, it can be run
+      // again.
+      if (!isCancellation(e)) setGenerationError(describeError('generating', e))
+      goTo('posting')
     }
   }
 
-  const autreOffre = () => {
-    setAnnonce(null)
-    setResultat(null)
-    setExporte(null)
-    setErreurCreation(null)
-    aller('annonce')
+  const anotherPosting = () => {
+    setPosting(null)
+    setResult(null)
+    setExportedPath(null)
+    setGenerationError(null)
+    goTo('posting')
   }
 
-  const surDonneesEffacees = useCallback(() => {
-    setProfil(null)
-    setNomFichier(null)
-    localStorage.removeItem(CLE_NOM_FICHIER)
-    setAnnonce(null)
-    setResultat(null)
-    setExporte(null)
-    retour.current = 'accueil'
-    aller('accueil')
-  }, [aller])
+  const onDataErased = useCallback(() => {
+    setProfile(null)
+    setFileName(null)
+    localStorage.removeItem(FILE_NAME_KEY)
+    setPosting(null)
+    setResult(null)
+    setExportedPath(null)
+    returnView.current = 'welcome'
+    goTo('welcome')
+  }, [goTo])
 
-  const surReglagesChanges = useCallback(() => void verifierMoteur(), [verifierMoteur])
+  const onSettingsChanged = useCallback(() => void checkEngine(), [checkEngine])
 
-  const surPret = useCallback(() => {
-    void verifierMoteur()
-    aller(retour.current === 'accueil' ? 'cv' : retour.current)
-  }, [aller, verifierMoteur])
+  const onReady = useCallback(() => {
+    void checkEngine()
+    goTo(returnView.current === 'welcome' ? 'cv' : returnView.current)
+  }, [goTo, checkEngine])
 
-  if (vue === null) return <div className="min-h-screen bg-papier" />
+  if (view === null) return <div className="min-h-screen bg-papier" />
 
-  const entete = enteteDeVue(vue)
-  const faites = etapesFaites({
-    profilPresent: profil !== null,
-    annonceConfirmee: resultat !== null || vue === 'creation',
-    exporte: exporte !== null,
+  const header = headerForView(view)
+  const done = doneSteps({
+    profilePresent: profile !== null,
+    postingConfirmed: result !== null || view === 'generating',
+    exportedPath: exportedPath !== null,
   })
-  const allerEtape = (etape: NumeroEtape) => aller(vueDeEtape(etape))
-  // Rien ne peut être lu ni créé sans moteur : on le dit là où on en a besoin, avec l'action pour y remédier.
-  const moteurManquant = !moteur.pret && (vue === 'cv' || vue === 'annonce')
+  const goToStep = (step: StepNumber) => goTo(viewForStep(step))
+  // Nothing can be read nor created without an engine: say so where it is needed, with the action to fix it.
+  const engineMissing = !engine.ready && (view === 'cv' || view === 'posting')
 
   return (
     <div className="flex min-h-screen flex-col bg-papier text-encre">
@@ -188,42 +189,42 @@ export default function App() {
             <img src={logo} alt="" width={40} height={40} className="rounded-champ" />
             Re:CV
           </span>
-          {entete.etapes ? (
-            <Etapes
-              courante={etapeDeVue(vue)}
-              faites={faites}
-              onAller={allerEtape}
-              etatCourante={vue === 'creation' ? 'en préparation' : 'en cours'}
-              verrouille={vue === 'creation'}
-              accessibles={resultat && !exporte ? [3] : []}
-              etats={resultat && !exporte ? { 3: 'à télécharger' } : {}}
+          {header.steps ? (
+            <Stepper
+              currentStep={stepForView(view)}
+              done={done}
+              onGoTo={goToStep}
+              currentStepState={view === 'generating' ? 'en préparation' : 'en cours'}
+              locked={view === 'generating'}
+              reachable={result && !exportedPath ? [3] : []}
+              stepStates={result && !exportedPath ? { 3: 'à télécharger' } : {}}
             />
           ) : (
             <span className="flex-1" />
           )}
-          {vue === 'reglages' && (
-            <BoutonLien icone="fleche-gauche" onClick={() => aller(retour.current)}>
+          {view === 'settings' && (
+            <LinkButton icon="arrow-left" onClick={() => goTo(returnView.current)}>
               Revenir où j’en étais
-            </BoutonLien>
+            </LinkButton>
           )}
-          {/* Une version téléchargée se signale partout où les réglages sont accessibles. */}
-          {entete.reglages && miseAJour?.status === 'prete' && (
+          {/* A downloaded version is shown wherever the settings can be reached. */}
+          {header.settings && update?.status === 'ready' && (
             <button
               type="button"
-              onClick={() => aller('reglages')}
+              onClick={() => goTo('settings')}
               className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-accent bg-accent-pale px-4 font-bold text-encre hover:brightness-95"
             >
-              <Icone nom="telecharger" taille={18} />
+              <Icon name="download" size={18} />
               Mise à jour prête
             </button>
           )}
-          {entete.reglages && (
+          {header.settings && (
             <button
               type="button"
-              onClick={() => aller('reglages')}
+              onClick={() => goTo('settings')}
               className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-bouton px-2 text-intro text-encre hover:text-marque"
             >
-              <Icone nom="reglages" taille={22} />
+              <Icon name="settings" size={22} />
               Réglages
             </button>
           )}
@@ -231,116 +232,116 @@ export default function App() {
       </header>
 
       <main className="ecrans flex flex-1 flex-col">
-        {moteurManquant && (
+        {engineMissing && (
           <div className="mx-auto w-full max-w-4xl px-6 pt-8">
-            <Alerte
-              type="avertissement"
-              titre="Re:CV n’est pas encore tout à fait prêt"
+            <Alert
+              type="warning"
+              title="Re:CV n’est pas encore tout à fait prêt"
               actions={
-                <Bouton taille="petit" onClick={preparer}>
+                <Button size="small" onClick={goToSetup}>
                   Terminer la préparation
-                </Bouton>
+                </Button>
               }
             >
               Il manque un téléchargement unique. Ensuite, plus besoin d’internet.
-            </Alerte>
+            </Alert>
           </div>
         )}
 
-        {vue === 'accueil' && (
-          <EcranAccueil
-            enLigne={moteur.enLigne}
-            onCommencer={() => {
-              retour.current = 'accueil'
-              void verifierMoteur().then((etat) => aller(apresCommencer(etat.pret)))
+        {view === 'welcome' && (
+          <WelcomeScreen
+            online={engine.online}
+            onStart={() => {
+              returnView.current = 'welcome'
+              void checkEngine().then((state) => goTo(afterStart(state.ready)))
             }}
           />
         )}
-        {vue === 'preparation' && (
-          <EcranPreparation
-            onPret={surPret}
-            onPlusTard={() => aller(retour.current === 'accueil' ? 'cv' : retour.current)}
-            onReglages={() => aller('reglages')}
+        {view === 'setup' && (
+          <SetupScreen
+            onReady={onReady}
+            onLater={() => goTo(returnView.current === 'welcome' ? 'cv' : returnView.current)}
+            onSettings={() => goTo('settings')}
           />
         )}
-        {vue === 'cv' && (
-          <EcranMonCv
-            profil={profil}
-            nomFichier={nomFichier}
-            enLigne={moteur.enLigne}
-            onProfil={surProfil}
-            onSuivant={() => aller('annonce')}
-            onPreparer={preparer}
+        {view === 'cv' && (
+          <MyCvScreen
+            profile={profile}
+            fileName={fileName}
+            online={engine.online}
+            onProfile={onProfile}
+            onNext={() => goTo('posting')}
+            onSetup={goToSetup}
           />
         )}
-        {vue === 'annonce' &&
-          (profil ? (
-            <EcranAnnonce
-              annonce={annonce}
-              onAnnonce={(a) => {
-                setAnnonce(a)
-                setErreurCreation(null)
+        {view === 'posting' &&
+          (profile ? (
+            <JobPostingScreen
+              posting={posting}
+              onJobPosting={(a) => {
+                setPosting(a)
+                setGenerationError(null)
               }}
-              estimationS={estimation}
-              erreurCreation={erreurCreation}
-              onCreer={() => void creer()}
-              onRetourCv={() => aller('cv')}
-              onPreparer={preparer}
+              estimateS={estimate}
+              generationError={generationError}
+              onCreate={() => void create()}
+              onBackToCv={() => goTo('cv')}
+              onSetup={goToSetup}
             />
           ) : (
             <div className="mx-auto w-full max-w-3xl px-6 py-12">
-              <EtatVide
-                titre="Commençons par votre CV"
-                texte="Pour lire une annonce et y adapter votre CV, il nous faut d’abord votre CV actuel."
-                action={<Bouton onClick={() => aller('cv')}>Importer mon CV</Bouton>}
+              <EmptyState
+                title="Commençons par votre CV"
+                text="Pour lire une annonce et y adapter votre CV, il nous faut d’abord votre CV actuel."
+                action={<Button onClick={() => goTo('cv')}>Importer mon CV</Button>}
               />
             </div>
           ))}
-        {vue === 'creation' && annonce && (
-          <EcranCreation
-            titrePoste={titreSansMention(annonce.offre.jobTitle)}
-            annonceLue
-            miseEnPage={miseEnPage}
-            estimationS={estimation}
-            enLigne={moteur.enLigne}
-            onAnnuler={() => void window.api.cancelTailoring()}
+        {view === 'generating' && posting && (
+          <GeneratingScreen
+            jobTitle={titleWithoutGender(posting.jobPosting.jobTitle)}
+            postingRead
+            layingOut={layingOut}
+            estimateS={estimate}
+            online={engine.online}
+            onCancel={() => void window.api.cancelTailoring()}
           />
         )}
-        {/* Gardé monté tant qu'un CV existe : les ajustements ne sont pas perdus en passant par un autre écran. */}
-        {resultat && (
-          <div className={vue === 'resultat' ? 'flex flex-1 flex-col' : 'hidden'}>
-            <EcranNouveauCv
-              key={resultat.genere.id}
-              profil={resultat.profil}
-              adapte={resultat.genere.cv}
-              onExporte={(chemin) => {
-                setExporte(chemin)
-                aller('succes')
+        {/* Kept mounted as long as a CV exists: adjustments are not lost when going through another screen. */}
+        {result && (
+          <div className={view === 'result' ? 'flex flex-1 flex-col' : 'hidden'}>
+            <NewCvScreen
+              key={result.generated.id}
+              profile={result.profile}
+              tailored={result.generated.cv}
+              onExported={(path) => {
+                setExportedPath(path)
+                goTo('success')
               }}
             />
           </div>
         )}
-        {vue === 'resultat' && !resultat && (
+        {view === 'result' && !result && (
           <div className="mx-auto w-full max-w-3xl px-6 py-12">
-            <EtatVide
-              titre="Votre nouveau CV apparaîtra ici"
-              texte="Pour le créer, il nous faut votre CV actuel et l’annonce qui vous intéresse."
+            <EmptyState
+              title="Votre nouveau CV apparaîtra ici"
+              text="Pour le créer, il nous faut votre CV actuel et l’annonce qui vous intéresse."
               action={
-                <Bouton onClick={() => aller(profil ? 'annonce' : 'cv')}>
-                  {profil ? 'Indiquer une annonce' : 'Commencer par mon CV'}
-                </Bouton>
+                <Button onClick={() => goTo(profile ? 'posting' : 'cv')}>
+                  {profile ? 'Indiquer une annonce' : 'Commencer par mon CV'}
+                </Button>
               }
             />
           </div>
         )}
-        {vue === 'succes' && exporte && resultat && (
-          <EcranSucces
-            chemin={exporte}
-            titrePoste={titreSansMention(resultat.offre.jobTitle)}
-            onAutreOffre={autreOffre}
+        {view === 'success' && exportedPath && result && (
+          <SuccessScreen
+            path={exportedPath}
+            jobTitle={titleWithoutGender(result.jobPosting.jobTitle)}
+            onAnotherPosting={anotherPosting}
           />
         )}
-        {vue === 'reglages' && <EcranReglages onChange={surReglagesChanges} onEfface={surDonneesEffacees} />}
+        {view === 'settings' && <SettingsScreen onChange={onSettingsChanged} onErased={onDataErased} />}
       </main>
     </div>
   )

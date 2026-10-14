@@ -9,7 +9,7 @@ const saved: Settings = {
   apiUrl: 'https://api.openai.com/v1',
   apiModel: '',
   rewriteBullets: false,
-  cvTemplate: 'classique',
+  cvTemplate: 'classic',
   localModelPath: 'C:\\m.gguf',
 }
 
@@ -30,7 +30,7 @@ describe('hasUnsavedTextChanges', () => {
   })
 
   it('ignores the choices that are saved immediately', () => {
-    const draft: Settings = { ...saved, provider: 'api', rewriteBullets: true, cvTemplate: 'moderne' }
+    const draft: Settings = { ...saved, provider: 'api', rewriteBullets: true, cvTemplate: 'modern' }
     expect(hasUnsavedTextChanges(saved, draft, '')).toBe(false)
   })
 })

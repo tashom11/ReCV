@@ -7,18 +7,18 @@ import { findTemplate, type TemplateId } from './templates'
 
 function BlockHtml({ block }: { block: Block }) {
   switch (block.type) {
-    case 'paragraphe':
+    case 'paragraph':
       return <p>{block.text}</p>
-    case 'liste':
+    case 'list':
       return (
         <ul>
           {block.elements.map((element, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
+            // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
             <li key={i}>{element}</li>
           ))}
         </ul>
       )
-    case 'entree':
+    case 'entry':
       return (
         <div>
           <h3>{block.heading}</h3>
@@ -28,7 +28,7 @@ function BlockHtml({ block }: { block: Block }) {
           {block.bullets.length > 0 && (
             <ul>
               {block.bullets.map((bullet, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
+                // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
                 <li key={i}>{bullet}</li>
               ))}
             </ul>
@@ -42,7 +42,7 @@ const SIDEBAR_TITLES: string[] = [SECTION_TITLES.skills, SECTION_TITLES.language
 
 /** Skills in a narrow column: « Étiquette : a, b, c » becomes a subtitle followed by a list. */
 function SidebarBlock({ block }: { block: Block }) {
-  if (block.type === 'paragraphe') {
+  if (block.type === 'paragraph') {
     const separation = block.text.indexOf(' : ')
     if (separation > 0) {
       const elements = block.text
@@ -54,7 +54,7 @@ function SidebarBlock({ block }: { block: Block }) {
           <h3>{block.text.slice(0, separation)}</h3>
           <ul>
             {elements.map((element, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
+              // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
               <li key={i}>{element}</li>
             ))}
           </ul>
@@ -71,10 +71,10 @@ function SectionHtml({ section, sidebar }: { section: Section; sidebar?: boolean
       <h2>{section.title}</h2>
       {section.blocks.map((block, i) =>
         sidebar ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
+          // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
           <SidebarBlock key={i} block={block} />
         ) : (
-          // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
+          // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
           <BlockHtml key={i} block={block} />
         ),
       )}
@@ -104,8 +104,8 @@ export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: 
         <title>{model.name ? `CV - ${model.name}` : 'CV'}</title>
         <style>{style.css}</style>
       </head>
-      <body data-modele={style.id}>
-        {style.layout === 'lateral' ? (
+      <body data-template={style.id}>
+        {style.layout === 'sidebar' ? (
           <div className="colonnes">
             <main className="principal">
               <header className="entete">

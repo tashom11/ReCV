@@ -111,8 +111,8 @@ describe('service: provider lifecycle and data', () => {
       }),
       pickAndReadCv: async () => ({ text: 'cv', name: 'mon-cv.pdf' }),
       updater: {
-        state: () => ({ version: '0.0.0', status: 'indisponible' as const }),
-        check: async () => ({ version: '0.0.0', status: 'indisponible' as const }),
+        state: () => ({ version: '0.0.0', status: 'unavailable' as const }),
+        check: async () => ({ version: '0.0.0', status: 'unavailable' as const }),
         install: () => undefined,
       },
       readCv: async () => 'cv',
@@ -234,14 +234,14 @@ describe('handlers IPC', () => {
     const ipcMain = { handle: (channel: string, h: Handler) => void handlers.set(channel, h) } as unknown as IpcMain
     const api = {
       cancelTailoring: async () => {
-        throw new CodedError('annule', 'Création annulée.')
+        throw new CodedError('cancelled', 'Création annulée.')
       },
     }
     registerHandlers(ipcMain, api as never)
     expect(await handlers.get(CHANNELS.cancelTailoring)?.({})).toEqual({
       ok: false,
       message: 'Création annulée.',
-      code: 'annule',
+      code: 'cancelled',
     })
   })
 
