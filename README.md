@@ -51,7 +51,7 @@ When the posting asks for a skill your résumé does not mention, it is offered 
 | **Ollama** | It stays on your computer, or goes to the address you configure. |
 | **Online service** (your own key) | It is sent to the chosen service on every run. Some free tiers reuse submitted data: read their terms. |
 
-Your key is encrypted by Windows and never displayed again. There is no account, no advertising and no analytics.
+Your key is encrypted by Windows and never displayed again. There is no account, no advertising and no analytics. A local diagnostic log keeps error codes only (never a message nor CV data); it leaves your computer only if you copy the report from Settings into a bug report.
 
 Besides the chosen engine, Re:CV only goes online to download the model, read a posting from a link and check for updates.
 
@@ -67,7 +67,7 @@ Re:CV checks for new versions at startup, then every six hours. An update downlo
 
 ## Bugs and ideas
 
-Open an [issue](https://github.com/tashom11/ReCV/issues/new/choose): there is a form to report a problem and another to suggest an idea. English and French are both welcome. For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead.
+Open an [issue](https://github.com/tashom11/ReCV/issues/new/choose) and paste the diagnostic report into it (Settings → “Signaler un problème”): there is a form to report a problem and another to suggest an idea. English and French are both welcome. For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead.
 
 ## Develop
 

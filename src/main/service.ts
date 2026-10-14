@@ -11,6 +11,7 @@ import type {
   SettingsState,
   TaskProgress,
 } from '@core/api'
+import { buildReport } from '@core/diagnostics'
 import { CodedError } from '@core/errors'
 import {
   buildCvDocument,
@@ -64,7 +65,16 @@ export interface ServiceDeps {
   revealPath: (path: string) => void
   /** Overridable for tests (never a real LLM call). */
   createProvider?: (settings: Settings, apiKey: string | null) => Promise<LlmProvider>
+  /** Diagnostic report: environment, recent lines of the local log, and the clipboard. */
+  diagnostics?: {
+    version: string
+    os: string
+    recentLines: (count: number) => string[]
+    copy: (text: string) => void
+  }
 }
+
+const REPORT_LINES = 50
 
 const MAX_SOUGHT_SKILLS = 8
 // Data minimisation: older tailored CVs (and their job postings) are deleted.
@@ -122,7 +132,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
         if (current === entry) current = null
       })
     }
-    if (!current) throw new Error('Fournisseur indisponible')
+    if (!current) throw new Error('Provider unavailable')
     return current.promise
   }
 
@@ -290,5 +300,21 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     downloadModel: (id: string) => models.download(id),
     cancelDownload: async () => models.cancel(),
     deleteModel: (id: string) => models.remove(id),
+
+    async copyDiagnosticReport() {
+      const [params, resources] = await Promise.all([settings.read(), models.state()])
+      const report = buildReport(
+        {
+          version: deps.diagnostics?.version ?? '?',
+          os: deps.diagnostics?.os ?? '?',
+          provider: params.provider,
+          ramGb: resources.ramGb,
+          vramGb: resources.vramGb,
+        },
+        deps.diagnostics?.recentLines(REPORT_LINES) ?? [],
+      )
+      deps.diagnostics?.copy(report)
+      return report
+    },
   }
 }

@@ -10,7 +10,7 @@ function parseInput<T>(schema: ZodType<T>, value: unknown): T {
   return result.data
 }
 
-function envelope(error: unknown): IpcResult<never> {
+function envelope(error: unknown): { ok: false; message: string; code?: string } {
   if (error instanceof JobPostingFetchError || error instanceof CodedError)
     return { ok: false, message: error.message, code: error.code }
   return { ok: false, message: error instanceof Error ? error.message : String(error) }
@@ -24,6 +24,8 @@ export function registerHandlers(
   api: ApiService,
   /** Receives the URL of the calling frame; refuses anything that is not the application interface. */
   isAllowedSender: (url: string) => boolean = () => true,
+  /** Receives every failed call (except a cancellation asked by the user), for the diagnostic log. */
+  onError: (channel: string, error: unknown) => void = () => undefined,
 ): void {
   const handle = (channel: string, handler: (...args: unknown[]) => Promise<unknown>) => {
     ipcMain.handle(channel, async (event, ...args): Promise<IpcResult<unknown>> => {
@@ -31,7 +33,9 @@ export function registerHandlers(
         if (!isAllowedSender(event.senderFrame?.url ?? '')) throw new Error('IPC call refused.')
         return { ok: true, value: await handler(...args) }
       } catch (error) {
-        return envelope(error)
+        const result = envelope(error)
+        if (result.code !== 'cancelled') onError(channel, error)
+        return result
       }
     })
   }
@@ -70,5 +74,6 @@ export function registerHandlers(
   handle(CHANNELS.getUpdateState, () => api.getUpdateState())
   handle(CHANNELS.checkForUpdate, () => api.checkForUpdate())
   handle(CHANNELS.installUpdate, () => api.installUpdate())
+  handle(CHANNELS.copyDiagnosticReport, () => api.copyDiagnosticReport())
   handle(CHANNELS.setApiKey, (key) => api.setApiKey(parseInput(ipcInputs.key, key)))
 }

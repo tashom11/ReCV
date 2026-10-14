@@ -1,14 +1,17 @@
 import { existsSync } from 'node:fs'
+import { release } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { CHANNELS } from '@core/channels'
-import { app, BrowserWindow, dialog, ipcMain, net, protocol, safeStorage, session, shell } from 'electron'
+import { errorEntry } from '@core/diagnostics'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, net, protocol, safeStorage, session, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { APP_ENTRY_URL, APP_SCHEME, isAppUrl, resolveAppFile } from './appProtocol'
 import { pickAndReadCv } from './cvPicker'
 import { DATA_FILES, migrateDataFolder } from './dataFolder'
 import { openDatabaseSafely } from './db/connection'
 import { DatabaseTooNewError } from './db/migrations'
+import { DiagnosticLog } from './diagnosticLog'
 import { chooseDestination, generatePdf } from './export'
 import { registerHandlers } from './ipc'
 import { browserUserAgent, renderHtml } from './job-posting/render'
@@ -105,6 +108,12 @@ app.whenReady().then(async () => {
     return
   }
   const { db, backupPath } = opening
+  // Local diagnostic log: error codes only, never a message nor CV data. Copied by the user from the settings.
+  const log = new DiagnosticLog(join(data, 'logs'))
+  log.append({ at: new Date().toISOString(), kind: 'start', version: app.getVersion() })
+  app.on('render-process-gone', (_event, _contents, details) => {
+    log.append({ at: new Date().toISOString(), kind: 'crash', reason: details.reason })
+  })
   const settings = new SettingsStore(data, {
     isAvailable: () => safeStorage.isEncryptionAvailable(),
     encrypt: (text) => safeStorage.encryptString(text),
@@ -155,8 +164,14 @@ app.whenReady().then(async () => {
     userAgent: browserUserAgent(session.defaultSession.getUserAgent()),
     chooseDestination,
     generatePdf,
+    diagnostics: {
+      version: app.getVersion(),
+      os: `Windows ${release()}`,
+      recentLines: (count) => log.recent(count),
+      copy: (text) => clipboard.writeText(text),
+    },
   })
-  registerHandlers(ipcMain, service, isAllowedSender)
+  registerHandlers(ipcMain, service, isAllowedSender, (channel, error) => log.append(errorEntry(channel, error)))
 
   // Cleanly frees the local model (native memory) before quitting.
   let releasing = false

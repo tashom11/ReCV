@@ -195,6 +195,8 @@ export interface ApiService {
   checkForUpdate(): Promise<UpdateState>
   /** Quits the application and installs the version already downloaded. */
   installUpdate(): Promise<void>
+  /** Copies a diagnostic report (environment, recent error codes, no CV data) to the clipboard and returns it. */
+  copyDiagnosticReport(): Promise<string>
 }
 
 /** Complete API as seen by the renderer. */

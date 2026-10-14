@@ -66,6 +66,7 @@ describe('service', () => {
     const settings = new SettingsStore(folder, fakeEncryptor())
     let received: { settings: Settings; key: string | null } | undefined
     const opened: string[] = []
+    const copied: string[] = []
     const api = createService({
       db,
       settings,
@@ -90,9 +91,25 @@ describe('service', () => {
         received = { settings: p, key }
         return factory()
       },
+      diagnostics: {
+        version: '0.3.0',
+        os: 'Windows 10.0.26100',
+        recentLines: (count) => ['{"kind":"start"}', '{"kind":"error","code":"network"}'].slice(-count),
+        copy: (text) => void copied.push(text),
+      },
     })
-    return { api, db, readReceived: () => received, opened }
+    return { api, db, readReceived: () => received, opened, copied }
   }
+
+  it('copies a diagnostic report: environment and recent log lines, nothing else', async () => {
+    const { api, copied } = service()
+    const report = await api.copyDiagnosticReport()
+    expect(copied).toEqual([report])
+    expect(report).toContain('Re:CV 0.3.0')
+    expect(report).toContain('Engine: local')
+    expect(report).toContain('Memory: 8 GB RAM, 0 GB VRAM')
+    expect(report.endsWith('{"kind":"error","code":"network"}')).toBe(true)
+  })
 
   it('imports a CV, then tailors it to a job posting and saves the result', async () => {
     const { api } = service()

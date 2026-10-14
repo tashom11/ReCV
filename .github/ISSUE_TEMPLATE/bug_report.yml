@@ -18,6 +18,12 @@ body:
     validations:
       required: true
   - type: textarea
+    id: report
+    attributes:
+      label: Rapport de diagnostic (Diagnostic report)
+      description: Réglages → « Signaler un problème » → « Copier le rapport », puis collez-le ici. Il ne contient rien de votre CV.
+      render: text
+  - type: textarea
     id: steps
     attributes:
       label: Comment le reproduire ? (Steps to reproduce)
