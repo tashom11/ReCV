@@ -67,6 +67,16 @@ Reste dans ces étapes :
   - PERF-07 : binaires ARM exclus. Installeur mesuré à 396 Mo (1 121 Mo installés). Sans les binaires CUDA :
     177 Mo (603 Mo installés) ; les cartes NVIDIA passeraient alors par Vulkan. Décision D5 ci-dessous.
   - Scripts passés en anglais : `npm run try` (`scripts/try-pipeline.ts`), `latest-yml.mjs`, fixtures renommées.
+- Étape 9, textes hors du code : fait.
+  - Point 1 : tous les textes de l'interface sont dans `src/renderer/src/i18n/fr.ts`, lus par `texts.…` (objet
+    typé : une clé fausse ne compile pas ; aucune dépendance, pas de fonction `t('clé')`). Vérifié par les 23
+    scénarios de bout en bout, qui cliquent sur les libellés réels.
+  - Point 2 : les libellés de progression envoyés par le main n'étaient jamais affichés (l'interface part de la clé
+    d'étape) : supprimés. Messages techniques passés en anglais. Les messages d'erreur lisibles par l'utilisateur
+    (volet « Détails ») restent en français dans le main et le core.
+  - Point 3 : libellés du CV produit dans `CV_LABELS[langue]` ; sections identifiées par un `id`.
+  - Restent hors du dictionnaire, à traiter avec une deuxième langue : noms et descriptions des mises en page
+    (`core/export/templates.ts`) et des modèles locaux (`core/llm/localModels.ts`), messages d'erreur du main.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 
