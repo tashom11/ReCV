@@ -45,6 +45,7 @@ export class ModelManager {
     const models = await Promise.all(
       LOCAL_MODELS.map(async (m) => ({
         id: m.id,
+        level: m.level,
         name: m.name,
         description: m.description,
         sizeBytes: m.sizeBytes,

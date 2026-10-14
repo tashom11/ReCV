@@ -3,6 +3,7 @@ import { z } from 'zod'
 export { CHANNELS, type IpcResult } from './channels'
 
 import { TEMPLATE_IDS } from './export/templates'
+import type { ModelLevel } from './llm/localModels'
 import {
   type JobPosting,
   jobPostingSchema,
@@ -93,6 +94,7 @@ export interface DroppedFile {
 
 export interface LocalModelState {
   id: string
+  level: ModelLevel
   name: string
   description: string
   sizeBytes: number

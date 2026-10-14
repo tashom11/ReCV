@@ -11,6 +11,7 @@
     "src/core/tailoring/text.ts",
     "src/core/channels.ts",
     "src/core/serviceUrl.ts",
+    "src/core/llm/localModels.ts",
     "src/core/errors.ts",
     "src/core/steps.ts"
   ],

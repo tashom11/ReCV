@@ -1,259 +1,14 @@
-import type { LocalModelState, ModelDownloadProgress, ModelsState, Settings, SettingsState } from '@core/api'
-import { isLocalService } from '@core/serviceUrl'
-import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
-import { downloadAnnouncement } from '../accessibility'
-import { describeError, type ErrorDescription, errorMessage } from '../errors'
-import { formatSize } from '../estimate'
+import type { ModelsState, Settings, SettingsState } from '@core/api'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { describeError, type ErrorDescription } from '../errors'
 import { hasUnsavedTextChanges } from '../settingsDraft'
-import {
-  Alert,
-  Button,
-  Card,
-  Checkbox,
-  Confirmation,
-  ConfirmDialog,
-  ErrorAlert,
-  Icon,
-  PageTitle,
-  Pill,
-  Select,
-  TextField,
-} from '../ui'
+import { Button, Card, Checkbox, Confirmation, ErrorAlert, Icon, PageTitle, Pill, TextField } from '../ui'
+import { EngineChoiceCard } from './settings/EngineChoiceCard'
+import { EraseDataCard } from './settings/EraseDataCard'
+import { ModelLevels } from './settings/ModelLevels'
+import { OllamaFields } from './settings/OllamaFields'
+import { OnlineServiceFields } from './settings/OnlineServiceFields'
 import { UpdatesCard } from './Updates'
-
-// The three local models, named by what they change for the user.
-const LEVELS: Record<string, { name: string; detail: string }> = {
-  'qwen3.5-2b': { name: 'Rapide', detail: 'Pour les ordinateurs modestes' },
-  'qwen3.5-4b': { name: 'Équilibré', detail: 'Bon résultat sur la plupart des ordinateurs' },
-  'qwen3.5-9b': { name: 'Soigné', detail: 'Meilleur résultat' },
-}
-
-const SERVICES = [
-  { value: 'https://api.openai.com/v1', label: 'OpenAI' },
-  { value: 'https://api.mistral.ai/v1', label: 'Mistral' },
-  { value: 'https://openrouter.ai/api/v1', label: 'OpenRouter' },
-]
-const OTHER_SERVICE = 'autre'
-
-/** Selectable card (radio button): the whole block is clickable, the choice is outlined and named. */
-function EngineChoiceCard({
-  chosen,
-  onChoose,
-  title,
-  label,
-  description,
-  highlighted = false,
-  children,
-}: {
-  chosen: boolean
-  onChoose: () => void
-  title: string
-  label?: ReactNode
-  description: string
-  highlighted?: boolean
-  children?: ReactNode
-}) {
-  return (
-    <div
-      className={`rounded-carte ${
-        chosen
-          ? `border-2 border-marque ${highlighted ? 'bg-marque-pale' : 'bg-surface'}`
-          : 'border border-trait bg-surface p-px'
-      }`}
-    >
-      <label className="flex min-h-11 items-start gap-3.5 p-4">
-        <input type="radio" name="engine" className="mt-1 size-5 shrink-0" checked={chosen} onChange={onChoose} />
-        <span className="min-w-0">
-          <span className="flex flex-wrap items-center gap-2.5 text-intro font-bold text-encre">
-            {title}
-            {label}
-          </span>
-          <span className="block text-corps text-encre-douce">{description}</span>
-        </span>
-      </label>
-      {children && <div className="space-y-4 px-4 pb-4">{children}</div>}
-    </div>
-  )
-}
-
-/** Choice and installation of the model running on the computer: Rapide, Équilibré or Soigné. */
-function ModelLevels({
-  activePath,
-  onActive,
-  onState,
-}: {
-  activePath: string | undefined
-  /** An installed model is chosen, or has just been installed. */
-  onActive: (path: string | undefined) => void
-  onState: (state: ModelsState) => void
-}) {
-  const [state, setState] = useState<ModelsState | null>(null)
-  const [progress, setProgress] = useState<ModelDownloadProgress | null>(null)
-  const [error, setError] = useState<ErrorDescription | null>(null)
-  const [busyWith, setBusyWith] = useState<string | null>(null)
-
-  const refresh = useCallback(
-    () =>
-      window.api.getModelsState().then(
-        (e) => {
-          setState(e)
-          setProgress(e.download)
-          onState(e)
-          return e
-        },
-        () => null,
-      ),
-    [onState],
-  )
-
-  useEffect(() => {
-    void refresh()
-    return window.api.onModelProgress((p) => {
-      setProgress(p)
-      if (p.status === 'done') {
-        // The main process has selected the installed model: this choice is taken over.
-        void refresh().then((e) => onActive(e?.models.find((m) => m.id === p.id)?.path))
-      }
-      if (p.status === 'cancelled' || p.status === 'error') void refresh()
-    })
-  }, [refresh, onActive])
-
-  const busy = progress?.status === 'downloading' || progress?.status === 'verifying'
-
-  const install = async (id: string) => {
-    setError(null)
-    setBusyWith(id)
-    try {
-      await window.api.downloadModel(id)
-    } catch (e) {
-      setError(describeError('setup', e))
-    } finally {
-      setBusyWith(null)
-    }
-  }
-
-  const remove = async (m: LocalModelState) => {
-    setError(null)
-    setBusyWith(m.id)
-    try {
-      await window.api.deleteModel(m.id)
-      const after = await refresh()
-      if (activePath === m.path) onActive(after?.models.find((x) => x.installed)?.path)
-    } catch (e) {
-      setError(describeError('settings', e))
-    } finally {
-      setBusyWith(null)
-    }
-  }
-
-  if (!state) return null
-
-  return (
-    <fieldset className="space-y-2.5">
-      <legend className="pb-2 text-corps font-bold text-encre">Rapidité ou soin du résultat</legend>
-      {error && (
-        <ErrorAlert
-          description={error}
-          onAction={() => setError(null)}
-          labels={{ dismiss: 'Compris' }}
-          headingLevel={3}
-        />
-      )}
-      {state.models.map((m) => {
-        const level = LEVELS[m.id] ?? { name: m.name, detail: m.description }
-        const active = m.installed && activePath === m.path
-        const download = progress?.id === m.id && busy ? progress : null
-        const percent =
-          download && download.totalBytes > 0 ? Math.round((download.receivedBytes / download.totalBytes) * 100) : 0
-        const slowNote = m.compatible ? '' : ', mais lent sur votre ordinateur'
-        return (
-          <div
-            key={m.id}
-            className={`space-y-3 rounded-carte bg-surface p-4 ${active ? 'border-2 border-marque' : 'border border-trait p-[17px]'}`}
-          >
-            <div className="flex flex-wrap items-center gap-4">
-              <label className="flex min-h-11 min-w-0 flex-1 items-start gap-3.5">
-                <input
-                  type="radio"
-                  name="niveau-modele"
-                  className="mt-1 size-5 shrink-0"
-                  checked={active}
-                  disabled={!m.installed}
-                  onChange={() => onActive(m.path)}
-                />
-                <span className="min-w-0">
-                  <span className="block text-corps text-encre">
-                    <strong>{level.name}</strong>
-                    {m.recommended && <span className="text-marque"> · conseillé pour votre ordinateur</span>}
-                  </span>
-                  <span className="block text-petit text-aide">
-                    {m.installed
-                      ? `Installé · ${formatSize(m.sizeBytes)}`
-                      : `${level.detail}${slowNote} · ${formatSize(m.sizeBytes)} à télécharger`}
-                  </span>
-                </span>
-              </label>
-              {m.installed ? (
-                <Button
-                  variant="danger"
-                  size="small"
-                  disabled={busy || busyWith !== null}
-                  busy={busyWith === m.id}
-                  onClick={() => void remove(m)}
-                >
-                  Supprimer
-                </Button>
-              ) : download ? (
-                <Button variant="secondary" size="small" onClick={() => void window.api.cancelDownload()}>
-                  Mettre en pause
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  size="small"
-                  disabled={busy || busyWith !== null}
-                  busy={busyWith === m.id}
-                  onClick={() => void install(m.id)}
-                >
-                  Installer
-                </Button>
-              )}
-            </div>
-            {download && (
-              <div className="space-y-1.5">
-                <div
-                  role="progressbar"
-                  aria-label={`Téléchargement du niveau ${level.name}`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={download.status === 'verifying' ? undefined : percent}
-                  className="h-2.5 overflow-hidden rounded-full bg-creux"
-                >
-                  {download.status === 'verifying' ? (
-                    <div className="barre-indeterminee h-full w-1/4 rounded-full bg-marque" />
-                  ) : (
-                    <div className="h-full rounded-full bg-marque transition-all" style={{ width: `${percent}%` }} />
-                  )}
-                </div>
-                <p className="text-petit text-aide">
-                  {download.status === 'verifying'
-                    ? 'Vérification du fichier… quelques secondes'
-                    : `${formatSize(download.receivedBytes)} sur ${formatSize(download.totalBytes)} (${percent} %)`}
-                </p>
-                <p className="sr-only" role="status">
-                  {downloadAnnouncement(percent, download.status === 'verifying')}
-                </p>
-              </div>
-            )}
-            {progress?.id === m.id && progress.status === 'cancelled' && (
-              <p className="text-petit text-aide">En pause : le téléchargement reprendra là où il s’était arrêté.</p>
-            )}
-          </div>
-        )
-      })}
-    </fieldset>
-  )
-}
 
 /**
  * Settings, outside the flow: the recommended engine is already chosen, the rest is collapsed in the advanced options.
@@ -272,18 +27,15 @@ export function SettingsScreen({
   const [saved, setSaved] = useState<SettingsState | null>(null)
   const [models, setModels] = useState<ModelsState | null>(null)
   const [key, setKey] = useState('')
-  const [otherService, setOtherService] = useState(false)
   const [error, setError] = useState<ErrorDescription | null>(null)
   const [confirmation, setConfirmation] = useState<string | null>(null)
-  const [busyWith, setBusyWith] = useState<'save' | 'key' | 'erase' | null>(null)
-  const [erasing, setErasing] = useState(false)
+  const [busyWith, setBusyWith] = useState<'save' | 'key' | null>(null)
 
   useEffect(() => {
     window.api.getSettings().then(
       (p) => {
         setState(p)
         setSaved(p)
-        setOtherService(!SERVICES.some((s) => s.value === p.apiUrl))
       },
       (e) => setError(describeError('settings', e)),
     )
@@ -372,22 +124,6 @@ export function SettingsScreen({
     }
   }
 
-  const eraseAll = async () => {
-    setError(null)
-    setBusyWith('erase')
-    try {
-      await window.api.eraseData()
-      onErased()
-    } catch (e) {
-      setError({
-        ...describeError('settings', e),
-        title: 'Vos données n’ont pas pu être effacées',
-        text: errorMessage(e),
-      })
-      setBusyWith(null)
-    }
-  }
-
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10">
       <PageTitle subtitle="La plupart des personnes n’ont rien à changer ici.">Réglages</PageTitle>
@@ -432,29 +168,7 @@ export function SettingsScreen({
                 title="Ollama (installé séparément)"
                 description="Utilise un modèle servi par Ollama sur cet ordinateur. Les données restent chez vous."
               >
-                {state.provider === 'ollama' && (
-                  <>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <TextField
-                        label="Adresse d’Ollama"
-                        value={state.ollamaUrl}
-                        onChange={(v) => update({ ollamaUrl: v })}
-                      />
-                      <TextField
-                        label="Modèle"
-                        value={state.ollamaModel}
-                        onChange={(v) => update({ ollamaModel: v })}
-                      />
-                    </div>
-                    {!isLocalService(state.ollamaUrl) && (
-                      <Alert type="warning">
-                        <strong>Cette adresse n’est pas celle de votre ordinateur.</strong> Votre CV et l’annonce seront
-                        envoyés à cet appareil
-                        {state.ollamaUrl.startsWith('http:') ? ', sans chiffrement sur le réseau' : ''}.
-                      </Alert>
-                    )}
-                  </>
-                )}
+                {state.provider === 'ollama' && <OllamaFields settings={state} update={update} />}
               </EngineChoiceCard>
 
               <EngineChoiceCard
@@ -464,60 +178,15 @@ export function SettingsScreen({
                 description="OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service."
               >
                 {state.provider === 'api' && (
-                  <>
-                    <Alert type="warning">
-                      <strong>Votre CV et l’annonce seront envoyés à ce service.</strong> Ils quittent votre ordinateur
-                      à chaque création de CV.
-                    </Alert>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <Select
-                        label="Service"
-                        value={otherService ? OTHER_SERVICE : state.apiUrl}
-                        options={[...SERVICES, { value: OTHER_SERVICE, label: 'Autre adresse' }]}
-                        onChange={(v) => {
-                          setOtherService(v === OTHER_SERVICE)
-                          if (v !== OTHER_SERVICE) update({ apiUrl: v })
-                        }}
-                      />
-                      <TextField
-                        label="Clé personnelle (API)"
-                        type="password"
-                        value={key}
-                        onChange={setKey}
-                        placeholder={state.hasApiKey ? '•••••••••••• (enregistrée)' : ''}
-                      />
-                      {otherService && (
-                        <TextField
-                          label="Adresse du service"
-                          value={state.apiUrl}
-                          onChange={(v) => update({ apiUrl: v })}
-                          hint="Elle commence par https:// et finit souvent par /v1."
-                        />
-                      )}
-                      <TextField
-                        label="Modèle"
-                        value={state.apiModel}
-                        onChange={(v) => update({ apiModel: v })}
-                        hint="Le nom donné par le service, par exemple « mistral-small-latest »."
-                      />
-                    </div>
-                    <p className="text-petit text-aide">
-                      {state.hasApiKey
-                        ? 'Une clé est enregistrée, chiffrée sur votre ordinateur. Elle n’est jamais réaffichée.'
-                        : 'Aucune clé enregistrée pour l’instant.'}
-                    </p>
-                    {state.hasApiKey && (
-                      <Button
-                        variant="danger"
-                        size="small"
-                        onClick={() => void removeKey()}
-                        busy={busyWith === 'key'}
-                        disabled={busyWith !== null}
-                      >
-                        Supprimer la clé
-                      </Button>
-                    )}
-                  </>
+                  <OnlineServiceFields
+                    settings={state}
+                    update={update}
+                    apiKey={key}
+                    onApiKey={setKey}
+                    onRemoveKey={() => void removeKey()}
+                    removingKey={busyWith === 'key'}
+                    disabled={busyWith !== null}
+                  />
                 )}
               </EngineChoiceCard>
 
@@ -542,29 +211,7 @@ export function SettingsScreen({
 
       <UpdatesCard />
 
-      <Card
-        title="Mes données"
-        subtitle="Votre CV, vos annonces et les CV créés sont enregistrés uniquement sur cet ordinateur."
-      >
-        <Button variant="danger" onClick={() => setErasing(true)}>
-          Tout effacer…
-        </Button>
-        <ConfirmDialog
-          open={erasing}
-          title="Tout effacer définitivement ?"
-          confirmLabel="Oui, tout effacer"
-          cancelLabel="Non, garder mes données"
-          onConfirm={() => void eraseAll()}
-          onCancel={() => setErasing(false)}
-          busy={busyWith === 'erase'}
-        >
-          <p>
-            Votre CV importé, vos annonces et vos CV créés seront supprimés de Re:CV. Les fichiers déjà téléchargés sur
-            votre ordinateur ne sont pas touchés. Les réglages sont gardés
-            {state.hasApiKey ? ', sauf votre clé personnelle, effacée elle aussi' : ''}.
-          </p>
-        </ConfirmDialog>
-      </Card>
+      <EraseDataCard hasApiKey={state.hasApiKey} onErased={onErased} onError={setError} />
 
       {confirmation && <Confirmation>{confirmation}</Confirmation>}
       <div className="flex flex-wrap items-center justify-end gap-4">

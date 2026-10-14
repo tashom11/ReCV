@@ -1,8 +1,12 @@
 // Catalogue of local models (Q4_K_M quantised GGUF, « unsloth » repositories on Hugging Face).
 // Size and SHA-256 digest come from the repository LFS metadata: the file is verified after download.
 
+export type ModelLevel = 'fast' | 'balanced' | 'quality'
+
 export interface LocalModel {
   id: string
+  /** What the model means for the user: speed or care of the result (named by the interface). */
+  level: ModelLevel
   name: string
   description: string
   fileName: string
@@ -23,6 +27,7 @@ const repoUrl = (size: string, fileName: string) =>
 export const LOCAL_MODELS: readonly LocalModel[] = [
   {
     id: 'qwen3.5-2b',
+    level: 'fast',
     name: 'Qwen3.5 2B',
     description: 'Léger et rapide, pour les ordinateurs modestes. Qualité de rédaction correcte.',
     fileName: 'Qwen3.5-2B-Q4_K_M.gguf',
@@ -34,6 +39,7 @@ export const LOCAL_MODELS: readonly LocalModel[] = [
   },
   {
     id: 'qwen3.5-4b',
+    level: 'balanced',
     name: 'Qwen3.5 4B',
     description: 'Bon compromis vitesse / qualité pour la plupart des ordinateurs récents.',
     fileName: 'Qwen3.5-4B-Q4_K_M.gguf',
@@ -45,6 +51,7 @@ export const LOCAL_MODELS: readonly LocalModel[] = [
   },
   {
     id: 'qwen3.5-9b',
+    level: 'quality',
     name: 'Qwen3.5 9B',
     description: 'Meilleure qualité, plus lent : pour les machines avec beaucoup de mémoire ou une carte graphique.',
     fileName: 'Qwen3.5-9B-Q4_K_M.gguf',
