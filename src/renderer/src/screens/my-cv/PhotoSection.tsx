@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { errorMessage } from '../../errors'
+import { texts } from '../../i18n'
 import { shrinkPhoto } from '../../photo'
 import { Alert, Button, Collapsible } from '../../ui'
 
@@ -15,23 +16,23 @@ export function PhotoSection({
   const [error, setError] = useState<string | null>(null)
   return (
     <Collapsible
-      title="Photo"
-      count="facultative"
-      summaryLine={
-        photo
-          ? 'Une photo est choisie · elle reste sur votre ordinateur'
-          : 'Aucune photo · elle reste sur votre ordinateur'
-      }
+      title={texts.myCv.photo.title}
+      count={texts.myCv.photo.optional}
+      summaryLine={photo ? texts.myCv.photo.chosen : texts.myCv.photo.none}
     >
       <div className="flex flex-wrap items-center gap-5">
         {photo ? (
-          <img src={photo} alt="Votre portrait" className="size-24 rounded-full border border-trait object-cover" />
+          <img
+            src={photo}
+            alt={texts.myCv.photo.alt}
+            className="size-24 rounded-full border border-trait object-cover"
+          />
         ) : (
           <div
             className="flex size-24 items-center justify-center rounded-full border-2 border-dashed border-trait-fort text-petit text-aide"
             aria-hidden="true"
           >
-            Aucune
+            {texts.myCv.photo.placeholder}
           </div>
         )}
         <div className="min-w-0 flex-1 space-y-3">
@@ -54,18 +55,15 @@ export function PhotoSection({
           />
           <div className="flex flex-wrap gap-3">
             <Button variant="secondary" onClick={() => input.current?.click()}>
-              {photo ? 'Changer la photo' : 'Ajouter une photo'}
+              {photo ? texts.myCv.photo.change : texts.myCv.photo.add}
             </Button>
             {photo && (
               <Button variant="danger" onClick={() => onChange(undefined)}>
-                Retirer la photo
+                {texts.myCv.photo.remove}
               </Button>
             )}
           </div>
-          <p className="text-petit text-aide">
-            Elle apparaît seulement dans les mises en page qui en prévoient une. Elle est recadrée en carré et reste sur
-            votre ordinateur.
-          </p>
+          <p className="text-petit text-aide">{texts.myCv.photo.note}</p>
           {error && <Alert type="error">{error}</Alert>}
         </div>
       </div>

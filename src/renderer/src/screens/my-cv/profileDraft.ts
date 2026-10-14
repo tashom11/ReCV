@@ -1,4 +1,5 @@
 import type { Education, Experience, Language, Profile } from '@core/schemas'
+import { texts } from '../../i18n'
 
 // Pure helpers of the step ① form (no React): testable on their own.
 
@@ -16,16 +17,7 @@ export function cleanProfile(profile: Profile): Profile {
 }
 
 /** CEFR levels. The saved value is the one shown on the CV (« Anglais (C1) »). */
-export const CEFR_LEVELS = [
-  { value: '', label: 'Niveau non précisé' },
-  { value: 'Langue maternelle', label: 'Langue maternelle' },
-  { value: 'C2', label: 'C2 — Maîtrise' },
-  { value: 'C1', label: 'C1 — Autonome, courant' },
-  { value: 'B2', label: 'B2 — Intermédiaire supérieur' },
-  { value: 'B1', label: 'B1 — Intermédiaire' },
-  { value: 'A2', label: 'A2 — Élémentaire' },
-  { value: 'A1', label: 'A1 — Débutant' },
-]
+export const CEFR_LEVELS = texts.myCv.languages.levels
 
 /** Keeps a level already present (e.g. « Courant » extracted from a CV) even if it is not in the list. */
 export function levelOptions(current: string) {
@@ -51,26 +43,28 @@ const joinNonEmpty = (...parts: (string | undefined)[]) => parts.filter((p) => p
 
 export function experiencesSummary(experiences: Experience[]): string {
   const first = experiences[0]
-  if (!first) return 'Aucune expérience pour l’instant'
+  if (!first) return texts.myCv.experiences.none
   const rest = experiences.length - 1
-  const more = rest > 0 ? ` · et ${rest} autre${rest > 1 ? 's' : ''}` : ''
+  const more = rest > 0 ? texts.myCv.experiences.more(rest) : ''
   return joinNonEmpty(first.position, first.company, first.dateRange) + more
 }
 
 export function skillsSummary(skills: string[]): string {
   const items = clean(skills)
-  if (items.length === 0) return 'Aucune compétence pour l’instant'
+  if (items.length === 0) return texts.myCv.skills.none
   return items.slice(0, 4).join(', ') + (items.length > 4 ? '…' : '')
 }
 
 export function educationSummary(education: Education[]): string {
   const first = education[0]
-  return first ? joinNonEmpty(first.degree, first.school, first.dateRange) : 'Aucune formation pour l’instant'
+  return first ? joinNonEmpty(first.degree, first.school, first.dateRange) : texts.myCv.education.none
 }
 
 export function languagesSummary(languages: Language[]): string {
-  if (languages.length === 0) return 'Aucune langue pour l’instant'
-  return languages.map((l) => (l.level ? `${l.name} : ${l.level.toLowerCase()}` : l.name)).join(' · ')
+  if (languages.length === 0) return texts.myCv.languages.none
+  return languages
+    .map((l) => (l.level ? texts.myCv.languages.withLevel(l.name, l.level.toLowerCase()) : l.name))
+    .join(' · ')
 }
 
 /** Number of skills actually filled in. */

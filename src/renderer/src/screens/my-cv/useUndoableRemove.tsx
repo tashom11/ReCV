@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { texts } from '../../i18n'
 import { insertAt } from './profileDraft'
 
 /**
@@ -28,14 +29,14 @@ export function useUndoableRemove<T>(items: T[], onChange: (items: T[]) => void,
 
   const notice = removed && (
     <p role="status" className="flex flex-wrap items-center gap-3 rounded-champ bg-creux px-4 py-2.5 text-corps">
-      <span>Élément retiré : « {removed.label} ».</span>
+      <span>{texts.myCv.undo.removed(removed.label)}</span>
       <button
         ref={undoButton}
         type="button"
         onClick={undo}
         className="min-h-11 rounded-champ font-bold text-marque underline underline-offset-4 hover:text-marque-survol"
       >
-        Annuler
+        {texts.myCv.undo.undo}
       </button>
     </p>
   )

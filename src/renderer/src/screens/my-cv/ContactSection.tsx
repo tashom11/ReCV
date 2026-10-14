@@ -1,4 +1,5 @@
 import type { Profile } from '@core/schemas'
+import { texts } from '../../i18n'
 import { Alert, Button, Collapsible, Loading, TextField } from '../../ui'
 
 /** Contact details and the profile summary sentence (which the model can suggest). */
@@ -22,73 +23,65 @@ export function ContactSection({
   /** Shown under the field: the top of the page is out of view in the middle of the form. */
   feedback: { type: 'error' | 'success'; text: string } | null
 }) {
+  const words = texts.myCv.contact
   const name = (draft.fullName ?? '').trim()
   return (
-    <Collapsible title="Vos coordonnées" summaryLine="Nom, métier, e-mail, téléphone, ville" open>
-      {name !== '' && !/\s/.test(name) && (
-        <Alert type="warning">
-          Un seul mot dans « Prénom et nom » : il manque peut-être votre prénom (il apparaît en tête du CV).
-        </Alert>
-      )}
+    <Collapsible title={words.title} summaryLine={words.summary} open>
+      {name !== '' && !/\s/.test(name) && <Alert type="warning">{words.singleWordName}</Alert>}
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField
-          label="Prénom et nom"
+          label={words.fullName}
           autoComplete="name"
           value={draft.fullName ?? ''}
           onChange={(v) => update({ fullName: v })}
         />
         <TextField
-          label="Votre métier actuel"
+          label={words.headline}
           autoComplete="organization-title"
           value={draft.headline ?? ''}
           onChange={(v) => update({ headline: v })}
         />
         <TextField
-          label="E-mail"
+          label={words.email}
           type="email"
           autoComplete="email"
           value={draft.email ?? ''}
           onChange={(v) => update({ email: v })}
         />
         <TextField
-          label="Téléphone"
+          label={words.phone}
           type="tel"
           autoComplete="tel"
           value={draft.phone ?? ''}
           onChange={(v) => update({ phone: v })}
         />
         <TextField
-          label="Ville ou département"
+          label={words.location}
           autoComplete="address-level2"
           value={draft.location ?? ''}
           onChange={(v) => update({ location: v })}
         />
         <TextField
-          label="Liens (facultatif)"
+          label={words.links}
           value={draft.links.join(', ')}
-          placeholder="Ex. : votre page LinkedIn"
+          placeholder={words.linksPlaceholder}
           onChange={(v) => update({ links: v.split(/,\s*/) })}
         />
       </div>
       <TextField
-        label="Votre phrase de présentation"
+        label={words.summaryLabel}
         multiline
         rows={3}
         value={draft.summary ?? ''}
         onChange={(v) => update({ summary: v })}
-        hint="Elle parle de vos qualités, pas d’un métier : elle reste valable pour toutes les annonces."
+        hint={words.summaryHint}
         action={
           <Button variant="outline" size="small" onClick={onSuggest} busy={suggesting} disabled={suggestDisabled}>
-            Proposer une phrase
+            {words.suggest}
           </Button>
         }
       />
-      {suggesting && (
-        <Loading
-          title="Nous cherchons une phrase qui vous ressemble…"
-          step={showSuggestStep ? 'À partir de vos qualités' : undefined}
-        />
-      )}
+      {suggesting && <Loading title={words.suggesting} step={showSuggestStep ? words.suggestingStep : undefined} />}
       {feedback && <Alert type={feedback.type}>{feedback.text}</Alert>}
     </Collapsible>
   )

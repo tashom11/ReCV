@@ -1,9 +1,11 @@
 import type { Education } from '@core/schemas'
+import { texts } from '../../i18n'
 import { Button, Collapsible, TextField } from '../../ui'
 import { educationSummary, emptyEducation, replaceAt } from './profileDraft'
 import { useUndoableRemove } from './useUndoableRemove'
 
-const describe = (education: Education) => education.degree.trim() || 'Formation sans intitulé'
+const words = texts.myCv.education
+const describe = (education: Education) => education.degree.trim() || words.untitled
 
 /** Education of the profile: one fieldset each, removable (with undo) and addable. */
 export function EducationList({
@@ -15,7 +17,7 @@ export function EducationList({
 }) {
   const { remove, notice } = useUndoableRemove(education, onChange, describe)
   return (
-    <Collapsible title="Formations" count={education.length} summaryLine={educationSummary(education)}>
+    <Collapsible title={words.title} count={education.length} summaryLine={educationSummary(education)}>
       {education.map((entry, i) => {
         const updateEducation = (partial: Partial<Education>) =>
           onChange(replaceAt(education, i, { ...entry, ...partial }))
@@ -23,13 +25,13 @@ export function EducationList({
           // biome-ignore lint/suspicious/noArrayIndexKey: editable list without a stable id
           <fieldset key={i} className="space-y-4 rounded-bouton border border-trait p-4">
             <legend className="px-2 text-libelle font-bold text-encre-douce">
-              {entry.degree.trim() || `Formation ${i + 1}`}
+              {entry.degree.trim() || words.numbered(i + 1)}
             </legend>
             <div className="grid gap-4 sm:grid-cols-3">
-              <TextField label="Diplôme" value={entry.degree} onChange={(v) => updateEducation({ degree: v })} />
-              <TextField label="Établissement" value={entry.school} onChange={(v) => updateEducation({ school: v })} />
+              <TextField label={words.degree} value={entry.degree} onChange={(v) => updateEducation({ degree: v })} />
+              <TextField label={words.school} value={entry.school} onChange={(v) => updateEducation({ school: v })} />
               <TextField
-                label="Année"
+                label={words.year}
                 value={entry.dateRange ?? ''}
                 onChange={(v) => updateEducation({ dateRange: v })}
               />
@@ -38,16 +40,16 @@ export function EducationList({
               variant="danger"
               size="small"
               onClick={() => remove(i)}
-              ariaLabel={`Retirer la formation « ${describe(entry)} »`}
+              ariaLabel={words.removeLabel(describe(entry))}
             >
-              Retirer cette formation
+              {words.remove}
             </Button>
           </fieldset>
         )
       })}
       {notice}
       <Button variant="secondary" icon="plus" onClick={() => onChange([...education, emptyEducation()])}>
-        Ajouter une formation
+        {words.add}
       </Button>
     </Collapsible>
   )
