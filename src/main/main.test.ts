@@ -195,8 +195,8 @@ describe('service', () => {
     await api.revealInFolder(pdf)
     expect(opened).toEqual([`ouvrir:${pdf}`, `montrer:${pdf}`])
 
-    await expect(api.openFile('C:\\Windows\\System32\\cmd.exe')).rejects.toThrow(/pas été créé par Re:CV/)
-    await expect(api.revealInFolder(join(folder, 'autre.pdf'))).rejects.toThrow(/pas été créé par Re:CV/)
+    await expect(api.openFile('C:\\Windows\\System32\\cmd.exe')).rejects.toThrow(/not created by Re:CV/)
+    await expect(api.revealInFolder(join(folder, 'autre.pdf'))).rejects.toThrow(/not created by Re:CV/)
     expect(opened).toHaveLength(2)
   })
 

@@ -12,7 +12,7 @@ export function getActiveProfile(db: AppDatabase): { id: number; profile: Profil
 /** New active profile: the previous profiles are kept until `purgeOldData` removes those no creation depends on. */
 export function createProfile(db: AppDatabase, profile: Profile): { id: number; profile: Profile } {
   const [created] = db.insert(profiles).values({ data: profile }).returning({ id: profiles.id }).all()
-  if (!created) throw new Error('Échec de l’enregistrement du profil')
+  if (!created) throw new Error('Saving the profile failed')
   return { id: created.id, profile: profile }
 }
 
@@ -51,13 +51,13 @@ export function saveProfile(db: AppDatabase, profile: Profile): { id: number; pr
     return { id: active.id, profile: profile }
   }
   const [created] = db.insert(profiles).values({ data: profile, updatedAt }).returning({ id: profiles.id }).all()
-  if (!created) throw new Error('Échec de l’enregistrement du profil')
+  if (!created) throw new Error('Saving the profile failed')
   return { id: created.id, profile: profile }
 }
 
 export function saveJobPosting(db: AppDatabase, jobPosting: JobPosting, url?: string): number {
   const [created] = db.insert(jobPostings).values({ data: jobPosting, url }).returning({ id: jobPostings.id }).all()
-  if (!created) throw new Error('Échec de l’enregistrement de l’offre')
+  if (!created) throw new Error('Saving the job posting failed')
   return created.id
 }
 
@@ -67,6 +67,6 @@ export function saveTailoredCv(db: AppDatabase, profileId: number, jobPostingId:
     .values({ profileId, jobPostingId, data: cv })
     .returning({ id: tailoredCvs.id })
     .all()
-  if (!created) throw new Error('Échec de l’enregistrement du CV')
+  if (!created) throw new Error('Saving the CV failed')
   return created.id
 }

@@ -215,7 +215,7 @@ describe('handlers IPC', () => {
     const { handlers, calledMethods } = wire((url) => url.startsWith('file://'))
     const h = handlers.get(CHANNELS.getProfile)
     const refused = await h?.({ senderFrame: { url: 'https://evil.example/' } })
-    expect(refused).toMatchObject({ ok: false, message: 'Appel IPC refusé.' })
+    expect(refused).toMatchObject({ ok: false, message: 'IPC call refused.' })
     expect(calledMethods).toHaveLength(0)
 
     const accepted = await h?.({ senderFrame: { url: 'file:///app/index.html' } })

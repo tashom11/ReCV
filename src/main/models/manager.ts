@@ -23,7 +23,7 @@ export class ModelManager {
 
   private find(id: string): LocalModel {
     const model = LOCAL_MODELS.find((m) => m.id === id)
-    if (!model) throw new Error(`Modèle inconnu : ${id}`)
+    if (!model) throw new Error(`Unknown model: ${id}`)
     return model
   }
 
