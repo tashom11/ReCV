@@ -1,3 +1,4 @@
+import { texts } from '../i18n'
 import { Button, CvIllustration, Icon, type IconName } from '../ui'
 
 /** First screen, as long as no CV is saved: the promise in one sentence and a single button. */
@@ -12,31 +13,24 @@ export function WelcomeScreen({
   const promises: { icon: IconName; text: string }[] = [
     {
       icon: 'lock',
-      text: online
-        ? 'Votre CV est enregistré sur votre ordinateur. Il est lu par le service en ligne choisi dans les Réglages.'
-        : 'Votre CV reste sur votre ordinateur. Rien n’est envoyé.',
+      text: online ? texts.welcome.promises.online : texts.welcome.promises.local,
     },
-    { icon: 'pencil', text: 'Vous pouvez tout modifier avant de télécharger.' },
-    { icon: 'download', text: 'Vous repartez avec un PDF ou un fichier Word.' },
+    { icon: 'pencil', text: texts.welcome.promises.editable },
+    { icon: 'download', text: texts.welcome.promises.formats },
   ]
   return (
     <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_420px]">
       <div className="space-y-8">
         <p className="inline-flex rounded-full border border-accent bg-accent-pale px-4 py-1.5 font-bold text-encre">
-          {online ? 'Gratuit · sans compte' : 'Gratuit · sans compte · sur votre ordinateur'}
+          {online ? texts.welcome.badge : texts.welcome.badgeLocal}
         </p>
-        <h1 className="max-w-xl font-titre text-titre-accueil font-bold">
-          Un CV adapté à chaque annonce, en quelques minutes.
-        </h1>
-        <p className="max-w-xl text-[1.25rem] leading-relaxed text-encre-douce">
-          Importez votre CV, indiquez l’annonce qui vous intéresse : Re:CV met en avant ce qui compte pour ce poste.
-          Vous relisez et validez chaque changement.
-        </p>
+        <h1 className="max-w-xl font-titre text-titre-accueil font-bold">{texts.welcome.title}</h1>
+        <p className="max-w-xl text-[1.25rem] leading-relaxed text-encre-douce">{texts.welcome.intro}</p>
         <div className="flex flex-wrap items-center gap-5">
           <Button size="large" endIcon="arrow-right" onClick={onStart}>
-            Commencer
+            {texts.welcome.start}
           </Button>
-          <span className="text-corps text-encre-douce">Environ 5 minutes la première fois</span>
+          <span className="text-corps text-encre-douce">{texts.welcome.duration}</span>
         </div>
         <ul className="space-y-3 pt-2">
           {promises.map((g) => (

@@ -66,7 +66,7 @@ export const fr = {
     formats: 'Fichier PDF ou Word (.docx)',
   },
 
-  errorAlert: { details: 'Détails' },
+  common: { details: 'Détails' },
 
   /** Every problem says what is happening and what to do: a short title, a sentence without jargon, an action. */
   errors: {
@@ -174,5 +174,77 @@ export const fr = {
     unsupportedFormat: 'Format non pris en charge : choisissez une image JPEG, PNG ou WebP.',
     tooLarge: 'Cette image est trop volumineuse (15 Mo maximum).',
     unprocessable: 'Impossible de traiter cette image.',
+  },
+
+  /** Locale for dates and times. */
+  locale: 'fr-FR',
+
+  welcome: {
+    badge: 'Gratuit · sans compte',
+    badgeLocal: 'Gratuit · sans compte · sur votre ordinateur',
+    title: 'Un CV adapté à chaque annonce, en quelques minutes.',
+    intro:
+      'Importez votre CV, indiquez l’annonce qui vous intéresse : Re:CV met en avant ce qui compte pour ce poste. Vous relisez et validez chaque changement.',
+    start: 'Commencer',
+    duration: 'Environ 5 minutes la première fois',
+    promises: {
+      online:
+        'Votre CV est enregistré sur votre ordinateur. Il est lu par le service en ligne choisi dans les Réglages.',
+      local: 'Votre CV reste sur votre ordinateur. Rien n’est envoyé.',
+      editable: 'Vous pouvez tout modifier avant de télécharger.',
+      formats: 'Vous repartez avec un PDF ou un fichier Word.',
+    },
+  },
+
+  setup: {
+    title: 'On prépare Re:CV',
+    intro: {
+      start: 'Pour travailler sans rien envoyer sur internet, Re:CV a besoin d’un fichier',
+      sizePrefix: 'd’environ',
+      unknownSize: ' volumineux',
+      onceBefore: '. Il se télécharge ',
+      once: 'une seule fois',
+      onceAfter: ' ; ensuite, l’application fonctionne même sans connexion.',
+    },
+    interrupted: 'Téléchargement interrompu',
+    verifying: 'Vérification du fichier… quelques secondes',
+    progress: (received: string, total: string) => `${received} sur ${total}`,
+    starting: 'Démarrage…',
+    progressLabel: 'Téléchargement',
+    tips: [
+      'Gardez l’ordinateur allumé et connecté à internet. Vous pouvez réduire cette fenêtre.',
+      'Si la connexion coupe, le téléchargement reprendra là où il s’était arrêté.',
+    ],
+    later: 'Plus tard',
+    otherOption: 'Choisir une autre option dans les Réglages',
+  },
+
+  success: {
+    title: 'Votre CV est prêt à envoyer',
+    tailoredFor: (jobTitle: string) =>
+      `Il est adapté à l’annonce « ${jobTitle} ». Bonne chance pour votre candidature !`,
+    openFolder: 'Ouvrir le dossier',
+    openCv: 'Ouvrir le CV',
+    openFailed: (path: string) => `Le fichier ne s’ouvre pas tout seul. Vous le trouverez à cet endroit : ${path}`,
+    anotherTitle: 'Une autre annonce vous intéresse ?',
+    another: 'Adapter pour une autre offre',
+    anotherText: 'Votre CV de départ est gardé : vous n’aurez qu’à indiquer la nouvelle annonce.',
+  },
+
+  updates: {
+    title: 'Mises à jour',
+    installedVersion: (version: string) => `Version installée : ${version}`,
+    upToDate: 'Re:CV est à jour.',
+    upToDateAt: (time: string) => `Re:CV est à jour (vérifié à ${time}).`,
+    checking: 'Recherche d’une mise à jour…',
+    nextVersion: 'suivante',
+    downloading: (version: string, percent: number) => `Téléchargement de la version ${version}… ${percent} %`,
+    ready: (version: string) => `La version ${version} est prête. Elle s’installera à la fermeture de Re:CV.`,
+    error: 'Impossible de vérifier les mises à jour pour l’instant. Vérifiez votre connexion, puis réessayez.',
+    unavailable: 'Les mises à jour automatiques ne concernent que l’application installée.',
+    none: 'Aucune vérification pour l’instant.',
+    progressLabel: 'Téléchargement de la mise à jour',
+    restart: 'Redémarrer maintenant',
+    check: 'Rechercher une mise à jour',
   },
 }
