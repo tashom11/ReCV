@@ -76,10 +76,11 @@ npm test             # tests (Vitest, aucun appel réel à un modèle)
 npm run lint         # Biome
 npm run typecheck
 npm run build:win    # installeur NSIS dans release/
-npm run essai -- fixtures/cv-exemple.txt fixtures/offre-exemple.txt   # adaptation complète hors Electron
+npm run try -- fixtures/sample-cv.txt fixtures/sample-job-posting.txt   # adaptation complète hors Electron
 ```
 
-Variables du script `essai` : `RECV_OLLAMA_URL`, `RECV_API_URL`, `RECV_API_CLE`, `RECV_MODELE_GGUF`.
+Options du script `try` : `--provider ollama|api|local`, `--model nom`. Variables : `RECV_OLLAMA_URL`, `RECV_API_URL`,
+`RECV_API_KEY`, `RECV_GGUF_MODEL`.
 
 | Dossier | Rôle |
 |---|---|
@@ -156,10 +157,11 @@ npm test             # tests (Vitest, no real model calls)
 npm run lint         # Biome
 npm run typecheck
 npm run build:win    # NSIS installer in release/
-npm run essai -- fixtures/cv-exemple.txt fixtures/offre-exemple.txt   # full tailoring run without Electron
+npm run try -- fixtures/sample-cv.txt fixtures/sample-job-posting.txt   # full tailoring run without Electron
 ```
 
-`essai` script variables: `RECV_OLLAMA_URL`, `RECV_API_URL`, `RECV_API_CLE`, `RECV_MODELE_GGUF`.
+`try` script options: `--provider ollama|api|local`, `--model name`. Variables: `RECV_OLLAMA_URL`, `RECV_API_URL`,
+`RECV_API_KEY`, `RECV_GGUF_MODEL`.
 
 | Folder | Role |
 |---|---|

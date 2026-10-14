@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { jobPostingSchema, profileSchema, tailoredCvSchema } from '../schemas'
 import { MockProvider } from './mockProvider'
 
-const cvText = readFileSync(resolve(import.meta.dirname, '../../../fixtures/cv-exemple.txt'), 'utf-8')
-const jobPostingText = readFileSync(resolve(import.meta.dirname, '../../../fixtures/offre-exemple.txt'), 'utf-8')
+const cvText = readFileSync(resolve(import.meta.dirname, '../../../fixtures/sample-cv.txt'), 'utf-8')
+const jobPostingText = readFileSync(resolve(import.meta.dirname, '../../../fixtures/sample-job-posting.txt'), 'utf-8')
 
 describe('MockProvider', () => {
   it('extractProfile returns a valid Profile', async () => {
