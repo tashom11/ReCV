@@ -16,22 +16,23 @@ App bureau Windows open source (gratuite) : import d'un CV (PDF/DOCX) → profil
 
 ## Architecture
 - `src/core/` : logique métier PURE (aucun import Electron/Node UI). Testable seule.
-  - `schemas/` (Profil, Offre, CvAdapte), `parsing/`, `offre/`, `llm/` (interface `FournisseurLLM`), `adaptation/`
-- `src/main/` : process principal, IPC, BDD, safeStorage, téléchargement modèles
+  - `schemas/` (Profile, JobPosting, TailoredCv), `parsing/`, `job-posting/`, `llm/` (interface `LlmProvider`),
+    `tailoring/`, `export/`
+- `src/main/` : process principal, IPC, BDD (`db/`, migrations par `PRAGMA user_version`), safeStorage, modèles locaux
 - `src/preload/` : API typée exposée via contextBridge (jamais de nodeIntegration)
-- `src/renderer/` : UI React
+- `src/renderer/` : UI React (`screens/`, `ui/` un composant par fichier, `i18n/` textes affichés)
 
 ## Règles
 - Code en ANGLAIS (projet open source) : identifiants, noms de fichiers/dossiers, commentaires, noms de tests,
   messages de commit. Conventions TypeScript/React standard (camelCase, PascalCase pour types et composants).
-  Le code existant est encore en français : migration en cours (glossaire dans `docs/audit/GLOSSAIRE.md`) ;
-  tout code nouveau ou réécrit est en anglais.
+  Correspondance avec les anciens noms français : `docs/audit/GLOSSAIRE.md`. Restent en français, volontairement :
+  les prompts (`src/core/llm/`, `src/core/tailoring/`) et les données de test.
 - Textes affichés à l'utilisateur en FRANÇAIS (vouvoiement), hors du code de logique : tous dans
   `src/renderer/src/i18n/fr.ts`, lus via `texts.…` (jamais de texte en dur dans un composant). Les libellés du CV
   produit sont dans `CV_LABELS` (`src/core/export/cvDocument.ts`).
 - Le LLM ne doit JAMAIS inventer : il reformule/priorise uniquement ce qui existe dans le profil.
 - Toute sortie LLM passe par un schéma Zod validé.
-- En test, utiliser `FournisseurMock` (jamais d'appel LLM réel dans Vitest).
+- En test, utiliser `MockProvider` / `MockEngine` (jamais d'appel LLM réel dans Vitest).
 - Pas de nouvelle dépendance sans le signaler.
 - Changements minimaux, ciblés : ne pas réécrire un fichier entier pour une petite modif.
 
