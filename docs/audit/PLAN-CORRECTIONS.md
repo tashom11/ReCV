@@ -26,7 +26,9 @@ Reste dans ces étapes :
 - 1.4 purge des données : attend D3.
 - SEC-08 (sélecteur `.gguf`) : reporté ; sans effet tant que le process principal accepte le chemin envoyé par
   l'interface. Option « supprimer mes données » du désinstalleur : demande un script NSIS, reportée.
-- 4.2 migrations versionnées : prochaine tâche (préalable au renommage).
+- 4.2 migrations versionnées : fait. Base : `PRAGMA user_version` + `src/main/bdd/migrations.ts` (migration 1 = schéma
+  v0.2.1 ; base d'une version plus récente refusée sans être touchée). Réglages : champ `version` +
+  `src/main/settingsMigrations.ts`. Vérifié sur un dossier de données v0.2.1 dans l'application.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 

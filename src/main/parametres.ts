@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { type EtatParametres, origineUrl, type Parametres, parametresSchema } from '@core/api'
+import { migrateSettings, SETTINGS_VERSION } from './settingsMigrations'
 
 /** Abstraction de `safeStorage` d'Electron (injectable pour les tests). */
 export interface Chiffreur {
@@ -30,7 +31,7 @@ export class StockageParametres {
 
   async lire(): Promise<Parametres> {
     try {
-      return parametresSchema.parse(JSON.parse(await readFile(this.fichierParametres, 'utf8')))
+      return parametresSchema.parse(migrateSettings(JSON.parse(await readFile(this.fichierParametres, 'utf8'))))
     } catch {
       return parametresSchema.parse({})
     }
@@ -47,7 +48,7 @@ export class StockageParametres {
     const precedente = (await this.lire()).urlApi
     if (origineUrl(precedente) !== origineUrl(valides.urlApi)) await rm(this.fichierCle, { force: true })
     await mkdir(this.dossier, { recursive: true })
-    await writeFile(this.fichierParametres, JSON.stringify(valides, null, 2))
+    await writeFile(this.fichierParametres, JSON.stringify({ version: SETTINGS_VERSION, ...valides }, null, 2))
     return this.etat()
   }
 
