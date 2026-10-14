@@ -6,7 +6,7 @@ import type { ZodType } from 'zod'
 
 function parseInput<T>(schema: ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value)
-  if (!result.success) throw new Error('Données invalides reçues par le process principal.')
+  if (!result.success) throw new Error('Invalid data received by the main process.')
   return result.data
 }
 
@@ -28,7 +28,7 @@ export function registerHandlers(
   const handle = (channel: string, handler: (...args: unknown[]) => Promise<unknown>) => {
     ipcMain.handle(channel, async (event, ...args): Promise<IpcResult<unknown>> => {
       try {
-        if (!isAllowedSender(event.senderFrame?.url ?? '')) throw new Error('Appel IPC refusé.')
+        if (!isAllowedSender(event.senderFrame?.url ?? '')) throw new Error('IPC call refused.')
         return { ok: true, value: await handler(...args) }
       } catch (error) {
         return envelope(error)

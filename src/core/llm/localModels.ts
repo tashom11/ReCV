@@ -76,6 +76,6 @@ export function isModelCompatible(model: LocalModel, { ramGb, vramGb }: Resource
 export function recommendModel(resources: Resources): LocalModel {
   const compatibleModels = LOCAL_MODELS.filter((m) => isModelCompatible(m, resources))
   const chosen = compatibleModels[compatibleModels.length - 1] ?? LOCAL_MODELS[0]
-  if (!chosen) throw new Error('Catalogue de modèles vide')
+  if (!chosen) throw new Error('Empty model catalogue')
   return chosen
 }

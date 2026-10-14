@@ -37,7 +37,7 @@ describe('AiSdkEngine', () => {
 
   it('fails with a clear message after two invalid outputs', async () => {
     const model = simulatedModel(['{"autre":1}'])
-    await expect(new AiSdkEngine(model).generateObject(request)).rejects.toThrow(/Étape « essai ».*2 tentatives/)
+    await expect(new AiSdkEngine(model).generateObject(request)).rejects.toThrow(/Step "essai".*2 attempts/)
     expect(model.doGenerateCalls).toHaveLength(2)
   })
 })

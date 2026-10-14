@@ -153,7 +153,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
 
   const checkExported = (path: string): string => {
     const absolute = resolve(path)
-    if (!exported.has(absolute)) throw new Error('Ce fichier n’a pas été créé par Re:CV pendant cette session.')
+    if (!exported.has(absolute)) throw new Error('This file was not created by Re:CV during this session.')
     return absolute
   }
 

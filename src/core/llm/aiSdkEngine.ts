@@ -50,7 +50,7 @@ export class AiSdkEngine implements LlmEngine {
         lastError = error
       }
     }
-    throw new Error(`Étape « ${name} » : le modèle n'a pas produit de JSON valide après ${attempts} tentatives.`, {
+    throw new Error(`Step "${name}": the model did not produce valid JSON after ${attempts} attempts.`, {
       cause: lastError,
     })
   }
