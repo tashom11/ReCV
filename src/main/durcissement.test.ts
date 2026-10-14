@@ -1,12 +1,14 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { CANAUX, parametresSchema, type ResultatIpc } from '@core/api'
+import { CANAUX, estServiceLocal, parametresSchema, type ResultatIpc } from '@core/api'
 import { ErreurCodee } from '@core/erreurs'
 import { type FournisseurLLM, FournisseurMock } from '@core/llm'
+import { profilSchema } from '@core/schemas'
 import type { IpcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './bdd/connexion'
+import { creerProfil, effacerDonnees } from './bdd/depots'
 import { enregistrerHandlers } from './ipc'
 import { GestionnaireModeles } from './modeles/gestionnaire'
 import { type Chiffreur, StockageParametres } from './parametres'
@@ -32,6 +34,23 @@ const existe = (chemin: string) =>
     () => false,
   )
 
+describe('erasing personal data', () => {
+  it('leaves no trace of the profile in the database files, journal included', async () => {
+    const chemin = join(dossier, 'recv.db')
+    const bdd = ouvrirBdd(chemin)
+    try {
+      creerProfil(bdd, profilSchema.parse({ nom: 'Zoé Trace-Unique', experiences: [] }))
+      effacerDonnees(bdd)
+      for (const fichier of [chemin, `${chemin}-wal`]) {
+        if (!(await existe(fichier))) continue
+        expect((await readFile(fichier)).includes('Trace-Unique'), fichier).toBe(false)
+      }
+    } finally {
+      bdd.fermer()
+    }
+  })
+})
+
 describe('validation des URLs de service', () => {
   it('exige https pour l’API, sauf pour localhost', () => {
     expect(parametresSchema.safeParse({ urlApi: 'https://api.mistral.ai/v1' }).success).toBe(true)
@@ -40,6 +59,15 @@ describe('validation des URLs de service', () => {
     expect(parametresSchema.safeParse({ urlApi: 'ftp://exemple.fr' }).success).toBe(false)
     expect(parametresSchema.safeParse({ urlApi: 'https://user:mdp@exemple.fr' }).success).toBe(false)
     expect(parametresSchema.safeParse({ urlOllama: 'javascript:alert(1)' }).success).toBe(false)
+  })
+
+  it('tells whether a service runs on this computer (the CV does not leave it)', () => {
+    expect(estServiceLocal('http://localhost:11434/v1')).toBe(true)
+    expect(estServiceLocal('http://127.0.0.1:11434/v1')).toBe(true)
+    expect(estServiceLocal('http://[::1]:11434/v1')).toBe(true)
+    expect(estServiceLocal('http://192.168.1.20:11434/v1')).toBe(false)
+    expect(estServiceLocal('https://ollama.example.com/v1')).toBe(false)
+    expect(estServiceLocal('pas une url')).toBe(false)
   })
 
   it('n’accepte qu’un fichier .gguf comme modèle local', () => {

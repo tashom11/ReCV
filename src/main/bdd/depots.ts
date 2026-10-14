@@ -1,5 +1,5 @@
 import type { CvAdapte, Offre, Profil } from '@core/schemas'
-import { desc, eq } from 'drizzle-orm'
+import { desc, eq, sql } from 'drizzle-orm'
 import type { Bdd } from './connexion'
 import { cvGeneres, offres, profils } from './schema'
 
@@ -21,6 +21,9 @@ export function effacerDonnees(bdd: Bdd): void {
   bdd.delete(cvGeneres).run()
   bdd.delete(offres).run()
   bdd.delete(profils).run()
+  // The write-ahead log still holds the deleted rows: rebuild the file, then empty the log.
+  bdd.run(sql`VACUUM`)
+  bdd.run(sql`PRAGMA wal_checkpoint(TRUNCATE)`)
 }
 
 /** Met à jour le profil actif s'il existe, sinon le crée. */

@@ -14,7 +14,14 @@ export async function genererPdf(html: string): Promise<Buffer> {
   try {
     await fenetre.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
     // Marges et fond (modèle « Bandeau ») sont définis par la CSS du modèle (@page).
-    return await fenetre.webContents.printToPDF({ pageSize: 'A4', printBackground: true, preferCSSPageSize: true })
+    // Tagged PDF with an outline: structure (headings, lists) readable by screen readers and recruiting software.
+    return await fenetre.webContents.printToPDF({
+      pageSize: 'A4',
+      printBackground: true,
+      preferCSSPageSize: true,
+      generateTaggedPDF: true,
+      generateDocumentOutline: true,
+    })
   } finally {
     if (!fenetre.isDestroyed()) fenetre.destroy()
   }

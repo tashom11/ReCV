@@ -16,19 +16,11 @@ import {
 
 export type { CodeErreur } from './erreurs'
 
+import { analyserUrl, HOTES_LOCAUX } from './serviceUrl'
+
+export { estServiceLocal } from './serviceUrl'
+
 // Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
-
-const HOTES_LOCAUX = new Set(['localhost', '127.0.0.1', '[::1]'])
-
-function analyserUrl(valeur: string): URL | null {
-  try {
-    const url = new URL(valeur)
-    const http = url.protocol === 'http:' || url.protocol === 'https:'
-    return http && !url.username && !url.password ? url : null
-  } catch {
-    return null
-  }
-}
 
 // Une URL de service est une destination de données personnelles (et de la clé API) : on la valide.
 const urlService = z
