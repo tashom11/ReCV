@@ -5,13 +5,12 @@ import type { JobAnalysis } from '../tailoring/jobAnalysis'
 /** Step of a long task, to display progress. */
 export interface TailoringStep {
   key?: StepKey
-  label: string
   current?: number
   total?: number
 }
 
 export interface TailoringOptions {
-  onStep?: (label: TailoringStep) => void
+  onStep?: (step: TailoringStep) => void
   /** Rewrite the bullets with the model (slow). Default: original bullets are selected, without the model. */
   rewrite?: boolean
   /** Job posting analysis already known (it does not depend on the profile): avoids calling the model. */
