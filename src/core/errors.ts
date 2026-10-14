@@ -7,7 +7,7 @@ export class CodedError extends Error {
 
   constructor(code: ErrorCode, message: string, options?: ErrorOptions) {
     super(message, options)
-    this.name = 'ErreurCodee'
+    this.name = 'CodedError'
     this.code = code
   }
 }

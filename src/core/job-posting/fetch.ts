@@ -32,7 +32,7 @@ export class JobPostingFetchError extends Error {
 
   constructor(code: JobPostingErrorCode, message: string) {
     super(message)
-    this.name = 'ErreurRecuperationOffre'
+    this.name = 'JobPostingFetchError'
     this.code = code
   }
 }
