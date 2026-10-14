@@ -1,24 +1,12 @@
 import type { GeneratedCv } from '@core/api'
 import type { JobPosting, Profile } from '@core/schemas'
-import { isLocalService } from '@core/serviceUrl'
-import { composeCv, initialChoices } from '@core/tailoring/composition'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { focusScreenTitle, windowTitle } from './accessibility'
-import logo from './assets/logo.png'
+import { useCallback, useEffect, useState } from 'react'
+import { AppHeader } from './app/AppHeader'
+import { useEngineStatus } from './app/useEngineStatus'
+import { useNavigation } from './app/useNavigation'
 import { describeError, type ErrorDescription, isCancellation } from './errors'
 import { readEstimate, saveDuration } from './estimate'
-import {
-  afterStart,
-  doneSteps,
-  engineReady,
-  headerForView,
-  initialView,
-  type StepNumber,
-  stepForView,
-  titleWithoutGender,
-  type View,
-  viewForStep,
-} from './flow'
+import { afterStart, doneSteps, initialView, titleWithoutGender, viewForStep } from './flow'
 import { GeneratingScreen } from './screens/Generating'
 import { JobPostingScreen, type ReadJobPosting } from './screens/JobPosting'
 import { MyCvScreen } from './screens/MyCv'
@@ -28,7 +16,7 @@ import { SetupScreen } from './screens/Setup'
 import { SuccessScreen } from './screens/Success'
 import { useUpdateState } from './screens/Updates'
 import { WelcomeScreen } from './screens/Welcome'
-import { Alert, Button, EmptyState, Icon, LinkButton, Stepper } from './ui'
+import { Alert, Button, EmptyState } from './ui'
 
 interface Result {
   /** Profile at the time of creation: the experience indices must match it. */
@@ -40,9 +28,9 @@ interface Result {
 const FILE_NAME_KEY = 'recv.nomFichierCv'
 
 export default function App() {
-  const [view, setView] = useState<View | null>(null)
-  // View to go back to when leaving the settings or the setup.
-  const returnView = useRef<View>('welcome')
+  const { view, setView, goTo, goBack, returnView } = useNavigation()
+  const { engine, checkEngine } = useEngineStatus()
+  const update = useUpdateState()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [fileName, setFileName] = useState<string | null>(() => localStorage.getItem(FILE_NAME_KEY))
   const [posting, setPosting] = useState<ReadJobPosting | null>(null)
@@ -51,24 +39,6 @@ export default function App() {
   const [generationError, setGenerationError] = useState<ErrorDescription | null>(null)
   const [layingOut, setLayingOut] = useState(false)
   const [estimate, setEstimate] = useState(() => readEstimate(localStorage))
-  const [engine, setEngine] = useState<{ ready: boolean; online: boolean }>({ ready: true, online: false })
-
-  const update = useUpdateState()
-
-  const checkEngine = useCallback(
-    () =>
-      Promise.all([window.api.getSettings(), window.api.getModelsState()]).then(
-        ([p, m]) => {
-          // "Online": the CV leaves this computer (online service, or Ollama on another machine).
-          const online = p.provider === 'api' || (p.provider === 'ollama' && !isLocalService(p.ollamaUrl))
-          const state = { ready: engineReady(p, m.models), online }
-          setEngine(state)
-          return state
-        },
-        () => ({ ready: true, online: false }),
-      ),
-    [],
-  )
 
   useEffect(() => {
     void checkEngine()
@@ -79,30 +49,7 @@ export default function App() {
       },
       () => setView('welcome'),
     )
-  }, [checkEngine])
-
-  // Each screen change is announced: window title, then focus on the title of the new screen
-  // (the clicked button has disappeared, the focus would otherwise fall back to the page).
-  const previousView = useRef<View | null>(null)
-  useEffect(() => {
-    if (view === null) return
-    document.title = windowTitle(view)
-    const isFirstScreen = previousView.current === null
-    previousView.current = view
-    // Effects run after the DOM is updated: the new title is already there. (No requestAnimationFrame: it is
-    // paused while the window is minimised, which users are invited to do during long tasks.)
-    if (!isFirstScreen) focusScreenTitle()
-  }, [view])
-
-  const goTo = useCallback((nextView: View) => {
-    setView((currentView) => {
-      if ((nextView === 'settings' || nextView === 'setup') && currentView && currentView !== nextView) {
-        if (currentView !== 'settings' && currentView !== 'setup') returnView.current = currentView
-      }
-      return nextView
-    })
-    window.scrollTo({ top: 0 })
-  }, [])
+  }, [checkEngine, setView])
 
   const goToSetup = useCallback(() => goTo('setup'), [goTo])
 
@@ -125,13 +72,8 @@ export default function App() {
       const generated = await window.api.tailorCv(jobPosting)
       saveDuration(localStorage, (Date.now() - start) / 1000)
       setEstimate(readEstimate(localStorage))
-      // Last announced step: the preview is prepared before showing the result.
+      // Last announced step: the result screen lays the CV out (its previews are computed there).
       setLayingOut(true)
-      const { cvTemplate } = await window.api.getSettings()
-      const bullets = generated.cv.experiences.map((e) => e.bullets)
-      await window.api
-        .templateHtml(composeCv(profile, generated.cv, initialChoices(generated.cv), bullets), cvTemplate)
-        .catch(() => '')
       setResult({ profile, jobPosting, generated })
       setExportedPath(null)
       goTo('result')
@@ -160,76 +102,36 @@ export default function App() {
     setExportedPath(null)
     returnView.current = 'welcome'
     goTo('welcome')
-  }, [goTo])
+  }, [goTo, returnView])
 
   const onSettingsChanged = useCallback(() => void checkEngine(), [checkEngine])
 
   const onReady = useCallback(() => {
     void checkEngine()
-    goTo(returnView.current === 'welcome' ? 'cv' : returnView.current)
-  }, [goTo, checkEngine])
+    goBack()
+  }, [goBack, checkEngine])
 
   if (view === null) return <div className="min-h-screen bg-papier" />
 
-  const header = headerForView(view)
   const done = doneSteps({
     profilePresent: profile !== null,
     postingConfirmed: result !== null || view === 'generating',
-    exportedPath: exportedPath !== null,
+    exported: exportedPath !== null,
   })
-  const goToStep = (step: StepNumber) => goTo(viewForStep(step))
   // Nothing can be read nor created without an engine: say so where it is needed, with the action to fix it.
   const engineMissing = !engine.ready && (view === 'cv' || view === 'posting')
 
   return (
     <div className="flex min-h-screen flex-col bg-papier text-encre">
-      <header className="sticky top-0 z-20 border-b border-trait bg-surface">
-        <div className="mx-auto flex min-h-[72px] max-w-7xl items-center gap-8 px-6">
-          <span className="flex shrink-0 items-center gap-3 font-titre text-2xl font-bold text-encre">
-            <img src={logo} alt="" width={40} height={40} className="rounded-champ" />
-            Re:CV
-          </span>
-          {header.steps ? (
-            <Stepper
-              currentStep={stepForView(view)}
-              done={done}
-              onGoTo={goToStep}
-              currentStepState={view === 'generating' ? 'en préparation' : 'en cours'}
-              locked={view === 'generating'}
-              reachable={result && !exportedPath ? [3] : []}
-              stepStates={result && !exportedPath ? { 3: 'à télécharger' } : {}}
-            />
-          ) : (
-            <span className="flex-1" />
-          )}
-          {view === 'settings' && (
-            <LinkButton icon="arrow-left" onClick={() => goTo(returnView.current)}>
-              Revenir où j’en étais
-            </LinkButton>
-          )}
-          {/* A downloaded version is shown wherever the settings can be reached. */}
-          {header.settings && update?.status === 'ready' && (
-            <button
-              type="button"
-              onClick={() => goTo('settings')}
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-accent bg-accent-pale px-4 font-bold text-encre hover:brightness-95"
-            >
-              <Icon name="download" size={18} />
-              Mise à jour prête
-            </button>
-          )}
-          {header.settings && (
-            <button
-              type="button"
-              onClick={() => goTo('settings')}
-              className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-bouton px-2 text-intro text-encre hover:text-marque"
-            >
-              <Icon name="settings" size={22} />
-              Réglages
-            </button>
-          )}
-        </div>
-      </header>
+      <AppHeader
+        view={view}
+        done={done}
+        hasUndownloadedCv={result !== null && !exportedPath}
+        updateReady={update?.status === 'ready'}
+        onGoToStep={(step) => goTo(viewForStep(step))}
+        onSettings={() => goTo('settings')}
+        onBack={() => goTo(returnView.current)}
+      />
 
       <main className="ecrans flex flex-1 flex-col">
         {engineMissing && (
@@ -253,17 +155,11 @@ export default function App() {
             online={engine.online}
             onStart={() => {
               returnView.current = 'welcome'
-              void checkEngine().then((state) => goTo(afterStart(state.ready)))
+              void checkEngine().then((status) => goTo(afterStart(status.ready)))
             }}
           />
         )}
-        {view === 'setup' && (
-          <SetupScreen
-            onReady={onReady}
-            onLater={() => goTo(returnView.current === 'welcome' ? 'cv' : returnView.current)}
-            onSettings={() => goTo('settings')}
-          />
-        )}
+        {view === 'setup' && <SetupScreen onReady={onReady} onLater={goBack} onSettings={() => goTo('settings')} />}
         {view === 'cv' && (
           <MyCvScreen
             profile={profile}
@@ -278,8 +174,8 @@ export default function App() {
           (profile ? (
             <JobPostingScreen
               posting={posting}
-              onJobPosting={(a) => {
-                setPosting(a)
+              onJobPosting={(read) => {
+                setPosting(read)
                 setGenerationError(null)
               }}
               estimateS={estimate}

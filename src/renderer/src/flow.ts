@@ -11,7 +11,7 @@ export interface FlowState {
   /** The job posting has been read and confirmed with « Créer mon CV adapté ». */
   postingConfirmed: boolean
   /** A tailored CV has been downloaded. */
-  exportedPath: boolean
+  exported: boolean
 }
 
 /** On opening: the welcome screen only if there is no CV yet, otherwise directly the job posting. */
@@ -55,7 +55,7 @@ export function doneSteps(state: FlowState): StepNumber[] {
   const done: StepNumber[] = []
   if (state.profilePresent) done.push(1)
   if (state.profilePresent && state.postingConfirmed) done.push(2)
-  if (done.length === 2 && state.exportedPath) done.push(3)
+  if (done.length === 2 && state.exported) done.push(3)
   return done
 }
 

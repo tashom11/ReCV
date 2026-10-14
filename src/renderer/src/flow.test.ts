@@ -57,10 +57,10 @@ describe('flow', () => {
   })
 
   it('only marks a step as done if the previous ones are', () => {
-    expect(doneSteps({ profilePresent: false, postingConfirmed: true, exportedPath: true })).toEqual([])
-    expect(doneSteps({ profilePresent: true, postingConfirmed: false, exportedPath: true })).toEqual([1])
-    expect(doneSteps({ profilePresent: true, postingConfirmed: true, exportedPath: false })).toEqual([1, 2])
-    expect(doneSteps({ profilePresent: true, postingConfirmed: true, exportedPath: true })).toEqual([1, 2, 3])
+    expect(doneSteps({ profilePresent: false, postingConfirmed: true, exported: true })).toEqual([])
+    expect(doneSteps({ profilePresent: true, postingConfirmed: false, exported: true })).toEqual([1])
+    expect(doneSteps({ profilePresent: true, postingConfirmed: true, exported: false })).toEqual([1, 2])
+    expect(doneSteps({ profilePresent: true, postingConfirmed: true, exported: true })).toEqual([1, 2, 3])
   })
 
   it('hides the steps on the welcome screen and the settings during a wait', () => {
