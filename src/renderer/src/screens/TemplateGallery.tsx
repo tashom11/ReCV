@@ -1,61 +1,17 @@
 import { CV_TEMPLATES, type TemplateId } from '@core/export/templates'
-import type { TailoredCv } from '@core/schemas'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Spinner, TemplateThumbnail } from '../ui'
-
-export type Previews = Partial<Record<TemplateId, { html?: string; error?: string }>>
+import type { Previews } from './template-gallery/usePreviews'
+import { useScaleToWidth } from './template-gallery/useScaleToWidth'
 
 // A4 page size in CSS pixels (96 dpi): the CV is rendered at this size then scaled down to the available width.
 const PAGE_WIDTH = 794
 const PAGE_HEIGHT = 1123
-const REFRESH_DELAY_MS = 400
-
-/**
- * Previews of the CV in every layout (the real rendering, photo included), recomputed shortly after the last change.
- * The old previews stay visible during the recomputation: nothing flickers.
- */
-export function usePreviews(cv: TailoredCv): { previews: Previews; busy: boolean } {
-  const [previews, setPreviews] = useState<Previews>({})
-  const [busy, setBusy] = useState(true)
-  // Generation number: a more recent generation makes the answers of the previous ones obsolete.
-  const generation = useRef(0)
-
-  useEffect(() => {
-    const number = ++generation.current
-    setBusy(true)
-    const timer = setTimeout(async () => {
-      for (const model of CV_TEMPLATES) {
-        let preview: { html?: string; error?: string }
-        try {
-          preview = { html: await window.api.templateHtml(cv, model.id) }
-        } catch (e) {
-          preview = { error: e instanceof Error ? e.message : String(e) }
-        }
-        if (number !== generation.current) return
-        setPreviews((a) => ({ ...a, [model.id]: preview }))
-      }
-      setBusy(false)
-    }, REFRESH_DELAY_MS)
-    return () => clearTimeout(timer)
-  }, [cv])
-
-  return { previews, busy }
-}
 
 /** A4 page scaled to the width of its container: the CV HTML is shown in an isolated frame, without scripts. */
 function ScaledPage({ html, title }: { html: string; title: string }) {
   const container = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.1)
-
-  useLayoutEffect(() => {
-    const element = container.current
-    if (!element) return
-    const measure = () => setScale(element.clientWidth / PAGE_WIDTH)
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
+  const scale = useScaleToWidth(container, PAGE_WIDTH, { initial: 0.1 })
 
   return (
     <div
@@ -156,18 +112,8 @@ export function LargePreview({
   onPages: (pages: number) => void
 }) {
   const container = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(0.8)
+  const scale = useScaleToWidth(container, PAGE_WIDTH, { initial: 0.8, max: 1 })
   const [pages, setPages] = useState(1)
-
-  useLayoutEffect(() => {
-    const element = container.current
-    if (!element) return
-    const measure = () => setScale(Math.min(1, element.clientWidth / PAGE_WIDTH))
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(element)
-    return () => observer.disconnect()
-  }, [])
 
   const height = pages * PAGE_HEIGHT
 

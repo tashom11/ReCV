@@ -1,35 +1,16 @@
 import type { JobPostingPreview } from '@core/api'
-import type { JobPosting, Requirements } from '@core/schemas'
+import type { JobPosting } from '@core/schemas'
 import { useState } from 'react'
 import { describeError, type ErrorAction, type ErrorDescription } from '../errors'
 import { announcedDuration } from '../estimate'
 import { useTaskProgress } from '../progress'
-import { Button, ErrorAlert, Icon, LinkButton, Loading, PageTitle, Pill, SegmentedTabs, TextField } from '../ui'
-import { tabId } from '../ui/SegmentedTabs'
-
-type Mode = 'link' | 'text'
+import { Button, ErrorAlert, LinkButton, Loading, PageTitle } from '../ui'
+import { JobPostingCard } from './job-posting/JobPostingCard'
+import { type InputMode, JobPostingInput } from './job-posting/JobPostingInput'
 
 export interface ReadJobPosting {
   jobPosting: JobPosting
   preview: JobPostingPreview
-}
-
-const PANEL_ID = 'saisie-annonce'
-
-/** What the job posting wishes for and the CV does not show: said without discouraging. */
-function goodToKnow(requirements: Requirements): string | null {
-  const sentences: string[] = []
-  if (requirements.experience?.status === 'not-found') {
-    sentences.push(`l’annonce souhaite « ${requirements.experience.required} ». Cela n’apparaît pas dans votre CV`)
-  }
-  if (requirements.education?.status === 'insufficient') {
-    const profile = requirements.education.profileValue
-      ? ` (votre CV indique « ${requirements.education.profileValue} »)`
-      : ''
-    sentences.push(`l’annonce demande « ${requirements.education.required} »${profile}`)
-  }
-  if (sentences.length === 0) return null
-  return `${sentences.join(' ; ')}, mais cela ne vous empêche pas de postuler.`
 }
 
 /** Step ②: link or text of the job posting, then a confirmation card of what was read. */
@@ -52,17 +33,16 @@ export function JobPostingScreen({
   onBackToCv: () => void
   onSetup: () => void
 }) {
-  const [mode, setMode] = useState<Mode>('link')
+  const [mode, setMode] = useState<InputMode>('link')
   const [url, setUrl] = useState('')
   const [text, setText] = useState('')
   const [busyWith, setBusyWith] = useState<'reading' | 'analysis' | null>(null)
   const [error, setError] = useState<ErrorDescription | null>(null)
-  const [correction, setCorrection] = useState<JobPosting | null>(null)
   const progress = useTaskProgress('job-posting', busyWith !== null)
 
-  // Reads the job posting (link or text), then spots what the employer is looking for: the confirmation card depends on
-  // it.
-  const read = async (source: Mode | JobPosting) => {
+  // Reads the job posting (link, text or a corrected version), then spots what the employer is looking for: the
+  // confirmation card depends on it.
+  const read = async (source: InputMode | JobPosting) => {
     setError(null)
     setBusyWith('reading')
     try {
@@ -74,7 +54,6 @@ export function JobPostingScreen({
             : await window.api.parseJobPostingText(text)
       setBusyWith('analysis')
       onJobPosting({ jobPosting, preview: await window.api.previewJobPosting(jobPosting) })
-      setCorrection(null)
     } catch (e) {
       setError(describeError('posting', e))
     } finally {
@@ -100,9 +79,6 @@ export function JobPostingScreen({
   )
 
   if (posting) {
-    const { jobPosting, preview } = posting
-    const note = goodToKnow(preview.requirements)
-    const details = [jobPosting.company, jobPosting.location, preview.contractType].filter((v) => v && v.trim() !== '')
     return (
       <div className="mx-auto w-full max-w-4xl space-y-7 px-6 py-12">
         <PageTitle kicker="Annonce lue">C’est bien cette annonce ?</PageTitle>
@@ -114,95 +90,15 @@ export function JobPostingScreen({
         )}
         {error && <ErrorAlert description={error} onAction={onErrorAction} />}
 
-        <article className="rounded-panneau border border-trait bg-surface shadow-panneau">
-          <div className="space-y-6 p-8">
-            <header className="flex items-start gap-5">
-              <span className="flex size-14 shrink-0 items-center justify-center rounded-carte bg-marque-pale text-marque">
-                <Icon name="briefcase" size={28} />
-              </span>
-              <div className="min-w-0">
-                <h2 className="text-[1.75rem] leading-tight font-bold text-encre">{jobPosting.jobTitle}</h2>
-                {details.length > 0 && (
-                  <p className="mt-1.5 flex flex-wrap gap-x-5 text-intro text-encre-douce">
-                    {details.map((d) => (
-                      <span key={d}>{d}</span>
-                    ))}
-                  </p>
-                )}
-              </div>
-            </header>
-
-            {preview.soughtSkills.length > 0 && (
-              <section className="space-y-3">
-                <h3 className="text-corps font-bold text-encre">Ce que l’employeur recherche</h3>
-                <ul className="flex flex-wrap gap-2.5">
-                  {preview.soughtSkills.map((term) => (
-                    <li key={term}>
-                      <Pill>{term}</Pill>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {note && (
-              <p className="flex items-start gap-3 rounded-carte bg-info-fond px-5 py-4 text-info">
-                <Icon name="info" className="mt-0.5" />
-                <span>
-                  <strong>Bon à savoir :</strong> {note}
-                </span>
-              </p>
-            )}
-          </div>
-
-          <details className="group border-t border-trait">
-            <summary className="flex min-h-16 items-center gap-3 rounded-b-panneau px-8 font-bold text-marque">
-              <Icon name="eye" />
-              <span className="flex-1">Voir le texte complet de l’annonce</span>
-              <Icon name="chevron-down" className="transition-transform duration-(--duree) group-open:rotate-180" />
-            </summary>
-            <div className="space-y-4 px-8 pb-8">
-              {correction ? (
-                <>
-                  <TextField
-                    label="Intitulé du poste"
-                    value={correction.jobTitle}
-                    onChange={(v) => setCorrection({ ...correction, jobTitle: v })}
-                  />
-                  <TextField
-                    label="Texte de l’annonce"
-                    multiline
-                    rows={12}
-                    value={correction.rawText}
-                    onChange={(v) => setCorrection({ ...correction, rawText: v })}
-                  />
-                  <div className="flex flex-wrap gap-3">
-                    <Button
-                      onClick={() => void read(correction)}
-                      busy={busyWith !== null}
-                      disabled={!correction.jobTitle.trim() || !correction.rawText.trim()}
-                    >
-                      Relire l’annonce corrigée
-                    </Button>
-                    <Button variant="secondary" onClick={() => setCorrection(null)} disabled={busyWith !== null}>
-                      Ne rien changer
-                    </Button>
-                  </div>
-                  {loading}
-                </>
-              ) : (
-                <>
-                  <p className="max-h-80 overflow-y-auto rounded-champ bg-papier p-4 whitespace-pre-wrap text-encre">
-                    {jobPosting.rawText}
-                  </p>
-                  <Button variant="secondary" icon="pencil" onClick={() => setCorrection(jobPosting)}>
-                    Corriger le texte
-                  </Button>
-                </>
-              )}
-            </div>
-          </details>
-        </article>
+        <JobPostingCard
+          // A new reading (correction) starts a new card: the correction form closes.
+          key={`${posting.jobPosting.jobTitle}\n${posting.jobPosting.rawText}`}
+          jobPosting={posting.jobPosting}
+          preview={posting.preview}
+          onReread={(corrected) => void read(corrected)}
+          busy={busyWith !== null}
+          loading={loading}
+        />
 
         <div className="flex flex-wrap items-center justify-between gap-4">
           <LinkButton icon="arrow-left" onClick={() => onJobPosting(null)}>
@@ -226,51 +122,17 @@ export function JobPostingScreen({
       </PageTitle>
       {error && <ErrorAlert description={error} onAction={onErrorAction} />}
 
-      <section className="space-y-6 rounded-panneau border border-trait bg-surface p-8 shadow-carte">
-        <SegmentedTabs
-          label="Façon de donner l’annonce"
-          panelId={PANEL_ID}
-          value={mode}
-          onChange={setMode}
-          disabled={busyWith !== null}
-          tabs={[
-            { id: 'link', label: 'Coller un lien', icon: 'link' },
-            { id: 'text', label: 'Coller le texte', icon: 'clipboard' },
-          ]}
-        />
-        <div id={PANEL_ID} role="tabpanel" aria-labelledby={tabId(PANEL_ID, mode)} className="space-y-5">
-          {mode === 'link' ? (
-            <TextField
-              label="Adresse de l’annonce"
-              type="url"
-              large
-              value={url}
-              onChange={setUrl}
-              placeholder="Collez ici l’adresse (elle commence par https://)"
-              hint="Astuce : dans votre navigateur, cliquez sur la barre d’adresse puis faites Ctrl + C pour copier."
-            />
-          ) : (
-            <TextField
-              label="Texte de l’annonce"
-              multiline
-              rows={10}
-              value={text}
-              onChange={setText}
-              placeholder="Collez ici tout le texte de l’annonce"
-              hint="Astuce : sur la page de l’annonce, sélectionnez le texte avec la souris, faites Ctrl + C, puis Ctrl + V ici."
-            />
-          )}
-          <Button
-            size="large"
-            onClick={() => void read(mode)}
-            busy={busyWith !== null}
-            disabled={mode === 'link' ? !url.trim() : !text.trim()}
-          >
-            Lire l’annonce
-          </Button>
-          {loading}
-        </div>
-      </section>
+      <JobPostingInput
+        mode={mode}
+        onMode={setMode}
+        url={url}
+        onUrl={setUrl}
+        text={text}
+        onText={setText}
+        onRead={() => void read(mode)}
+        busy={busyWith !== null}
+        loading={loading}
+      />
 
       <LinkButton icon="arrow-left" onClick={onBackToCv}>
         Revenir à mon CV
