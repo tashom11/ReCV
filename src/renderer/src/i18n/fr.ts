@@ -314,4 +314,66 @@ export const fr = {
     privacyLocal:
       'Votre ordinateur fait tout le travail lui-même : c’est parfois un peu long, mais rien ne sort de chez vous.',
   },
+
+  newCv: {
+    ready: 'Votre CV est prêt',
+    title: 'Relisez, ajustez si besoin, puis téléchargez',
+    headlineSection: 'Titre et présentation',
+    headlineLabel: 'Titre du CV',
+    summaryLabel: 'Phrase de présentation',
+    showChanges: 'Voir ce qui a changé',
+    backToPreview: 'Revenir à l’aperçu',
+    layout: (template: string, pages: number) => `Mise en page « ${template} » · ${pages} page${pages > 1 ? 's' : ''}`,
+    word: 'Version Word (.docx)',
+    pdf: 'Télécharger en PDF',
+    highlighted: {
+      title: 'Compétences mises en avant',
+      present: 'Déjà dans votre CV · placées en premier',
+      missing: 'Demandées par l’annonce, absentes de votre CV',
+      missingWarning:
+        'Cochez seulement ce que vous savez vraiment faire : on pourra vous interroger dessus en entretien.',
+    },
+    excluded: {
+      title: 'Retiré de ce CV',
+      summary: 'Sans rapport avec l’annonce · vous pouvez le remettre',
+      legend: 'Cochez ce que vous voulez remettre. Une expérience revient avec ses phrases de départ.',
+    },
+    gallery: {
+      layout: 'Mise en page',
+      thumbnail: (template: string) => `Aperçu de la mise en page ${template}`,
+      previewLabel: 'Aperçu de votre CV',
+      previewFrame: (template: string) => `Votre CV, mise en page ${template}`,
+      previewFailed: 'L’aperçu n’a pas pu s’afficher. Vous pouvez quand même télécharger votre CV.',
+      layingOut: 'Nous mettons votre CV en page…',
+    },
+  },
+
+  whatChanged: {
+    title: 'Ce qui a changé',
+    intro:
+      'Vos postes, dates et formations ne changent pas : nous choisissons et réordonnons ce qui vient de votre CV.',
+    before: 'Dans votre CV de départ',
+    after: 'Dans ce nouveau CV',
+    empty: '—',
+    headline: {
+      title: 'Titre du CV',
+      label: 'Titre adapté à l’annonce',
+      keep: 'Utiliser le titre adapté',
+    },
+    summary: {
+      title: 'Phrase de présentation',
+      label: 'Phrase adaptée à l’annonce',
+      keep: 'Utiliser la phrase adaptée',
+    },
+    experience: {
+      label: 'Ce que vous avez fait (une idée par ligne)',
+      keep: 'Utiliser les phrases choisies pour cette annonce',
+      keepHint: 'Décochée : toutes vos phrases de départ sont reprises, dans leur ordre.',
+    },
+    skills: {
+      title: 'Compétences',
+      keep: 'Utiliser la sélection adaptée',
+      keepHint: 'Les compétences utiles pour cette annonce, celles qu’elle demande en premier.',
+    },
+  },
 }

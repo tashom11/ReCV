@@ -1,6 +1,7 @@
 import type { Profile, TailoredCv } from '@core/schemas'
 import type { CompositionChoices } from '@core/tailoring/composition'
 import type { ReactNode } from 'react'
+import { texts } from '../i18n'
 import { Checkbox, TextField } from '../ui'
 
 const toLines = (text: string) => text.split('\n')
@@ -22,11 +23,11 @@ function Comparison({
       <h3 className="font-titre text-intro font-bold text-encre">{title}</h3>
       <div className="grid gap-4 xl:grid-cols-2">
         <div className="space-y-2 rounded-bouton bg-papier p-4">
-          <p className="text-petit font-bold text-encre-douce">Dans votre CV de départ</p>
+          <p className="text-petit font-bold text-encre-douce">{texts.whatChanged.before}</p>
           <div className="text-corps text-encre">{before}</div>
         </div>
         <div className="space-y-2 rounded-bouton bg-marque-pale p-4">
-          <p className="text-petit font-bold text-marque">Dans ce nouveau CV</p>
+          <p className="text-petit font-bold text-marque">{texts.whatChanged.after}</p>
           {after}
         </div>
       </div>
@@ -69,19 +70,17 @@ export function WhatChanged({
   return (
     <div className="space-y-5">
       <header className="space-y-1">
-        <h2 className="font-titre text-titre-section font-bold">Ce qui a changé</h2>
-        <p className="text-corps text-encre-douce">
-          Vos postes, dates et formations ne changent pas : nous choisissons et réordonnons ce qui vient de votre CV.
-        </p>
+        <h2 className="font-titre text-titre-section font-bold">{texts.whatChanged.title}</h2>
+        <p className="text-corps text-encre-douce">{texts.whatChanged.intro}</p>
       </header>
 
       <Comparison
-        title="Titre du CV"
-        before={<p>{profile.headline || '—'}</p>}
-        after={<TextField label="Titre adapté à l’annonce" value={headline} onChange={onHeadline} />}
+        title={texts.whatChanged.headline.title}
+        before={<p>{profile.headline || texts.whatChanged.empty}</p>}
+        after={<TextField label={texts.whatChanged.headline.label} value={headline} onChange={onHeadline} />}
         keep={
           <Checkbox
-            label="Utiliser le titre adapté"
+            label={texts.whatChanged.headline.keep}
             check={choices.headline}
             onChange={(v) => onChoices({ ...choices, headline: v })}
           />
@@ -89,12 +88,14 @@ export function WhatChanged({
       />
 
       <Comparison
-        title="Phrase de présentation"
-        before={<p className="whitespace-pre-wrap">{profile.summary || '—'}</p>}
-        after={<TextField label="Phrase adaptée à l’annonce" multiline rows={4} value={summary} onChange={onSummary} />}
+        title={texts.whatChanged.summary.title}
+        before={<p className="whitespace-pre-wrap">{profile.summary || texts.whatChanged.empty}</p>}
+        after={
+          <TextField label={texts.whatChanged.summary.label} multiline rows={4} value={summary} onChange={onSummary} />
+        }
         keep={
           <Checkbox
-            label="Utiliser la phrase adaptée"
+            label={texts.whatChanged.summary.keep}
             check={choices.summary}
             onChange={(v) => onChoices({ ...choices, summary: v })}
           />
@@ -116,7 +117,7 @@ export function WhatChanged({
             }
             after={
               <TextField
-                label="Ce que vous avez fait (une idée par ligne)"
+                label={texts.whatChanged.experience.label}
                 multiline
                 rows={Math.max(4, (bullets[i]?.length ?? 0) + 1)}
                 value={(bullets[i] ?? []).join('\n')}
@@ -125,8 +126,8 @@ export function WhatChanged({
             }
             keep={
               <Checkbox
-                label="Utiliser les phrases choisies pour cette annonce"
-                hint="Décochée : toutes vos phrases de départ sont reprises, dans leur ordre."
+                label={texts.whatChanged.experience.keep}
+                hint={texts.whatChanged.experience.keepHint}
                 check={choices.experiences[i] ?? true}
                 onChange={(v) => onChoices({ ...choices, experiences: replaceAt(choices.experiences, i, v) })}
               />
@@ -136,13 +137,13 @@ export function WhatChanged({
       })}
 
       <Comparison
-        title="Compétences"
-        before={<p>{profile.skills.join(', ') || '—'}</p>}
-        after={<p className="text-corps text-encre">{finalSkills.join(', ') || '—'}</p>}
+        title={texts.whatChanged.skills.title}
+        before={<p>{profile.skills.join(', ') || texts.whatChanged.empty}</p>}
+        after={<p className="text-corps text-encre">{finalSkills.join(', ') || texts.whatChanged.empty}</p>}
         keep={
           <Checkbox
-            label="Utiliser la sélection adaptée"
-            hint="Les compétences utiles pour cette annonce, celles qu’elle demande en premier."
+            label={texts.whatChanged.skills.keep}
+            hint={texts.whatChanged.skills.keepHint}
             check={choices.skills}
             onChange={(v) => onChoices({ ...choices, skills: v })}
           />

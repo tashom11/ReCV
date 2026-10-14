@@ -3,6 +3,7 @@ import { findTemplate, type TemplateId } from '@core/export/templates'
 import type { Profile, TailoredCv } from '@core/schemas'
 import { useEffect, useRef, useState } from 'react'
 import { describeError, type ErrorDescription } from '../errors'
+import { texts } from '../i18n'
 import { ActionBar, Button, Collapsible, ErrorAlert, Icon, TextField } from '../ui'
 import { ExcludedItemsSection } from './new-cv/ExcludedItemsSection'
 import { HighlightedSkillsSection } from './new-cv/HighlightedSkillsSection'
@@ -72,17 +73,15 @@ export function NewCvScreen({
           <header className="space-y-2">
             <p className="flex items-center gap-2 font-bold text-marque">
               <Icon name="check-circle" />
-              Votre CV est prêt
+              {texts.newCv.ready}
             </p>
-            <h1 className="font-titre text-[1.75rem] leading-tight font-bold">
-              Relisez, ajustez si besoin, puis téléchargez
-            </h1>
+            <h1 className="font-titre text-[1.75rem] leading-tight font-bold">{texts.newCv.title}</h1>
           </header>
 
-          <Collapsible title="Titre et présentation" open>
-            <TextField label="Titre du CV" value={draft.headline} onChange={draft.setHeadline} />
+          <Collapsible title={texts.newCv.headlineSection} open>
+            <TextField label={texts.newCv.headlineLabel} value={draft.headline} onChange={draft.setHeadline} />
             <TextField
-              label="Phrase de présentation"
+              label={texts.newCv.summaryLabel}
               multiline
               rows={5}
               value={draft.summary}
@@ -106,7 +105,7 @@ export function NewCvScreen({
           />
 
           <Button variant="secondary" icon={comparing ? 'eye' : 'compare'} onClick={() => setComparing((c) => !c)}>
-            {comparing ? 'Revenir à l’aperçu' : 'Voir ce qui a changé'}
+            {comparing ? texts.newCv.backToPreview : texts.newCv.showChanges}
           </Button>
         </div>
 
@@ -140,14 +139,14 @@ export function NewCvScreen({
         </div>
       </div>
 
-      <ActionBar maxWidth="max-w-7xl" left={`Mise en page « ${template.name} » · ${pages} page${pages > 1 ? 's' : ''}`}>
+      <ActionBar maxWidth="max-w-7xl" left={texts.newCv.layout(template.name, pages)}>
         <Button
           variant="on-dark"
           onClick={() => void exportAs('docx')}
           busy={exporting === 'docx'}
           disabled={exporting !== null}
         >
-          Version Word (.docx)
+          {texts.newCv.word}
         </Button>
         <Button
           variant="accent"
@@ -157,7 +156,7 @@ export function NewCvScreen({
           busy={exporting === 'pdf'}
           disabled={exporting !== null}
         >
-          Télécharger en PDF
+          {texts.newCv.pdf}
         </Button>
       </ActionBar>
     </>
