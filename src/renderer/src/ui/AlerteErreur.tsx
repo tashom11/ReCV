@@ -10,14 +10,17 @@ export function AlerteErreur({
   description,
   surAction,
   libelles,
+  headingLevel,
 }: {
   description: DescriptionErreur
   surAction: (action: ActionErreur) => void
   /** Libellés propres à l'écran, quand ceux par défaut ne conviennent pas. */
   libelles?: Partial<Record<ActionErreur, string>>
+  headingLevel?: 2 | 3
 }) {
   return (
     <Alerte
+      headingLevel={headingLevel}
       type={description.type}
       icone={description.icone}
       titre={description.titre}

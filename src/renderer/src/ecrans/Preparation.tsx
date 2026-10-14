@@ -1,5 +1,6 @@
 import type { ModeleEmbarqueEtat, ProgressionModele } from '@core/api'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { downloadAnnouncement } from '../accessibility'
 import { type DescriptionErreur, decrireErreur } from '../erreurs'
 import { debit, formaterTaille, restantTelechargement } from '../estimation'
 import { AlerteErreur, Bouton, BoutonLien, Icone } from '../ui'
@@ -107,7 +108,8 @@ export function EcranPreparation({
               <span className="text-[1.5rem] font-bold tabular-nums" aria-hidden="true">
                 {pourcentage} %
               </span>
-              <span className="text-corps text-encre-douce" role="status">
+              {/* Visible text changes several times per second: only the sr-only line below is announced. */}
+              <span className="text-corps text-encre-douce">
                 {verification
                   ? 'Vérification du fichier… quelques secondes'
                   : total > 0
@@ -115,6 +117,9 @@ export function EcranPreparation({
                     : 'Démarrage…'}
               </span>
             </div>
+            <p className="sr-only" role="status">
+              {total > 0 ? downloadAnnouncement(pourcentage, verification) : ''}
+            </p>
             <div
               role="progressbar"
               aria-label="Téléchargement"

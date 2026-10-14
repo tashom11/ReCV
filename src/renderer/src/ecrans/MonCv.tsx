@@ -1,5 +1,6 @@
 import type { Experience, Formation, Langue, Profil } from '@core/schemas'
 import { useEffect, useRef, useState } from 'react'
+import { type AutosaveStatus, createAutosave } from '../autosave'
 import { type ActionErreur, type DescriptionErreur, decrireErreur, messageErreur } from '../erreurs'
 import { compter, initiales } from '../parcours'
 import { reduirePhoto } from '../photo'
@@ -50,6 +51,9 @@ function optionsNiveau(courant: string) {
     ? [...NIVEAUX_LANGUE, { valeur: courant, libelle: courant }]
     : NIVEAUX_LANGUE
 }
+
+// Pause in typing after which the draft is saved.
+const AUTOSAVE_DELAY_MS = 800
 
 const experienceVide = (): Experience => ({ poste: '', entreprise: '', realisations: [] })
 const formationVide = (): Formation => ({ diplome: '', etablissement: '' })
@@ -104,8 +108,40 @@ export function EcranMonCv({
   const dernierImport = useRef<(() => void) | null>(null)
   const progressionImport = useProgressionTache('import', occupe === 'import')
   const progressionAccroche = useProgressionTache('accroche', occupe === 'accroche')
+  const [saveStatus, setSaveStatus] = useState<AutosaveStatus | null>(null)
+  const [autosave] = useState(() =>
+    createAutosave<Profil>({
+      delayMs: AUTOSAVE_DELAY_MS,
+      save: async (draft) => void (await window.api.enregistrerProfil(nettoyerProfil(draft))),
+      onStatus: setSaveStatus,
+    }),
+  )
+  // The draft differs from the profile known to the app: it is saved after a pause, and handed to the app
+  // when the screen is left by any route (stepper, settings), so that no correction is lost.
+  const dirty = useRef(false)
+  const latest = useRef({ brouillon, onProfil })
+  latest.current = { brouillon, onProfil }
 
-  useEffect(() => setBrouillon(profil), [profil])
+  useEffect(() => {
+    dirty.current = false
+    autosave.cancel()
+    setBrouillon(profil)
+  }, [profil, autosave])
+
+  useEffect(() => {
+    if (dirty.current && brouillon) autosave.schedule(brouillon)
+  }, [brouillon, autosave])
+
+  useEffect(
+    () => () => {
+      if (!dirty.current) return
+      const { brouillon: draft, onProfil: handOver } = latest.current
+      void autosave.flush().then(() => {
+        if (draft) handOver(nettoyerProfil(draft))
+      })
+    },
+    [autosave],
+  )
 
   const importer = async (fichier?: File) => {
     dernierImport.current = () => void importer(fichier)
@@ -132,8 +168,10 @@ export function EcranMonCv({
     if (!brouillon) return
     setOccupe('enregistrement')
     setErreur(null)
+    autosave.cancel()
     try {
       const { profil: enregistre } = await window.api.enregistrerProfil(nettoyerProfil(brouillon))
+      dirty.current = false
       onProfil(enregistre)
       onSuivant()
     } catch (e) {
@@ -156,7 +194,7 @@ export function EcranMonCv({
     setRetourAccroche(null)
     try {
       const accroche = await window.api.genererAccroche(nettoyerProfil(brouillon))
-      setBrouillon((p) => (p ? { ...p, accroche } : p))
+      maj({ accroche })
       setRetourAccroche({ type: 'succes', texte: 'Voici une proposition : relisez-la et ajustez-la si besoin.' })
     } catch (e) {
       const description = decrireErreur('creation', e)
@@ -169,7 +207,10 @@ export function EcranMonCv({
     }
   }
 
-  const maj = (partiel: Partial<Profil>) => setBrouillon((p) => (p ? { ...p, ...partiel } : p))
+  function maj(partiel: Partial<Profil>) {
+    dirty.current = true
+    setBrouillon((p) => (p ? { ...p, ...partiel } : p))
+  }
 
   if (!brouillon) {
     return (
@@ -279,16 +320,35 @@ export function EcranMonCv({
               </Alerte>
             )}
             <div className="grid gap-4 sm:grid-cols-2">
-              <Champ etiquette="Prénom et nom" valeur={brouillon.nom ?? ''} onChange={(v) => maj({ nom: v })} />
+              <Champ
+                etiquette="Prénom et nom"
+                autoComplete="name"
+                valeur={brouillon.nom ?? ''}
+                onChange={(v) => maj({ nom: v })}
+              />
               <Champ
                 etiquette="Votre métier actuel"
+                autoComplete="organization-title"
                 valeur={brouillon.titrePoste ?? ''}
                 onChange={(v) => maj({ titrePoste: v })}
               />
-              <Champ etiquette="E-mail" valeur={brouillon.email ?? ''} onChange={(v) => maj({ email: v })} />
-              <Champ etiquette="Téléphone" valeur={brouillon.telephone ?? ''} onChange={(v) => maj({ telephone: v })} />
+              <Champ
+                etiquette="E-mail"
+                type="email"
+                autoComplete="email"
+                valeur={brouillon.email ?? ''}
+                onChange={(v) => maj({ email: v })}
+              />
+              <Champ
+                etiquette="Téléphone"
+                type="tel"
+                autoComplete="tel"
+                valeur={brouillon.telephone ?? ''}
+                onChange={(v) => maj({ telephone: v })}
+              />
               <Champ
                 etiquette="Ville ou département"
+                autoComplete="address-level2"
                 valeur={brouillon.adresse ?? ''}
                 onChange={(v) => maj({ adresse: v })}
               />
@@ -566,7 +626,19 @@ export function EcranMonCv({
         </div>
       </div>
 
-      <BarreActions ton="clair" largeur="max-w-3xl" gauche="Vos corrections sont enregistrées quand vous continuez.">
+      <BarreActions
+        ton="clair"
+        largeur="max-w-3xl"
+        gauche={
+          saveStatus === 'error' ? (
+            <span role="alert" className="font-bold text-erreur">
+              Vos dernières corrections ne sont pas encore enregistrées. Elles le seront quand vous continuerez.
+            </span>
+          ) : (
+            'Vos corrections sont enregistrées automatiquement.'
+          )
+        }
+      >
         <Bouton
           taille="grand"
           iconeFin="fleche-droite"

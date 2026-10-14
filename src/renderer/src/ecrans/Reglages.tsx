@@ -1,7 +1,10 @@
 import type { EtatModeles, EtatParametres, ModeleEmbarqueEtat, Parametres, ProgressionModele } from '@core/api'
-import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { estServiceLocal } from '@core/serviceUrl'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import { downloadAnnouncement } from '../accessibility'
 import { type DescriptionErreur, decrireErreur, messageErreur } from '../erreurs'
 import { formaterTaille } from '../estimation'
+import { hasUnsavedTextChanges } from '../settingsDraft'
 import {
   Alerte,
   AlerteErreur,
@@ -148,7 +151,12 @@ function NiveauxModele({
     <fieldset className="space-y-2.5">
       <legend className="pb-2 text-corps font-bold text-encre">Rapidité ou soin du résultat</legend>
       {erreur && (
-        <AlerteErreur description={erreur} surAction={() => setErreur(null)} libelles={{ reprendre: 'Compris' }} />
+        <AlerteErreur
+          description={erreur}
+          surAction={() => setErreur(null)}
+          libelles={{ reprendre: 'Compris' }}
+          headingLevel={3}
+        />
       )}
       {etat.modeles.map((m) => {
         const niveau = NIVEAUX[m.id] ?? { nom: m.nom, detail: m.description }
@@ -231,10 +239,13 @@ function NiveauxModele({
                     />
                   )}
                 </div>
-                <p role="status" className="text-petit text-aide">
+                <p className="text-petit text-aide">
                   {telechargement.etat === 'verification'
                     ? 'Vérification du fichier… quelques secondes'
                     : `${formaterTaille(telechargement.recuOctets)} sur ${formaterTaille(telechargement.totalOctets)} (${pourcentage} %)`}
+                </p>
+                <p className="sr-only" role="status">
+                  {downloadAnnouncement(pourcentage, telechargement.etat === 'verification')}
                 </p>
               </div>
             )}
@@ -259,6 +270,8 @@ export function EcranReglages({
   onEfface: () => void
 }) {
   const [etat, setEtat] = useState<EtatParametres | null>(null)
+  // What is actually saved: immediate choices are applied on top of it, never on top of half-typed fields.
+  const [enregistre, setEnregistre] = useState<EtatParametres | null>(null)
   const [modeles, setModeles] = useState<EtatModeles | null>(null)
   const [cle, setCle] = useState('')
   const [autreService, setAutreService] = useState(false)
@@ -271,6 +284,7 @@ export function EcranReglages({
     window.api.lireParametres().then(
       (p) => {
         setEtat(p)
+        setEnregistre(p)
         setAutreService(!SERVICES.some((s) => s.valeur === p.urlApi))
       },
       (e) => setErreur(decrireErreur('reglages', e)),
@@ -291,8 +305,23 @@ export function EcranReglages({
     },
     [onChange],
   )
+  // A choice (engine, model level, rewriting) is saved at once: leaving the screen never loses it.
+  const choisir = async (partiel: Partial<Parametres>) => {
+    setEtat((e) => (e ? { ...e, ...partiel } : e))
+    if (!enregistre) return
+    setErreur(null)
+    try {
+      const { cleApiDefinie: _ignore, ...base } = enregistre
+      setEnregistre(await window.api.enregistrerParametres({ ...base, ...partiel }))
+      onChange()
+    } catch (e) {
+      setErreur(decrireErreur('reglages', e))
+    }
+  }
+  const choisirRef = useRef(choisir)
+  choisirRef.current = choisir
   const surModeleActif = useCallback((chemin: string | undefined) => {
-    setEtat((e) => (e ? { ...e, cheminModeleLocal: chemin } : e))
+    void choisirRef.current({ cheminModeleLocal: chemin })
   }, [])
 
   if (!etat) {
@@ -318,6 +347,7 @@ export function EcranReglages({
       if (cle.trim()) apres = await window.api.definirCleApi(cle.trim())
       setCle('')
       setEtat(apres)
+      setEnregistre(apres)
       setConfirmation(
         etat.cleApiDefinie && !apres.cleApiDefinie
           ? 'Réglages enregistrés. Le service a changé : saisissez à nouveau votre clé personnelle.'
@@ -368,7 +398,7 @@ export function EcranReglages({
       <Carte titre="Moteur d’intelligence artificielle" sousTitre="C’est lui qui lit votre CV et l’annonce.">
         <ChoixMoteur
           choisi={local}
-          onChoisir={() => maj({ fournisseur: 'local' })}
+          onChoisir={() => void choisir({ fournisseur: 'local' })}
           titre="Sur mon ordinateur"
           etiquette={<Pastille variante="recommande">Recommandé</Pastille>}
           description="Gratuit et privé : rien ne quitte votre ordinateur. Fonctionne sans internet."
@@ -395,21 +425,34 @@ export function EcranReglages({
           <div className="space-y-3 px-5 pb-5">
             <ChoixMoteur
               choisi={etat.fournisseur === 'ollama'}
-              onChoisir={() => maj({ fournisseur: 'ollama' })}
+              onChoisir={() => void choisir({ fournisseur: 'ollama' })}
               titre="Ollama (installé séparément)"
               description="Utilise un modèle servi par Ollama sur cet ordinateur. Les données restent chez vous."
             >
               {etat.fournisseur === 'ollama' && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Champ etiquette="Adresse d’Ollama" valeur={etat.urlOllama} onChange={(v) => maj({ urlOllama: v })} />
-                  <Champ etiquette="Modèle" valeur={etat.modeleOllama} onChange={(v) => maj({ modeleOllama: v })} />
-                </div>
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Champ
+                      etiquette="Adresse d’Ollama"
+                      valeur={etat.urlOllama}
+                      onChange={(v) => maj({ urlOllama: v })}
+                    />
+                    <Champ etiquette="Modèle" valeur={etat.modeleOllama} onChange={(v) => maj({ modeleOllama: v })} />
+                  </div>
+                  {!estServiceLocal(etat.urlOllama) && (
+                    <Alerte type="avertissement">
+                      <strong>Cette adresse n’est pas celle de votre ordinateur.</strong> Votre CV et l’annonce seront
+                      envoyés à cet appareil
+                      {etat.urlOllama.startsWith('http:') ? ', sans chiffrement sur le réseau' : ''}.
+                    </Alerte>
+                  )}
+                </>
               )}
             </ChoixMoteur>
 
             <ChoixMoteur
               choisi={etat.fournisseur === 'api'}
-              onChoisir={() => maj({ fournisseur: 'api' })}
+              onChoisir={() => void choisir({ fournisseur: 'api' })}
               titre="Service en ligne avec ma clé personnelle"
               description="OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service."
             >
@@ -476,7 +519,7 @@ export function EcranReglages({
                 etiquette={<strong className="text-intro">Réécrire les phrases de mes expériences</strong>}
                 aide="Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes."
                 coche={etat.reformulerPuces}
-                onChange={(v) => maj({ reformulerPuces: v })}
+                onChange={(v) => void choisir({ reformulerPuces: v })}
               />
             </div>
 
@@ -526,7 +569,13 @@ export function EcranReglages({
       </Carte>
 
       {confirmation && <Confirmation>{confirmation}</Confirmation>}
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-4">
+        {enregistre && hasUnsavedTextChanges(enregistre, etat, cle) && (
+          <p className="flex items-center gap-2 font-bold text-alerte">
+            <Icone nom="alerte" taille={18} />
+            Des modifications ne sont pas encore enregistrées.
+          </p>
+        )}
         <Bouton onClick={() => void enregistrer()} enCours={occupe === 'enregistrer'} desactive={occupe !== null}>
           Enregistrer les réglages
         </Bouton>

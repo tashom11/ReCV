@@ -2,7 +2,7 @@ import { type ReactNode, useId } from 'react'
 import { Icone } from './icones'
 
 const BASE_CHAMP =
-  'w-full rounded-champ border bg-surface px-3.5 text-corps text-encre placeholder:text-trait-fort transition duration-(--duree-rapide) hover:border-encre-douce'
+  'w-full rounded-champ border bg-surface px-3.5 text-corps text-encre placeholder:text-indicatif transition duration-(--duree-rapide) hover:border-encre-douce'
 
 const bordure = (erreur?: string) => (erreur ? 'border-2 border-erreur' : 'border-trait-fort')
 
@@ -33,13 +33,16 @@ export function Champ({
   aide,
   erreur,
   grand = false,
+  autoComplete,
 }: {
   etiquette: string
   valeur: string
   onChange: (valeur: string) => void
   multiligne?: boolean
   lignes?: number
-  type?: 'text' | 'password' | 'url'
+  type?: 'text' | 'password' | 'url' | 'email' | 'tel'
+  /** Purpose of a personal data field (WCAG 1.3.5), e.g. `name`, `email`, `tel`. */
+  autoComplete?: string
   placeholder?: string
   /** Bouton affiché en bas à droite, à l'intérieur de la zone de texte (champs multilignes). */
   action?: ReactNode
@@ -75,6 +78,7 @@ export function Champ({
           id={id}
           className={`${BASE_CHAMP} ${bordure(erreur)} ${grand ? 'min-h-14 text-intro' : 'min-h-12'}`}
           type={type}
+          autoComplete={autoComplete}
           value={valeur}
           placeholder={placeholder}
           aria-invalid={erreur ? true : undefined}

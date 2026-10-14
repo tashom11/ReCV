@@ -20,6 +20,7 @@ export function Alerte({
   icone,
   actions,
   children,
+  headingLevel = 2,
 }: {
   type: TypeAlerte
   titre?: string
@@ -27,16 +28,21 @@ export function Alerte({
   /** Boutons proposés ; le premier est l'action conseillée. */
   actions?: ReactNode
   children?: ReactNode
+  /** Title level in the page outline: 3 inside a card titled with an h2. */
+  headingLevel?: 2 | 3
 }) {
   const style = STYLES[type]
   const refTitre = useRef<HTMLHeadingElement>(null)
+  const focusesTitle = type === 'erreur' && Boolean(titre)
 
   // Une erreur déplace le focus sur son titre : l'action proposée est alors le premier bouton atteint au clavier.
   useEffect(() => {
-    if (type === 'erreur' && titre) refTitre.current?.focus()
-  }, [type, titre])
+    if (focusesTitle) refTitre.current?.focus()
+  }, [focusesTitle])
 
-  const role = type === 'erreur' ? 'alert' : 'status'
+  // The focus move already makes screen readers read the title: a live role on top would announce it twice.
+  const role = focusesTitle ? undefined : type === 'erreur' ? 'alert' : 'status'
+  const Heading = headingLevel === 3 ? 'h3' : 'h2'
 
   if (!titre) {
     return (
@@ -53,9 +59,9 @@ export function Alerte({
         <Icone nom={icone ?? style.icone} />
       </span>
       <div className="min-w-0 flex-1 space-y-1.5">
-        <h3 ref={refTitre} tabIndex={-1} className={`font-titre text-intro font-bold outline-none ${style.texte}`}>
+        <Heading ref={refTitre} tabIndex={-1} className={`font-titre text-intro font-bold ${style.texte}`}>
           {titre}
-        </h3>
+        </Heading>
         {children && <div className="text-corps text-encre">{children}</div>}
         {actions && <div className="flex flex-wrap items-center gap-3 pt-2.5">{actions}</div>}
       </div>

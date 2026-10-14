@@ -139,6 +139,12 @@ describe('erreurs', () => {
     expect(d.actions).toEqual(['coller-texte', 'reessayer'])
   })
 
+  it('explains that a local network address is not a job posting, and offers to paste the text', () => {
+    const d = decrireErreur('annonce', erreur('reseau-local'))
+    expect(d.titre).toBe('Cette adresse n’est pas celle d’une annonce')
+    expect(d.actions).toEqual(['coller-texte'])
+  })
+
   it('renvoie vers la préparation quand le moteur manque, quelle que soit l’étape', () => {
     for (const contexte of ['cv', 'annonce', 'creation'] as const) {
       const d = decrireErreur(contexte, erreur('moteur-absent'))

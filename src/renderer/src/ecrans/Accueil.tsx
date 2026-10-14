@@ -23,7 +23,7 @@ export function EcranAccueil({
     <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_420px]">
       <div className="space-y-8">
         <p className="inline-flex rounded-full border border-accent bg-accent-pale px-4 py-1.5 font-bold text-encre">
-          Gratuit · sans compte · sur votre ordinateur
+          {enLigne ? 'Gratuit · sans compte' : 'Gratuit · sans compte · sur votre ordinateur'}
         </p>
         <h1 className="max-w-xl font-titre text-titre-accueil font-bold">
           Un CV adapté à chaque annonce, en quelques minutes.

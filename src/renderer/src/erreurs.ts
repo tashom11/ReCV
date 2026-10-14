@@ -87,6 +87,17 @@ export function decrireErreur(contexte: ContexteErreur, erreur: unknown): Descri
         actions: ['coller-texte'],
       }
     }
+    if (code === 'reseau-local') {
+      return {
+        ...base,
+        type: 'erreur',
+        icone: 'croix-cercle',
+        titre: 'Cette adresse n’est pas celle d’une annonce',
+        texte:
+          'Elle mène à un appareil de votre ordinateur ou de votre réseau (box, imprimante…). Copiez l’adresse de l’annonce depuis votre navigateur, ou collez son texte.',
+        actions: ['coller-texte'],
+      }
+    }
     if (code && SITE_BLOQUE.has(code)) {
       return {
         ...base,
