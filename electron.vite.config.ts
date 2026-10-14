@@ -11,5 +11,7 @@ export default defineConfig({
   renderer: {
     resolve: { alias: { ...alias, '@renderer': resolve('src/renderer/src') } },
     plugins: [react(), tailwindcss()],
+    // Not minified by default: React alone then weighs several hundred kB to parse at startup.
+    build: { minify: true },
   },
 })
