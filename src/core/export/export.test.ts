@@ -2,7 +2,7 @@ import mammoth from 'mammoth'
 import { describe, expect, it } from 'vitest'
 import { profileSchema, tailoredCvSchema } from '../schemas'
 import { generateHtmlCv } from './CvHtml'
-import { buildCvDocument, cvFileName, SECTION_TITLES } from './cvDocument'
+import { buildCvDocument, CV_LABELS, cvFileName } from './cvDocument'
 import { generateDocxCv } from './docx'
 
 const profile = profileSchema.parse({
@@ -31,13 +31,24 @@ const cv = tailoredCvSchema.parse({
 describe('buildCvDocument', () => {
   const model = buildCvDocument(profile, cv)
 
-  it('orders the sections with standard titles', () => {
+  it('orders the sections with the standard titles of the CV language', () => {
+    expect(model.language).toBe('fr')
+    expect(model.sections.map((s) => s.id)).toEqual(['profile', 'skills', 'experience', 'education', 'languages'])
     expect(model.sections.map((s) => s.title)).toEqual([
-      SECTION_TITLES.profile,
-      SECTION_TITLES.skills,
-      SECTION_TITLES.experience,
-      SECTION_TITLES.education,
-      SECTION_TITLES.languages,
+      'Profil',
+      'Compétences',
+      'Expérience professionnelle',
+      'Formation',
+      'Langues',
+    ])
+  })
+
+  it('gives each skill line its label and its terms', () => {
+    const skills = buildCvDocument(profile, { ...cv, keySkills: ['React'], skills: ['Rigueur', 'Vitest'] })
+    expect(skills.sections.find((s) => s.id === 'skills')?.blocks).toEqual([
+      { type: 'labelled-list', label: CV_LABELS.fr.skillLines.key, elements: ['React'] },
+      { type: 'labelled-list', label: CV_LABELS.fr.skillLines.soft, elements: ['Rigueur'] },
+      { type: 'labelled-list', label: CV_LABELS.fr.skillLines.hard, elements: ['Vitest'] },
     ])
   })
 
@@ -47,7 +58,7 @@ describe('buildCvDocument', () => {
 
   it('leaves out empty sections', () => {
     const empty = buildCvDocument(profile, { ...cv, summary: ' ', skills: [], education: [], languages: [] })
-    expect(empty.sections.map((s) => s.title)).toEqual([SECTION_TITLES.experience])
+    expect(empty.sections.map((s) => s.id)).toEqual(['experience'])
   })
 
   it('produces a safe file name', () => {
