@@ -30,6 +30,7 @@ export function Button({
   busy = false,
   icon,
   endIcon,
+  ariaLabel,
 }: {
   children: ReactNode
   onClick: () => void
@@ -41,6 +42,8 @@ export function Button({
   icon?: IconName
   /** Icon placed after the label (« continue » arrow). */
   endIcon?: IconName
+  /** Accessible name when the visible label needs its context (« Retirer » → « Retirer l’anglais »). */
+  ariaLabel?: string
 }) {
   // Disabled: dashed border and dimmed text, not only opacity.
   const state =
@@ -52,6 +55,7 @@ export function Button({
       type="button"
       disabled={disabled || busy}
       aria-busy={busy}
+      aria-label={ariaLabel}
       onClick={onClick}
       className={`inline-flex items-center justify-center gap-2.5 rounded-bouton font-bold transition duration-(--duree-rapide) ${SIZES[size]} ${state}`}
     >

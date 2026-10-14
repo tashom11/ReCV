@@ -125,7 +125,7 @@ export function SetupScreen({
               aria-label="Téléchargement"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={percent}
+              aria-valuenow={verifying ? undefined : percent}
               className="h-3.5 overflow-hidden rounded-full bg-creux"
             >
               {verifying ? (

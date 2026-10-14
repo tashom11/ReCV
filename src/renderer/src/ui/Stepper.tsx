@@ -52,11 +52,11 @@ export function Stepper({
                 {isDone ? <Icon name="check" size={20} strokeWidth={3} /> : number}
               </span>
               <span className="min-w-0 text-left leading-tight">
-                <span className={`block truncate text-petit ${isDone ? 'font-bold text-marque' : 'text-encre-douce'}`}>
+                <span className={`block text-petit ${isDone ? 'font-bold text-marque' : 'text-encre-douce'}`}>
                   Étape {number} · {state}
                 </span>
                 <span
-                  className={`block truncate font-bold ${isCurrent || isDone || accessible ? 'text-encre' : 'text-encre-douce'} ${
+                  className={`block font-bold ${isCurrent || isDone || accessible ? 'text-encre' : 'text-encre-douce'} ${
                     clickable ? 'underline underline-offset-4' : ''
                   }`}
                 >

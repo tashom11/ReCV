@@ -5,6 +5,7 @@ import { describeError, type ErrorAction, type ErrorDescription } from '../error
 import { announcedDuration } from '../estimate'
 import { useTaskProgress } from '../progress'
 import { Button, ErrorAlert, Icon, LinkButton, Loading, PageTitle, Pill, SegmentedTabs, TextField } from '../ui'
+import { tabId } from '../ui/SegmentedTabs'
 
 type Mode = 'link' | 'text'
 
@@ -171,7 +172,7 @@ export function JobPostingScreen({
                   <TextField
                     label="Texte de l’annonce"
                     multiline
-                    toLines={12}
+                    rows={12}
                     value={correction.rawText}
                     onChange={(v) => setCorrection({ ...correction, rawText: v })}
                   />
@@ -237,7 +238,7 @@ export function JobPostingScreen({
             { id: 'text', label: 'Coller le texte', icon: 'clipboard' },
           ]}
         />
-        <div id={PANEL_ID} role="tabpanel" aria-labelledby={`${PANEL_ID}-onglet-${mode}`} className="space-y-5">
+        <div id={PANEL_ID} role="tabpanel" aria-labelledby={tabId(PANEL_ID, mode)} className="space-y-5">
           {mode === 'link' ? (
             <TextField
               label="Adresse de l’annonce"
@@ -252,7 +253,7 @@ export function JobPostingScreen({
             <TextField
               label="Texte de l’annonce"
               multiline
-              toLines={10}
+              rows={10}
               value={text}
               onChange={setText}
               placeholder="Collez ici tout le texte de l’annonce"

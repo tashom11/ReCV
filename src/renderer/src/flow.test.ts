@@ -1,6 +1,6 @@
 import { decodeError, encodeError } from '@core/channels'
 import { describe, expect, it } from 'vitest'
-import { describeError, isCancellation, messageErreur } from './errors'
+import { describeError, errorMessage, isCancellation } from './errors'
 import {
   announcedDuration,
   DEFAULT_ESTIMATE_S,
@@ -118,7 +118,7 @@ describe('errors', () => {
       message: 'Création annulée.',
     })
     expect(decodeError('Message [[sans]] code')).toEqual({ message: 'Message [[sans]] code' })
-    expect(messageErreur(error('network', 'site injoignable'))).toBe('site injoignable')
+    expect(errorMessage(error('network', 'site injoignable'))).toBe('site injoignable')
     expect(isCancellation(error('cancelled'))).toBe(true)
     expect(isCancellation(error(undefined))).toBe(false)
   })

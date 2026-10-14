@@ -34,7 +34,7 @@ export function readError(error: unknown): { code?: string; message: string } {
 }
 
 /** Readable message of an error, without its code. */
-export function messageErreur(error: unknown): string {
+export function errorMessage(error: unknown): string {
   return readError(error).message
 }
 

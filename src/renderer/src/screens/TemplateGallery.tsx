@@ -85,14 +85,46 @@ export function TemplateStrip({
   value: TemplateId
   onChange: (id: TemplateId) => void
 }) {
+  // Radio group: arrows move the choice (and the focus) to the previous or next template.
+  const current = CV_TEMPLATES.findIndex((m) => m.id === value)
+  const choose = (index: number) => {
+    const next = CV_TEMPLATES[(index + CV_TEMPLATES.length) % CV_TEMPLATES.length]
+    if (!next) return
+    onChange(next.id)
+    document.getElementById(`template-${next.id}`)?.focus()
+  }
+  const keys: Record<string, () => void> = {
+    ArrowRight: () => choose(current + 1),
+    ArrowDown: () => choose(current + 1),
+    ArrowLeft: () => choose(current - 1),
+    ArrowUp: () => choose(current - 1),
+  }
   return (
-    <fieldset>
-      <legend className="pb-2.5 text-corps font-bold text-encre">Mise en page</legend>
-      <div className="flex flex-wrap gap-3">
+    <div>
+      <p id="template-label" className="pb-2.5 text-corps font-bold text-encre">
+        Mise en page
+      </p>
+      <div
+        role="radiogroup"
+        aria-labelledby="template-label"
+        className="flex flex-wrap gap-3"
+        onKeyDown={(e) => {
+          const action = keys[e.key]
+          if (!action) return
+          e.preventDefault()
+          action()
+        }}
+      >
         {CV_TEMPLATES.map((m) => {
           const html = previews[m.id]?.html
           return (
-            <TemplateThumbnail key={m.id} name={m.name} chosen={m.id === value} onChoose={() => onChange(m.id)}>
+            <TemplateThumbnail
+              key={m.id}
+              id={`template-${m.id}`}
+              name={m.name}
+              chosen={m.id === value}
+              onChoose={() => onChange(m.id)}
+            >
               {html ? (
                 <ScaledPage html={html} title={`Aperçu de la mise en page ${m.name}`} />
               ) : (
@@ -104,7 +136,7 @@ export function TemplateStrip({
           )
         })}
       </div>
-    </fieldset>
+    </div>
   )
 }
 
