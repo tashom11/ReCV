@@ -3,6 +3,11 @@
 
 const minutes = (n: number) => `${n} minute${n > 1 ? 's' : ''}`
 
+const notReady = {
+  title: 'Re:CV n’est pas encore tout à fait prêt',
+  text: 'Il manque un téléchargement unique. Ensuite, plus besoin d’internet.',
+}
+
 export const fr = {
   appName: 'Re:CV',
 
@@ -39,11 +44,7 @@ export const fr = {
   },
 
   emptyStates: {
-    notReady: {
-      title: 'Re:CV n’est pas encore tout à fait prêt',
-      text: 'Il manque un téléchargement unique. Ensuite, plus besoin d’internet.',
-      action: 'Terminer la préparation',
-    },
+    notReady: { ...notReady, action: 'Terminer la préparation' },
     noCv: {
       title: 'Commençons par votre CV',
       text: 'Pour lire une annonce et y adapter votre CV, il nous faut d’abord votre CV actuel.',
@@ -66,6 +67,69 @@ export const fr = {
   },
 
   errorAlert: { details: 'Détails' },
+
+  /** Every problem says what is happening and what to do: a short title, a sentence without jargon, an action. */
+  errors: {
+    actions: {
+      'paste-text': 'Coller le texte à la place',
+      retry: 'Réessayer',
+      'choose-file': 'Choisir un autre fichier',
+      'finish-setup': 'Terminer la préparation',
+      'choose-folder': 'Choisir un autre dossier',
+      dismiss: 'Reprendre',
+    },
+    /** Shorter label when the action is not the recommended one. */
+    secondaryActions: { 'paste-text': 'Coller le texte' } as Record<string, string>,
+    engineMissing: notReady,
+    posting: {
+      network: {
+        title: 'Pas de connexion internet',
+        text: 'Pour lire un lien, il faut internet. En collant le texte de l’annonce, tout fonctionne sans connexion.',
+      },
+      invalidUrl: {
+        title: 'Cette adresse n’est pas complète',
+        text: 'Une adresse d’annonce commence par https://. Copiez-la depuis la barre d’adresse de votre navigateur.',
+      },
+      localNetwork: {
+        title: 'Cette adresse n’est pas celle d’une annonce',
+        text: 'Elle mène à un appareil de votre ordinateur ou de votre réseau (box, imprimante…). Copiez l’adresse de l’annonce depuis votre navigateur, ou collez son texte.',
+      },
+      blockedSite: {
+        title: 'Ce site ne nous laisse pas lire l’annonce',
+        text: 'Ça arrive souvent, ce n’est pas grave. Copiez le texte de l’annonce sur la page, puis collez-le ici.',
+      },
+      interrupted: {
+        title: 'La lecture de l’annonce s’est arrêtée en route',
+        text: 'Rien n’est perdu : vous pouvez relancer tout de suite.',
+      },
+    },
+    cv: {
+      unreadable: {
+        title: 'Nous n’arrivons pas à lire ce fichier',
+        text: 'C’est souvent le cas d’un CV scanné ou pris en photo. Essayez la version Word, ou un PDF enregistré depuis Word.',
+      },
+      interrupted: {
+        title: 'La lecture de votre CV s’est arrêtée en route',
+        text: 'Votre fichier n’a pas été modifié. Vous pouvez relancer tout de suite.',
+      },
+    },
+    export: {
+      title: 'Impossible d’enregistrer le CV ici',
+      text: 'Le fichier est peut-être déjà ouvert, ou le dossier est protégé. Fermez le PDF s’il est ouvert, ou choisissez un autre dossier.',
+    },
+    setup: {
+      title: 'Le téléchargement s’est interrompu',
+      text: 'Ce qui est déjà téléchargé est gardé : il repartira là où il s’était arrêté.',
+    },
+    settings: {
+      title: 'Ce réglage n’a pas pu être enregistré',
+      text: 'Vérifiez ce que vous avez saisi, puis réessayez.',
+    },
+    generating: {
+      title: 'La création s’est arrêtée en route',
+      text: 'Rien n’est perdu : votre CV et l’annonce sont gardés. Vous pouvez relancer tout de suite.',
+    },
+  },
 
   download: {
     verifying: 'Vérification du fichier',

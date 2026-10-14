@@ -1,4 +1,4 @@
-import { ACTION_LABELS, type ErrorAction, type ErrorDescription } from '../errors'
+import { actionLabel, type ErrorAction, type ErrorDescription } from '../errors'
 import { texts } from '../i18n'
 import { Alert } from './Alert'
 import { Button } from './Button'
@@ -34,7 +34,7 @@ export function ErrorAlert({
             variant={i === 0 ? 'primary' : 'secondary'}
             onClick={() => onAction(action)}
           >
-            {labels?.[action] ?? (i === 0 ? ACTION_LABELS[action] : ACTION_LABELS[action].replace(' à la place', ''))}
+            {labels?.[action] ?? actionLabel(action, i === 0)}
           </Button>
         ))
       }
