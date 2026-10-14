@@ -44,7 +44,10 @@ describe('generateProfileSummary', () => {
   })
 
   it('rejects a summary containing a figure or an employer', async () => {
-    for (const summary of ['Je fais preuve de rigueur depuis 4 ans.', 'Je fais preuve de rigueur, ancien de Webagence.']) {
+    for (const summary of [
+      'Je fais preuve de rigueur depuis 4 ans.',
+      'Je fais preuve de rigueur, ancien de Webagence.',
+    ]) {
       const m = engine({ transferableSkills: ['Rigueur'], summary })
       expect(await generateProfileSummary(m, profile)).toBe('Je fais preuve de rigueur.')
     }
