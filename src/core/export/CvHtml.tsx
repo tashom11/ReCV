@@ -1,14 +1,24 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { type Block, type CvDocument, SECTION_TITLES, type Section } from './cvDocument'
+import {
+  type Block,
+  CV_LABELS,
+  type CvDocument,
+  type CvLanguage,
+  labelledLine,
+  type Section,
+  type SectionId,
+} from './cvDocument'
 import { findTemplate, type TemplateId } from './templates'
 
 // ATS layout: a single column, real text, no table nor icon, standard section titles.
 // The style comes from the chosen template (see templates.ts); the structure is the same for all.
 
-function BlockHtml({ block }: { block: Block }) {
+function BlockHtml({ block, language }: { block: Block; language: CvLanguage }) {
   switch (block.type) {
     case 'paragraph':
       return <p>{block.text}</p>
+    case 'labelled-list':
+      return <p>{labelledLine(block, language)}</p>
     case 'list':
       return (
         <ul>
@@ -38,44 +48,35 @@ function BlockHtml({ block }: { block: Block }) {
   }
 }
 
-const SIDEBAR_TITLES: string[] = [SECTION_TITLES.skills, SECTION_TITLES.languages]
+const SIDEBAR_SECTIONS: SectionId[] = ['skills', 'languages']
 
-/** Skills in a narrow column: « Étiquette : a, b, c » becomes a subtitle followed by a list. */
-function SidebarBlock({ block }: { block: Block }) {
-  if (block.type === 'paragraph') {
-    const separation = block.text.indexOf(' : ')
-    if (separation > 0) {
-      const elements = block.text
-        .slice(separation + 3)
-        .split(', ')
-        .filter((e) => e.trim() !== '')
-      return (
-        <>
-          <h3>{block.text.slice(0, separation)}</h3>
-          <ul>
-            {elements.map((element, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
-              <li key={i}>{element}</li>
-            ))}
-          </ul>
-        </>
-      )
-    }
-  }
-  return <BlockHtml block={block} />
+/** In a narrow column, a labelled list becomes a subtitle followed by a list. */
+function SidebarBlock({ block, language }: { block: Block; language: CvLanguage }) {
+  if (block.type !== 'labelled-list') return <BlockHtml block={block} language={language} />
+  return (
+    <>
+      <h3>{block.label}</h3>
+      <ul>
+        {block.elements.map((element, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
+          <li key={i}>{element}</li>
+        ))}
+      </ul>
+    </>
+  )
 }
 
-function SectionHtml({ section, sidebar }: { section: Section; sidebar?: boolean }) {
+function SectionHtml({ section, language, sidebar }: { section: Section; language: CvLanguage; sidebar?: boolean }) {
   return (
     <section>
       <h2>{section.title}</h2>
       {section.blocks.map((block, i) =>
         sidebar ? (
           // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
-          <SidebarBlock key={i} block={block} />
+          <SidebarBlock key={i} block={block} language={language} />
         ) : (
           // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
-          <BlockHtml key={i} block={block} />
+          <BlockHtml key={i} block={block} language={language} />
         ),
       )}
     </section>
@@ -84,6 +85,8 @@ function SectionHtml({ section, sidebar }: { section: Section; sidebar?: boolean
 
 export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: TemplateId }) {
   const style = findTemplate(templateId)
+  const { language } = model
+  const inSidebar = (s: Section) => SIDEBAR_SECTIONS.includes(s.id)
   const contact = model.contact.length > 0 && (
     <p className="contact">
       {model.contact.map((element) => (
@@ -98,7 +101,7 @@ export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: 
     </>
   )
   return (
-    <html lang="fr">
+    <html lang={language}>
       <head>
         <meta charSet="utf-8" />
         <title>{model.name ? `CV - ${model.name}` : 'CV'}</title>
@@ -112,24 +115,22 @@ export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: 
                 <div className="identite">{identity}</div>
               </header>
               {model.sections
-                .filter((s) => !SIDEBAR_TITLES.includes(s.title))
+                .filter((s) => !inSidebar(s))
                 .map((section) => (
-                  <SectionHtml key={section.title} section={section} />
+                  <SectionHtml key={section.id} section={section} language={language} />
                 ))}
             </main>
             <aside className="lateral">
               {model.photo && <img className="photo" src={model.photo} alt="" />}
               {contact && (
                 <section>
-                  <h2>Contact</h2>
+                  <h2>{CV_LABELS[language].contact}</h2>
                   {contact}
                 </section>
               )}
-              {model.sections
-                .filter((s) => SIDEBAR_TITLES.includes(s.title))
-                .map((section) => (
-                  <SectionHtml key={section.title} section={section} sidebar />
-                ))}
+              {model.sections.filter(inSidebar).map((section) => (
+                <SectionHtml key={section.id} section={section} language={language} sidebar />
+              ))}
             </aside>
           </div>
         ) : (
@@ -142,7 +143,7 @@ export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: 
               {model.photo && <img className="photo" src={model.photo} alt="" />}
             </header>
             {model.sections.map((section) => (
-              <SectionHtml key={section.title} section={section} />
+              <SectionHtml key={section.id} section={section} language={language} />
             ))}
           </>
         )}

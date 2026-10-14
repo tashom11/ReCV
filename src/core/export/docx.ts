@@ -11,7 +11,7 @@ import {
   TextRun,
   VerticalPositionRelativeFrom,
 } from 'docx'
-import type { Block, CvDocument } from './cvDocument'
+import { type Block, type CvDocument, type CvLanguage, labelledLine } from './cvDocument'
 import { findTemplate, type TemplateId } from './templates'
 
 // Sizes in half-points (docx).
@@ -37,10 +37,12 @@ function text(style: Style, content: string, options: { bold?: boolean; size?: n
   })
 }
 
-function blockParagraphs(style: Style, block: Block): Paragraph[] {
+function blockParagraphs(style: Style, block: Block, language: CvLanguage): Paragraph[] {
   switch (block.type) {
     case 'paragraph':
       return [new Paragraph({ children: [text(style, block.text)] })]
+    case 'labelled-list':
+      return [new Paragraph({ children: [text(style, labelledLine(block, language))] })]
     case 'list':
       return block.elements.map((e) => new Paragraph({ children: [text(style, e)], bullet: { level: 0 } }))
     case 'entry': {
@@ -149,7 +151,7 @@ export async function generateDocxCv(model: CvDocument, templateId?: TemplateId)
         }),
       ],
     }),
-    ...section.blocks.flatMap((block) => blockParagraphs(style, block)),
+    ...section.blocks.flatMap((block) => blockParagraphs(style, block, model.language)),
   ])
 
   const document = new Document({
