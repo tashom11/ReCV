@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { MoteurLLM } from '../llm/moteur'
 import { encadrer, REGLES_ANTI_INVENTION } from '../llm/prompts'
-import type { Profil } from '../schemas'
+import type { Profile } from '../schemas'
 import { borneAccroche } from './pipeline'
 import { pointFidele } from './reecriture'
 import { contientMot, normaliser, texteExperience } from './texte'
@@ -35,12 +35,12 @@ function enumererAvecDe(elements: string[]): string {
 const MOTIF_PREMIERE_PERSONNE = /(?:^|[^\p{L}])(?:je|mon|ma|mes)(?![\p{L}])|(?:^|[^\p{L}])j['’]/iu
 const MOTIF_TROISIEME_PERSONNE = /(?:^|[^\p{L}])(?:il|elle|le candidat|la candidate|sa|son|ses)(?![\p{L}])/iu
 
-function texteSource(profil: Profil): string {
+function texteSource(profil: Profile): string {
   return [
-    profil.accroche ?? '',
-    ...profil.competences,
+    profil.summary ?? '',
+    ...profil.skills,
     ...profil.experiences.map(texteExperience),
-    ...profil.experiences.map((e) => e.periode ?? ''),
+    ...profil.experiences.map((e) => e.dateRange ?? ''),
   ].join('\n')
 }
 
@@ -51,11 +51,11 @@ function texteSource(profil: Profil): string {
  * - l'accroche est rejetée si elle cite une compétence de métier, un poste, un employeur ou un chiffre ;
  * - sinon, repli sur une phrase composée uniquement des compétences retenues.
  */
-export async function genererAccrocheProfil(moteur: MoteurLLM, profil: Profil): Promise<string> {
+export async function genererAccrocheProfil(moteur: MoteurLLM, profil: Profile): Promise<string> {
   const contenu = {
-    competences: profil.competences,
-    realisations: profil.experiences.flatMap((e) => [e.description ?? '', ...e.realisations]).filter(Boolean),
-    accrocheActuelle: profil.accroche,
+    competences: profil.skills,
+    realisations: profil.experiences.flatMap((e) => [e.description ?? '', ...e.achievements]).filter(Boolean),
+    accrocheActuelle: profil.summary,
   }
   const reponse = await moteur.genererObjet({
     nom: 'accrocheProfil',
@@ -73,9 +73,9 @@ export async function genererAccrocheProfil(moteur: MoteurLLM, profil: Profil): 
 
   const retenuesNormalisees = new Set(retenues.map(normaliser))
   const interdits = [
-    ...profil.competences.filter((c) => !retenuesNormalisees.has(normaliser(c))),
-    ...profil.experiences.flatMap((e) => [e.poste, e.entreprise]),
-    ...(profil.titrePoste ? [profil.titrePoste] : []),
+    ...profil.skills.filter((c) => !retenuesNormalisees.has(normaliser(c))),
+    ...profil.experiences.flatMap((e) => [e.position, e.company]),
+    ...(profil.headline ? [profil.headline] : []),
   ].filter((terme) => terme.trim().length >= 3)
 
   const proposee = borneAccroche(reponse.accroche)

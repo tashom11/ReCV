@@ -1,4 +1,4 @@
-import type { Experience, Formation, Langue, Profil } from '@core/schemas'
+import type { Education, Experience, Language, Profile } from '@core/schemas'
 import { useEffect, useRef, useState } from 'react'
 import { type AutosaveStatus, createAutosave } from '../autosave'
 import { type ActionErreur, type DescriptionErreur, decrireErreur, messageErreur } from '../erreurs'
@@ -24,12 +24,12 @@ const lignes = (texte: string) => texte.split('\n')
 const nettoyer = (valeurs: string[]) => valeurs.map((v) => v.trim()).filter(Boolean)
 
 // Les listes éditées gardent leurs lignes vides pendant la saisie ; on les retire à l'enregistrement.
-function nettoyerProfil(profil: Profil): Profil {
+function nettoyerProfil(profil: Profile): Profile {
   return {
     ...profil,
-    liensProfessionnels: nettoyer(profil.liensProfessionnels),
-    competences: nettoyer(profil.competences),
-    experiences: profil.experiences.map((e) => ({ ...e, realisations: nettoyer(e.realisations) })),
+    links: nettoyer(profil.links),
+    skills: nettoyer(profil.skills),
+    experiences: profil.experiences.map((e) => ({ ...e, realisations: nettoyer(e.achievements) })),
   }
 }
 
@@ -55,9 +55,9 @@ function optionsNiveau(courant: string) {
 // Pause in typing after which the draft is saved.
 const AUTOSAVE_DELAY_MS = 800
 
-const experienceVide = (): Experience => ({ poste: '', entreprise: '', realisations: [] })
-const formationVide = (): Formation => ({ diplome: '', etablissement: '' })
-const langueVide = (): Langue => ({ nom: '' })
+const experienceVide = (): Experience => ({ position: '', company: '', achievements: [] })
+const formationVide = (): Education => ({ degree: '', school: '' })
+const langueVide = (): Language => ({ name: '' })
 
 function remplacer<T>(liste: T[], indice: number, valeur: T): T[] {
   return liste.map((element, i) => (i === indice ? valeur : element))
@@ -70,7 +70,7 @@ function resumeExperiences(experiences: Experience[]): string {
   if (!premiere) return 'Aucune expérience pour l’instant'
   const reste = experiences.length - 1
   const suite = reste > 0 ? ` · et ${reste} autre${reste > 1 ? 's' : ''}` : ''
-  return joindre(premiere.poste, premiere.entreprise, premiere.periode) + suite
+  return joindre(premiere.position, premiere.company, premiere.dateRange) + suite
 }
 
 function resumeCompetences(competences: string[]): string {
@@ -88,17 +88,17 @@ export function EcranMonCv({
   onSuivant,
   onPreparer,
 }: {
-  profil: Profil | null
+  profil: Profile | null
   /** Nom du fichier importé, s'il est connu. */
   nomFichier: string | null
   /** Un service en ligne est choisi dans les réglages : on ne promet pas que rien n'est envoyé. */
   enLigne: boolean
-  onProfil: (profil: Profil, nomFichier?: string) => void
+  onProfil: (profil: Profile, nomFichier?: string) => void
   onSuivant: () => void
   /** Ouvre l'écran de préparation (moteur pas encore prêt). */
   onPreparer: () => void
 }) {
-  const [brouillon, setBrouillon] = useState<Profil | null>(profil)
+  const [brouillon, setBrouillon] = useState<Profile | null>(profil)
   const [occupe, setOccupe] = useState<'import' | 'enregistrement' | 'accroche' | null>(null)
   const [erreur, setErreur] = useState<DescriptionErreur | null>(null)
   // Retour affiché sous le champ : le haut de page est hors de vue quand on est au milieu du formulaire.
@@ -110,7 +110,7 @@ export function EcranMonCv({
   const progressionAccroche = useProgressionTache('accroche', occupe === 'accroche')
   const [saveStatus, setSaveStatus] = useState<AutosaveStatus | null>(null)
   const [autosave] = useState(() =>
-    createAutosave<Profil>({
+    createAutosave<Profile>({
       delayMs: AUTOSAVE_DELAY_MS,
       save: async (draft) => void (await window.api.enregistrerProfil(nettoyerProfil(draft))),
       onStatus: setSaveStatus,
@@ -194,7 +194,7 @@ export function EcranMonCv({
     setRetourAccroche(null)
     try {
       const accroche = await window.api.genererAccroche(nettoyerProfil(brouillon))
-      maj({ accroche })
+      maj({ summary: accroche })
       setRetourAccroche({ type: 'succes', texte: 'Voici une proposition : relisez-la et ajustez-la si besoin.' })
     } catch (e) {
       const description = decrireErreur('creation', e)
@@ -207,7 +207,7 @@ export function EcranMonCv({
     }
   }
 
-  function maj(partiel: Partial<Profil>) {
+  function maj(partiel: Partial<Profile>) {
     dirty.current = true
     setBrouillon((p) => (p ? { ...p, ...partiel } : p))
   }
@@ -238,14 +238,14 @@ export function EcranMonCv({
     )
   }
 
-  const nom = (brouillon.nom ?? '').trim()
-  const sousTitre = [brouillon.titrePoste, brouillon.adresse].filter((v) => v && v.trim() !== '').join(' · ')
-  const nbCompetences = nettoyer(brouillon.competences).length
+  const nom = (brouillon.fullName ?? '').trim()
+  const sousTitre = [brouillon.headline, brouillon.location].filter((v) => v && v.trim() !== '').join(' · ')
+  const nbCompetences = nettoyer(brouillon.skills).length
   const comptes = [
     compter(brouillon.experiences.length, 'expérience', 'expériences'),
-    compter(brouillon.formations.length, 'formation', 'formations'),
+    compter(brouillon.education.length, 'formation', 'formations'),
     compter(nbCompetences, 'compétence ou qualité', 'compétences et qualités'),
-    compter(brouillon.langues.length, 'langue', 'langues'),
+    compter(brouillon.languages.length, 'langue', 'langues'),
   ]
 
   return (
@@ -323,14 +323,14 @@ export function EcranMonCv({
               <Champ
                 etiquette="Prénom et nom"
                 autoComplete="name"
-                valeur={brouillon.nom ?? ''}
-                onChange={(v) => maj({ nom: v })}
+                valeur={brouillon.fullName ?? ''}
+                onChange={(v) => maj({ fullName: v })}
               />
               <Champ
                 etiquette="Votre métier actuel"
                 autoComplete="organization-title"
-                valeur={brouillon.titrePoste ?? ''}
-                onChange={(v) => maj({ titrePoste: v })}
+                valeur={brouillon.headline ?? ''}
+                onChange={(v) => maj({ headline: v })}
               />
               <Champ
                 etiquette="E-mail"
@@ -343,28 +343,28 @@ export function EcranMonCv({
                 etiquette="Téléphone"
                 type="tel"
                 autoComplete="tel"
-                valeur={brouillon.telephone ?? ''}
-                onChange={(v) => maj({ telephone: v })}
+                valeur={brouillon.phone ?? ''}
+                onChange={(v) => maj({ phone: v })}
               />
               <Champ
                 etiquette="Ville ou département"
                 autoComplete="address-level2"
-                valeur={brouillon.adresse ?? ''}
-                onChange={(v) => maj({ adresse: v })}
+                valeur={brouillon.location ?? ''}
+                onChange={(v) => maj({ location: v })}
               />
               <Champ
                 etiquette="Liens (facultatif)"
-                valeur={brouillon.liensProfessionnels.join(', ')}
+                valeur={brouillon.links.join(', ')}
                 placeholder="Ex. : votre page LinkedIn"
-                onChange={(v) => maj({ liensProfessionnels: v.split(/,\s*/) })}
+                onChange={(v) => maj({ links: v.split(/,\s*/) })}
               />
             </div>
             <Champ
               etiquette="Votre phrase de présentation"
               multiligne
               lignes={3}
-              valeur={brouillon.accroche ?? ''}
-              onChange={(v) => maj({ accroche: v })}
+              valeur={brouillon.summary ?? ''}
+              onChange={(v) => maj({ summary: v })}
               aide="Elle parle de vos qualités, pas d’un métier : elle reste valable pour toutes les annonces."
               action={
                 <Bouton
@@ -399,25 +399,29 @@ export function EcranMonCv({
                 // biome-ignore lint/suspicious/noArrayIndexKey: liste éditable sans identifiant stable
                 <fieldset key={i} className="space-y-4 rounded-bouton border border-trait p-4">
                   <legend className="px-2 text-libelle font-bold text-encre-douce">
-                    {experience.poste.trim() || `Expérience ${i + 1}`}
+                    {experience.position.trim() || `Expérience ${i + 1}`}
                   </legend>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Champ etiquette="Poste" valeur={experience.poste} onChange={(v) => majExperience({ poste: v })} />
+                    <Champ
+                      etiquette="Poste"
+                      valeur={experience.position}
+                      onChange={(v) => majExperience({ position: v })}
+                    />
                     <Champ
                       etiquette="Entreprise"
-                      valeur={experience.entreprise}
-                      onChange={(v) => majExperience({ entreprise: v })}
+                      valeur={experience.company}
+                      onChange={(v) => majExperience({ company: v })}
                     />
                     <Champ
                       etiquette="Dates"
-                      valeur={experience.periode ?? ''}
+                      valeur={experience.dateRange ?? ''}
                       placeholder="Ex. : 2019 – 2024"
-                      onChange={(v) => majExperience({ periode: v })}
+                      onChange={(v) => majExperience({ dateRange: v })}
                     />
                     <Champ
                       etiquette="Ville"
-                      valeur={experience.lieu ?? ''}
-                      onChange={(v) => majExperience({ lieu: v })}
+                      valeur={experience.location ?? ''}
+                      onChange={(v) => majExperience({ location: v })}
                     />
                   </div>
                   <Champ
@@ -431,8 +435,8 @@ export function EcranMonCv({
                     etiquette="Ce que vous avez fait (une idée par ligne)"
                     multiligne
                     lignes={4}
-                    valeur={experience.realisations.join('\n')}
-                    onChange={(v) => majExperience({ realisations: lignes(v) })}
+                    valeur={experience.achievements.join('\n')}
+                    onChange={(v) => majExperience({ achievements: lignes(v) })}
                   />
                   <Bouton
                     variante="danger"
@@ -456,61 +460,61 @@ export function EcranMonCv({
           <SectionRepliable
             titre="Compétences et qualités"
             compte={nbCompetences}
-            resume={resumeCompetences(brouillon.competences)}
+            resume={resumeCompetences(brouillon.skills)}
           >
             <Champ
               etiquette="Vos compétences et qualités (une par ligne)"
               multiligne
               lignes={8}
-              valeur={brouillon.competences.join('\n')}
-              onChange={(v) => maj({ competences: lignes(v) })}
+              valeur={brouillon.skills.join('\n')}
+              onChange={(v) => maj({ skills: lignes(v) })}
               aide="Quelques mots suffisent : « Organisation », « Travail en équipe », « Gestion des stocks »."
             />
           </SectionRepliable>
 
           <SectionRepliable
             titre="Formations"
-            compte={brouillon.formations.length}
+            compte={brouillon.education.length}
             resume={
-              brouillon.formations[0]
+              brouillon.education[0]
                 ? joindre(
-                    brouillon.formations[0].diplome,
-                    brouillon.formations[0].etablissement,
-                    brouillon.formations[0].periode,
+                    brouillon.education[0].degree,
+                    brouillon.education[0].school,
+                    brouillon.education[0].dateRange,
                   )
                 : 'Aucune formation pour l’instant'
             }
           >
-            {brouillon.formations.map((formation, i) => {
-              const majFormation = (partiel: Partial<Formation>) =>
-                maj({ formations: remplacer(brouillon.formations, i, { ...formation, ...partiel }) })
+            {brouillon.education.map((formation, i) => {
+              const majFormation = (partiel: Partial<Education>) =>
+                maj({ education: remplacer(brouillon.education, i, { ...formation, ...partiel }) })
               return (
                 // biome-ignore lint/suspicious/noArrayIndexKey: liste éditable sans identifiant stable
                 <fieldset key={i} className="space-y-4 rounded-bouton border border-trait p-4">
                   <legend className="px-2 text-libelle font-bold text-encre-douce">
-                    {formation.diplome.trim() || `Formation ${i + 1}`}
+                    {formation.degree.trim() || `Formation ${i + 1}`}
                   </legend>
                   <div className="grid gap-4 sm:grid-cols-3">
                     <Champ
                       etiquette="Diplôme"
-                      valeur={formation.diplome}
-                      onChange={(v) => majFormation({ diplome: v })}
+                      valeur={formation.degree}
+                      onChange={(v) => majFormation({ degree: v })}
                     />
                     <Champ
                       etiquette="Établissement"
-                      valeur={formation.etablissement}
-                      onChange={(v) => majFormation({ etablissement: v })}
+                      valeur={formation.school}
+                      onChange={(v) => majFormation({ school: v })}
                     />
                     <Champ
                       etiquette="Année"
-                      valeur={formation.periode ?? ''}
-                      onChange={(v) => majFormation({ periode: v })}
+                      valeur={formation.dateRange ?? ''}
+                      onChange={(v) => majFormation({ dateRange: v })}
                     />
                   </div>
                   <Bouton
                     variante="danger"
                     taille="petit"
-                    onClick={() => maj({ formations: brouillon.formations.filter((_, j) => j !== i) })}
+                    onClick={() => maj({ education: brouillon.education.filter((_, j) => j !== i) })}
                   >
                     Retirer cette formation
                   </Bouton>
@@ -520,7 +524,7 @@ export function EcranMonCv({
             <Bouton
               variante="secondaire"
               icone="plus"
-              onClick={() => maj({ formations: [...brouillon.formations, formationVide()] })}
+              onClick={() => maj({ education: [...brouillon.education, formationVide()] })}
             >
               Ajouter une formation
             </Bouton>
@@ -528,28 +532,33 @@ export function EcranMonCv({
 
           <SectionRepliable
             titre="Langues"
-            compte={brouillon.langues.length}
+            compte={brouillon.languages.length}
             resume={
-              brouillon.langues.length > 0
-                ? brouillon.langues.map((l) => (l.niveau ? `${l.nom} : ${l.niveau.toLowerCase()}` : l.nom)).join(' · ')
+              brouillon.languages.length > 0
+                ? brouillon.languages
+                    .map((l) => (l.level ? `${l.name} : ${l.level.toLowerCase()}` : l.name))
+                    .join(' · ')
                 : 'Aucune langue pour l’instant'
             }
           >
-            {brouillon.langues.map((langue, i) => (
+            {brouillon.languages.map((langue, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: liste éditable sans identifiant stable
               <div key={i} className="grid items-end gap-4 sm:grid-cols-[1fr_1fr_auto]">
                 <Champ
                   etiquette="Langue"
-                  valeur={langue.nom}
-                  onChange={(v) => maj({ langues: remplacer(brouillon.langues, i, { ...langue, nom: v }) })}
+                  valeur={langue.name}
+                  onChange={(v) => maj({ languages: remplacer(brouillon.languages, i, { ...langue, name: v }) })}
                 />
                 <Selection
                   etiquette="Niveau"
-                  valeur={langue.niveau ?? ''}
-                  options={optionsNiveau(langue.niveau ?? '')}
-                  onChange={(v) => maj({ langues: remplacer(brouillon.langues, i, { ...langue, niveau: v }) })}
+                  valeur={langue.level ?? ''}
+                  options={optionsNiveau(langue.level ?? '')}
+                  onChange={(v) => maj({ languages: remplacer(brouillon.languages, i, { ...langue, level: v }) })}
                 />
-                <Bouton variante="danger" onClick={() => maj({ langues: brouillon.langues.filter((_, j) => j !== i) })}>
+                <Bouton
+                  variante="danger"
+                  onClick={() => maj({ languages: brouillon.languages.filter((_, j) => j !== i) })}
+                >
                   Retirer
                 </Bouton>
               </div>
@@ -557,7 +566,7 @@ export function EcranMonCv({
             <Bouton
               variante="secondaire"
               icone="plus"
-              onClick={() => maj({ langues: [...brouillon.langues, langueVide()] })}
+              onClick={() => maj({ languages: [...brouillon.languages, langueVide()] })}
             >
               Ajouter une langue
             </Bouton>

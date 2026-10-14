@@ -1,5 +1,5 @@
 import { type IdModele, MODELES_CV } from '@core/export/modeles'
-import type { CvAdapte } from '@core/schemas'
+import type { TailoredCv } from '@core/schemas'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Spinner, VignetteModele } from '../ui'
 
@@ -14,7 +14,7 @@ const DELAI_ACTUALISATION_MS = 400
  * Aperçus du CV dans chaque mise en page (le vrai rendu, photo comprise), recalculés peu après la dernière
  * modification. Les anciens aperçus restent affichés pendant le recalcul : rien ne clignote.
  */
-export function useApercus(cv: CvAdapte): { apercus: Apercus; enCours: boolean } {
+export function useApercus(cv: TailoredCv): { apercus: Apercus; enCours: boolean } {
   const [apercus, setApercus] = useState<Apercus>({})
   const [enCours, setEnCours] = useState(true)
   // Numéro de génération : une génération plus récente rend caduques les réponses des précédentes.

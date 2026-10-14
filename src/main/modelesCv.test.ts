@@ -2,7 +2,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { FournisseurMock, profilCanned } from '@core/llm'
-import { cvAdapteSchema } from '@core/schemas'
+import { tailoredCvSchema } from '@core/schemas'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './bdd/connexion'
 import { GestionnaireModeles } from './modeles/gestionnaire'
@@ -55,7 +55,7 @@ function creer() {
   return { service, parametres, pdfs }
 }
 
-const cv = cvAdapteSchema.parse({ titre: 'Dev', accroche: 'Je fais preuve de rigueur.' })
+const cv = tailoredCvSchema.parse({ headline: 'Dev', summary: 'Je fais preuve de rigueur.' })
 
 describe('modèles de CV et photo', () => {
   it('renvoie le HTML d’un modèle avec la photo du profil', async () => {

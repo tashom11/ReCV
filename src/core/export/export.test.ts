@@ -1,31 +1,31 @@
 import mammoth from 'mammoth'
 import { describe, expect, it } from 'vitest'
-import { cvAdapteSchema, profilSchema } from '../schemas'
+import { profileSchema, tailoredCvSchema } from '../schemas'
 import { genererHtmlCv } from './CvHtml'
 import { genererDocxCv } from './docx'
 import { construireModele, nomFichierCv, TITRES_SECTIONS } from './modele'
 
-const profil = profilSchema.parse({
-  nom: 'Claire Dubois',
+const profil = profileSchema.parse({
+  fullName: 'Claire Dubois',
   email: 'claire@exemple.fr',
-  telephone: '06 12 34 56 78',
-  adresse: 'Lyon',
+  phone: '06 12 34 56 78',
+  location: 'Lyon',
 })
-const cv = cvAdapteSchema.parse({
-  titre: 'Développeuse front-end React',
-  accroche: 'Cinq ans d’expérience en React & TypeScript <3.',
+const cv = tailoredCvSchema.parse({
+  headline: 'Développeuse front-end React',
+  summary: 'Cinq ans d’expérience en React & TypeScript <3.',
   experiences: [
     {
-      poste: 'Développeuse front-end',
-      entreprise: 'Société Alpha',
-      lieu: 'Lyon',
-      periode: '2021 – présent',
-      points: ['Migration vers TypeScript', 'Tests avec Vitest'],
+      position: 'Développeuse front-end',
+      company: 'Société Alpha',
+      location: 'Lyon',
+      dateRange: '2021 – présent',
+      bullets: ['Migration vers TypeScript', 'Tests avec Vitest'],
     },
   ],
-  competences: ['React', 'TypeScript'],
-  formations: [{ diplome: 'Master informatique', etablissement: 'Université de Lyon' }],
-  langues: [{ nom: 'Français', niveau: 'natif' }],
+  skills: ['React', 'TypeScript'],
+  education: [{ degree: 'Master informatique', school: 'Université de Lyon' }],
+  languages: [{ name: 'Français', level: 'natif' }],
 })
 
 describe('construireModele', () => {
@@ -46,7 +46,7 @@ describe('construireModele', () => {
   })
 
   it('omet les sections vides', () => {
-    const vide = construireModele(profil, { ...cv, accroche: ' ', competences: [], formations: [], langues: [] })
+    const vide = construireModele(profil, { ...cv, summary: ' ', skills: [], education: [], languages: [] })
     expect(vide.sections.map((s) => s.titre)).toEqual([TITRES_SECTIONS.experience])
   })
 

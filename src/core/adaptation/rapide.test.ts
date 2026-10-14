@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { versSchemaGrammaire } from '../llm/moteurLocal'
 import { MoteurMock } from '../llm/moteurMock'
-import type { Experience, Offre, Profil } from '../schemas'
+import type { Experience, JobPosting, Profile } from '../schemas'
 import { analyseOffreSchema } from './motsCles'
 import { niveauxCompetences } from './pertinence'
 import { adapterCv } from './pipeline'
 import { selectionnerPoints } from './reecriture'
 
 const experience: Experience = {
-  poste: 'Carrossier peintre',
-  entreprise: 'Dupont',
-  realisations: [
+  position: 'Carrossier peintre',
+  company: 'Dupont',
+  achievements: [
     'Débosselage et redressage de carrosseries',
     'Application de peintures et vernis',
     'Ponçage et préparation des surfaces',
@@ -30,20 +30,20 @@ describe('selectionnerPoints (sans modèle)', () => {
   })
 
   it('renvoie tout si le nombre de puces tient dans la limite, sans rien inventer', () => {
-    expect(selectionnerPoints(experience, ['x'], 10)).toEqual(experience.realisations)
+    expect(selectionnerPoints(experience, ['x'], 10)).toEqual(experience.achievements)
   })
 })
 
 describe('adapterCv : mode rapide par défaut', () => {
-  const profil: Profil = {
-    liensProfessionnels: [],
-    titrePoste: 'Carrossier peintre',
+  const profil: Profile = {
+    links: [],
+    headline: 'Carrossier peintre',
     experiences: [experience],
-    competences: ['Rigueur'],
-    formations: [],
-    langues: [],
+    skills: ['Rigueur'],
+    education: [],
+    languages: [],
   }
-  const offre: Offre = { titrePoste: 'Carrossier peintre', texteBrut: 'Ponçage, peinture et vernis.' }
+  const offre: JobPosting = { jobTitle: 'Carrossier peintre', rawText: 'Ponçage, peinture et vernis.' }
   const reponses = {
     motsCles: { motsCles: ['ponçage', 'peinture'], competencesRequises: [] },
     pertinence: {},
@@ -54,8 +54,8 @@ describe('adapterCv : mode rapide par défaut', () => {
     const m = new MoteurMock(reponses)
     const cv = await adapterCv(m, profil, offre)
     expect(m.requetes.map((r) => r.nom)).toEqual(['motsCles', 'pertinence', 'accroche'])
-    expect(cv.experiences[0]?.points.every((p) => experience.realisations.includes(p))).toBe(true)
-    expect(cv.experiences[0]?.points).toHaveLength(3)
+    expect(cv.experiences[0]?.bullets.every((p) => experience.achievements.includes(p))).toBe(true)
+    expect(cv.experiences[0]?.bullets).toHaveLength(3)
   })
 
   it('réutilise une analyse déjà connue (aucun appel « motsCles »)', async () => {

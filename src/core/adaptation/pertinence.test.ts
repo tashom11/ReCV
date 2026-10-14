@@ -1,42 +1,42 @@
 import { describe, expect, it } from 'vitest'
 import { MoteurMock } from '../llm/moteurMock'
-import type { Offre, Profil } from '../schemas'
+import type { JobPosting, Profile } from '../schemas'
 import { adapterCv } from './pipeline'
 
 // Cas réel : CV de développeur web (avec un passé de carrossier) face à une offre de carrossier peintre.
-const profil: Profil = {
-  nom: 'Julien Moreau',
-  titrePoste: 'Développeur web / Carrossier peintre',
-  accroche: 'Expérience de 4 ans en développement web front-end avec HTML, CSS et JavaScript.',
-  liensProfessionnels: [],
+const profil: Profile = {
+  fullName: 'Julien Moreau',
+  headline: 'Développeur web / Carrossier peintre',
+  summary: 'Expérience de 4 ans en développement web front-end avec HTML, CSS et JavaScript.',
+  links: [],
   experiences: [
     {
-      poste: 'Développeur web front',
-      entreprise: 'Webagence',
-      periode: '2022',
-      realisations: ['Intégrer des interfaces utilisateur en HTML, CSS et JavaScript', 'Corriger des bugs'],
+      position: 'Développeur web front',
+      company: 'Webagence',
+      dateRange: '2022',
+      achievements: ['Intégrer des interfaces utilisateur en HTML, CSS et JavaScript', 'Corriger des bugs'],
     },
     {
-      poste: 'Carrossier peintre',
-      entreprise: 'Carrosserie Dupont',
-      periode: '2016 - 2020',
-      realisations: [
+      position: 'Carrossier peintre',
+      company: 'Carrosserie Dupont',
+      dateRange: '2016 - 2020',
+      achievements: [
         'Remise en état de carrosseries : débosselage, ponçage, préparation des surfaces',
         'Application de peintures et vernis avec respect des délais',
       ],
     },
   ],
-  competences: ['WordPress / CMS', 'HTML / CSS', 'Rigueur', 'Sens du détail'],
-  formations: [
-    { diplome: 'BAC +2', etablissement: 'École du Code', periode: '2022' },
-    { diplome: 'BAC PRO', etablissement: 'Lycée Jean Moulin, Douai', periode: '2015' },
+  skills: ['WordPress / CMS', 'HTML / CSS', 'Rigueur', 'Sens du détail'],
+  education: [
+    { degree: 'BAC +2', school: 'École du Code', dateRange: '2022' },
+    { degree: 'BAC PRO', school: 'Lycée Jean Moulin, Douai', dateRange: '2015' },
   ],
-  langues: [{ nom: 'Français' }],
+  languages: [{ name: 'Français' }],
 }
 
-const offre: Offre = {
-  titrePoste: 'Carrossier peintre H/F',
-  texteBrut: 'Nous recherchons un carrossier peintre rigoureux : ponçage, application de peinture et vernis.',
+const offre: JobPosting = {
+  jobTitle: 'Carrossier peintre H/F',
+  rawText: 'Nous recherchons un carrossier peintre rigoureux : ponçage, application de peinture et vernis.',
 }
 
 function moteur(accroche: { accroche: string }, competences = [0, 0, 1, 1]) {
@@ -65,17 +65,17 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
       profil,
       offre,
     )
-    expect(cv.experiences.map((e) => e.entreprise)).toEqual(['Carrosserie Dupont'])
-    expect(cv.experiences[0]?.indice).toBe(1)
-    expect(cv.competences.slice(0, 2)).toEqual(['Rigueur', 'Sens du détail'])
-    expect(cv.competences).not.toContain('WordPress / CMS')
-    expect(cv.formations.map((f) => f.diplome)).toEqual(['BAC PRO'])
-    expect(cv.ecartes.experiences.map((e) => e.entreprise)).toEqual(['Webagence'])
-    expect(cv.ecartes.experiences[0]?.points).toEqual(profil.experiences[0]?.realisations)
-    expect(cv.ecartes.competences).toEqual(['WordPress / CMS', 'HTML / CSS'])
-    expect(cv.ecartes.formations.map((f) => f.diplome)).toEqual(['BAC +2'])
-    expect(cv.titre).toBe('Carrossier peintre')
-    expect(cv.accroche).toBe('Carrossier peintre rigoureux, attentif aux délais.')
+    expect(cv.experiences.map((e) => e.company)).toEqual(['Carrosserie Dupont'])
+    expect(cv.experiences[0]?.sourceIndex).toBe(1)
+    expect(cv.skills.slice(0, 2)).toEqual(['Rigueur', 'Sens du détail'])
+    expect(cv.skills).not.toContain('WordPress / CMS')
+    expect(cv.education.map((f) => f.degree)).toEqual(['BAC PRO'])
+    expect(cv.excluded.experiences.map((e) => e.company)).toEqual(['Webagence'])
+    expect(cv.excluded.experiences[0]?.bullets).toEqual(profil.experiences[0]?.achievements)
+    expect(cv.excluded.skills).toEqual(['WordPress / CMS', 'HTML / CSS'])
+    expect(cv.excluded.education.map((f) => f.degree)).toEqual(['BAC +2'])
+    expect(cv.headline).toBe('Carrossier peintre')
+    expect(cv.summary).toBe('Carrossier peintre rigoureux, attentif aux délais.')
   })
 
   it('ne transmet rien du domaine écarté au modèle qui rédige l’accroche', async () => {
@@ -90,17 +90,17 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
 
   it('remplace une accroche qui réintroduit le domaine écarté (jamais celle du profil d’origine) ; le titre vient du profil', async () => {
     const cv = await adapterCv(moteur({ accroche: 'Carrossier peintre et expert HTML / CSS.' }), profil, offre)
-    expect(cv.titre).toBe('Carrossier peintre')
+    expect(cv.headline).toBe('Carrossier peintre')
     // Rejetée : repli sur une phrase de qualités attestées (jamais l'ancienne accroche du profil).
-    expect(cv.accroche).toMatch(/^Je fais preuve de /)
-    expect(cv.accroche).not.toMatch(/HTML|WordPress/)
+    expect(cv.summary).toMatch(/^Je fais preuve de /)
+    expect(cv.summary).not.toMatch(/HTML|WordPress/)
   })
 
   it('garde une compétence citée mot pour mot dans l’offre, même jugée sans rapport', async () => {
-    const offreAvecCss: Offre = { ...offre, texteBrut: `${offre.texteBrut} Notions de WordPress appréciées.` }
+    const offreAvecCss: JobPosting = { ...offre, rawText: `${offre.rawText} Notions de WordPress appréciées.` }
     const cv = await adapterCv(moteur({ accroche: 'Carrossier peintre.' }), profil, offreAvecCss)
-    expect(cv.competences).toContain('WordPress / CMS')
-    expect(cv.ecartes.competences).toEqual(['HTML / CSS'])
+    expect(cv.skills).toContain('WordPress / CMS')
+    expect(cv.excluded.skills).toEqual(['HTML / CSS'])
   })
 
   it('ne vide jamais une section : tout est conservé si tout est jugé sans rapport', async () => {
@@ -115,8 +115,8 @@ describe('adapterCv : écarte ce qui est sans rapport avec l’offre', () => {
       reecriture: { points: [] },
       accroche: { accroche: '' },
     })
-    const cv = await adapterCv(m, profil, { titrePoste: 'Astronaute', texteBrut: 'Voyager dans l’espace.' })
+    const cv = await adapterCv(m, profil, { jobTitle: 'Astronaute', rawText: 'Voyager dans l’espace.' })
     expect(cv.experiences).toHaveLength(2)
-    expect(cv.ecartes.experiences).toHaveLength(0)
+    expect(cv.excluded.experiences).toHaveLength(0)
   })
 })

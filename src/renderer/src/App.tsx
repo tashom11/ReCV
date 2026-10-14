@@ -1,6 +1,6 @@
 import { choixInitial, composerCv } from '@core/adaptation/composition'
 import type { CvGenere } from '@core/api'
-import type { Offre, Profil } from '@core/schemas'
+import type { JobPosting, Profile } from '@core/schemas'
 import { estServiceLocal } from '@core/serviceUrl'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { focusScreenTitle, windowTitle } from './accessibility'
@@ -32,8 +32,8 @@ import { Alerte, Bouton, BoutonLien, Etapes, EtatVide, Icone } from './ui'
 
 interface Resultat {
   /** Profil au moment de la création : les indices des expériences doivent correspondre. */
-  profil: Profil
-  offre: Offre
+  profil: Profile
+  offre: JobPosting
   genere: CvGenere
 }
 
@@ -43,7 +43,7 @@ export default function App() {
   const [vue, setVue] = useState<Vue | null>(null)
   // Vue à retrouver en quittant les réglages ou la préparation.
   const retour = useRef<Vue>('accueil')
-  const [profil, setProfil] = useState<Profil | null>(null)
+  const [profil, setProfil] = useState<Profile | null>(null)
   const [nomFichier, setNomFichier] = useState<string | null>(() => localStorage.getItem(CLE_NOM_FICHIER))
   const [annonce, setAnnonce] = useState<AnnonceLue | null>(null)
   const [resultat, setResultat] = useState<Resultat | null>(null)
@@ -106,7 +106,7 @@ export default function App() {
 
   const preparer = useCallback(() => aller('preparation'), [aller])
 
-  const surProfil = (nouveau: Profil, fichier?: string) => {
+  const surProfil = (nouveau: Profile, fichier?: string) => {
     setProfil(nouveau)
     if (fichier) {
       setNomFichier(fichier)
@@ -128,7 +128,7 @@ export default function App() {
       // Dernière étape annoncée : on prépare l'aperçu avant de montrer le résultat.
       setMiseEnPage(true)
       const { modeleCv } = await window.api.lireParametres()
-      const points = genere.cv.experiences.map((e) => e.points)
+      const points = genere.cv.experiences.map((e) => e.bullets)
       await window.api
         .htmlModeleCv(composerCv(profil, genere.cv, choixInitial(genere.cv), points), modeleCv)
         .catch(() => '')
@@ -298,7 +298,7 @@ export default function App() {
           ))}
         {vue === 'creation' && annonce && (
           <EcranCreation
-            titrePoste={titreSansMention(annonce.offre.titrePoste)}
+            titrePoste={titreSansMention(annonce.offre.jobTitle)}
             annonceLue
             miseEnPage={miseEnPage}
             estimationS={estimation}
@@ -336,7 +336,7 @@ export default function App() {
         {vue === 'succes' && exporte && resultat && (
           <EcranSucces
             chemin={exporte}
-            titrePoste={titreSansMention(resultat.offre.titrePoste)}
+            titrePoste={titreSansMention(resultat.offre.jobTitle)}
             onAutreOffre={autreOffre}
           />
         )}

@@ -69,7 +69,7 @@ describe('données structurées JobPosting', () => {
 
   it('est utilisée en priorité par l’extraction de page', () => {
     const offre = extraireOffreDepuisHtml(HTML_JOB_POSTING)
-    expect(offre).toMatchObject({ titrePoste: 'Consultant SEO', entreprise: 'Eskimoz', lieu: 'Lyon' })
+    expect(offre).toMatchObject({ jobTitle: 'Consultant SEO', company: 'Eskimoz', location: 'Lyon' })
   })
 
   it('ignore un JSON-LD invalide ou d’un autre type', () => {

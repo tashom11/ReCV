@@ -24,7 +24,7 @@ import {
 } from '@core/export'
 import { creerFournisseurApi, creerFournisseurOllama, type FournisseurLLM } from '@core/llm'
 import { recupererOffre, repererContrat } from '@core/offre'
-import type { Offre, Profil } from '@core/schemas'
+import type { JobPosting, Profile } from '@core/schemas'
 import type { Bdd } from './bdd/connexion'
 import {
   creerProfil,
@@ -144,8 +144,8 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
 
   // L'analyse d'une offre ne dépend pas du profil : mémorisée, elle sert à la carte de confirmation de l'annonce
   // puis à l'adaptation, sans second appel au modèle.
-  const cleOffre = (offre: Offre) =>
-    createHash('sha256').update(`${offre.titrePoste}\n${offre.texteBrut}`).digest('hex')
+  const cleOffre = (offre: JobPosting) =>
+    createHash('sha256').update(`${offre.jobTitle}\n${offre.rawText}`).digest('hex')
   const memoriser = (cle: string, analyse: AnalyseOffre) => {
     analyses.set(cle, analyse)
     if (analyses.size > 20) analyses.delete(analyses.keys().next().value as string)
@@ -171,18 +171,18 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       return obtenirProfilActif(bdd)
     },
 
-    async enregistrerProfil(profil: Profil) {
+    async enregistrerProfil(profil: Profile) {
       return enregistrerProfil(bdd, profil)
     },
 
     recupererOffre: (url: string) => recupererOffre(url, { rendreHtml, userAgent: deps.userAgent }),
 
-    async analyserTexteOffre(texte: string): Promise<Offre> {
+    async analyserTexteOffre(texte: string): Promise<JobPosting> {
       signaler({ tache: 'offre', etape: 'Analyse de l’offre par le modèle' })
       return (await fournisseur()).extraireOffre(texte)
     },
 
-    async analyserAnnonce(offre: Offre): Promise<ApercuAnnonce> {
+    async analyserAnnonce(offre: JobPosting): Promise<ApercuAnnonce> {
       const actif = profilActif()
       const cle = cleOffre(offre)
       let analyse = analyses.get(cle)
@@ -193,16 +193,16 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       }
       const couverture = analyserCouverture(preparerProfil(actif.profil), analyse)
       // Ordre de l'annonce (savoir-faire, qualités, autres termes), limité à ce que la couverture a retenu.
-      const retenues = new Set([...couverture.attestees, ...couverture.manquantes])
+      const retenues = new Set([...couverture.evidenced, ...couverture.missing])
       const recherchees = [...analyse.competencesRequises, ...analyse.qualites, ...analyse.motsCles]
         .map((terme) => terme.trim())
         .filter((terme, i, tous) => retenues.has(terme) && tous.indexOf(terme) === i)
         .slice(0, MAX_RECHERCHEES)
         .map(formaterCompetence)
-      return { recherchees, contrat: repererContrat(offre.texteBrut), prerequis: couverture.prerequis }
+      return { recherchees, contrat: repererContrat(offre.rawText), prerequis: couverture.requirements }
     },
 
-    async adapterCv(offre: Offre): Promise<CvGenere> {
+    async adapterCv(offre: JobPosting): Promise<CvGenere> {
       const actif = profilActif()
       adaptationEnCours?.abort()
       const annulation = new AbortController()
@@ -235,7 +235,7 @@ export function creerService(deps: DependancesService): ApiService & { liberer()
       adaptationEnCours?.abort()
     },
 
-    async genererAccroche(profil: Profil) {
+    async genererAccroche(profil: Profile) {
       signaler({ tache: 'accroche', etape: 'Repérage des compétences transversales' })
       return (await fournisseur()).genererAccroche(profil)
     },

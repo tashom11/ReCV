@@ -2,7 +2,7 @@ import { z } from 'zod'
 import type { MoteurLLM } from '../llm/moteur'
 import { assainirLigne, encadrer, REGLES_ANTI_INVENTION } from '../llm/prompts'
 import { preparerTexteAnalyse } from '../offre/sections'
-import type { Offre } from '../schemas'
+import type { JobPosting } from '../schemas'
 import { contientMot, normaliser } from './texte'
 
 const MAX_MOTS_CLES = 8
@@ -57,13 +57,13 @@ ${REGLES_ANTI_INVENTION}`
 // Étape 1 : exigences de l'offre.
 // Le texte est nettoyé et organisé (profil recherché en premier) avant d'être lu ; titre et termes sont assainis
 // (ils sont réinjectés dans les prompts suivants : injection de second ordre).
-export async function analyserOffre(moteur: MoteurLLM, offre: Offre): Promise<AnalyseOffre> {
-  const titreCible = assainirLigne(offre.titrePoste, 100)
+export async function analyserOffre(moteur: MoteurLLM, offre: JobPosting): Promise<AnalyseOffre> {
+  const titreCible = assainirLigne(offre.jobTitle, 100)
   const analyse = await moteur.genererObjet({
     nom: 'motsCles',
     schema: analyseOffreSchema,
     systeme: SYSTEME,
-    utilisateur: `${encadrer('titre', titreCible)}\n${encadrer('offre', preparerTexteAnalyse(offre.texteBrut))}`,
+    utilisateur: `${encadrer('titre', titreCible)}\n${encadrer('offre', preparerTexteAnalyse(offre.rawText))}`,
   })
   const termes = (valeurs: string[], max: number) =>
     valeurs

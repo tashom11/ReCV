@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { MoteurLLM } from '../llm/moteur'
 import { encadrer, REGLES_ANTI_INVENTION } from '../llm/prompts'
-import type { Experience, Profil } from '../schemas'
+import type { Experience, Profile } from '../schemas'
 import type { AnalyseOffre } from './motsCles'
 import { normaliser } from './texte'
 
@@ -63,12 +63,12 @@ export function niveauxCompetences(utiles: number[], taille: number): Niveau[] {
 // Chaque groupe prend la note la plus haute.
 export function harmoniserExperiences(
   niveaux: Niveau[],
-  experiences: Pick<Experience, 'poste'>[],
+  experiences: Pick<Experience, 'position'>[],
   domaines: string[] = [],
 ): Niveau[] {
   const cles = (i: number) =>
     [
-      experiences[i] ? `poste:${normaliser(experiences[i].poste)}` : '',
+      experiences[i] ? `poste:${normaliser(experiences[i].position)}` : '',
       domaines[i] ? `domaine:${normaliser(domaines[i])}` : '',
     ].filter(Boolean)
   // On propage le maximum entre éléments partageant une clé, jusqu'à stabilité.
@@ -111,7 +111,7 @@ async function domaineLePlusProche(
   const liste = distincts.map((domaine, indice) => ({
     indice,
     domaine,
-    postes: experiences.filter((_, i) => normaliser(domaines[i] ?? '') === normaliser(domaine)).map((e) => e.poste),
+    postes: experiences.filter((_, i) => normaliser(domaines[i] ?? '') === normaliser(domaine)).map((e) => e.position),
   }))
   const { choix } = await moteur.genererObjet({
     nom: 'domaineProche',
@@ -127,8 +127,12 @@ const MAX_REALISATIONS_ENVOYEES = 4
 const MAX_CARACTERES_REALISATION = 140
 
 // Étape 2 : pertinence de chaque élément du profil par rapport au poste visé (une seule requête).
-export async function evaluerPertinence(moteur: MoteurLLM, profil: Profil, analyse: AnalyseOffre): Promise<Pertinence> {
-  const { experiences, formations, competences } = profil
+export async function evaluerPertinence(
+  moteur: MoteurLLM,
+  profil: Profile,
+  analyse: AnalyseOffre,
+): Promise<Pertinence> {
+  const { experiences, education: formations, skills: competences } = profil
   if (experiences.length + formations.length + competences.length === 0) {
     return { experiences: [], formations: [], competences: [] }
   }
@@ -136,12 +140,12 @@ export async function evaluerPertinence(moteur: MoteurLLM, profil: Profil, analy
   const contenu = {
     experiences: experiences.map((e, indice) => ({
       indice,
-      poste: e.poste,
-      realisations: e.realisations
+      poste: e.position,
+      realisations: e.achievements
         .slice(0, MAX_REALISATIONS_ENVOYEES)
         .map((r) => r.slice(0, MAX_CARACTERES_REALISATION)),
     })),
-    formations: formations.map((f, indice) => ({ indice, diplome: f.diplome })),
+    formations: formations.map((f, indice) => ({ indice, diplome: f.degree })),
     competences: competences.map((nom, indice) => ({ indice, nom })),
   }
   const exigences = [...analyse.competencesRequises, ...analyse.motsCles]

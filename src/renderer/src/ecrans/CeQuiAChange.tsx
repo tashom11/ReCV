@@ -1,5 +1,5 @@
 import type { ChoixComposition } from '@core/adaptation/composition'
-import type { CvAdapte, Profil } from '@core/schemas'
+import type { Profile, TailoredCv } from '@core/schemas'
 import type { ReactNode } from 'react'
 import { CaseACocher, Champ } from '../ui'
 
@@ -52,10 +52,10 @@ export function CeQuiAChange({
   choix,
   onChoix,
 }: {
-  profil: Profil
-  adapte: CvAdapte
+  profil: Profile
+  adapte: TailoredCv
   /** CV tel qu'il sera téléchargé (compétences composées). */
-  cvFinal: CvAdapte
+  cvFinal: TailoredCv
   titre: string
   onTitre: (titre: string) => void
   accroche: string
@@ -65,7 +65,7 @@ export function CeQuiAChange({
   choix: ChoixComposition
   onChoix: (choix: ChoixComposition) => void
 }) {
-  const competencesFinales = [...cvFinal.competencesCles, ...cvFinal.competences]
+  const competencesFinales = [...cvFinal.keySkills, ...cvFinal.skills]
   return (
     <div className="space-y-5">
       <header className="space-y-1">
@@ -77,7 +77,7 @@ export function CeQuiAChange({
 
       <Comparaison
         titre="Titre du CV"
-        avant={<p>{profil.titrePoste || '—'}</p>}
+        avant={<p>{profil.headline || '—'}</p>}
         apres={<Champ etiquette="Titre adapté à l’annonce" valeur={titre} onChange={onTitre} />}
         garder={
           <CaseACocher
@@ -90,7 +90,7 @@ export function CeQuiAChange({
 
       <Comparaison
         titre="Phrase de présentation"
-        avant={<p className="whitespace-pre-wrap">{profil.accroche || '—'}</p>}
+        avant={<p className="whitespace-pre-wrap">{profil.summary || '—'}</p>}
         apres={
           <Champ etiquette="Phrase adaptée à l’annonce" multiligne lignes={4} valeur={accroche} onChange={onAccroche} />
         }
@@ -104,14 +104,14 @@ export function CeQuiAChange({
       />
 
       {adapte.experiences.map((experience, i) => {
-        const originale = profil.experiences[experience.indice ?? i]
+        const originale = profil.experiences[experience.sourceIndex ?? i]
         return (
           <Comparaison
-            key={`${experience.indice ?? i}-${experience.poste}-${experience.entreprise}`}
-            titre={`${experience.poste} — ${experience.entreprise}`}
+            key={`${experience.sourceIndex ?? i}-${experience.position}-${experience.company}`}
+            titre={`${experience.position} — ${experience.company}`}
             avant={
               <ul className="list-disc space-y-1 pl-5">
-                {(originale?.realisations ?? []).map((r) => (
+                {(originale?.achievements ?? []).map((r) => (
                   <li key={r}>{r}</li>
                 ))}
               </ul>
@@ -139,7 +139,7 @@ export function CeQuiAChange({
 
       <Comparaison
         titre="Compétences"
-        avant={<p>{profil.competences.join(', ') || '—'}</p>}
+        avant={<p>{profil.skills.join(', ') || '—'}</p>}
         apres={<p className="text-corps text-encre">{competencesFinales.join(', ') || '—'}</p>}
         garder={
           <CaseACocher

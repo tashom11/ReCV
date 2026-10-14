@@ -1,7 +1,7 @@
 import mammoth from 'mammoth'
 import { describe, expect, it } from 'vitest'
 import { assainirProfil } from '../llm/assainissement'
-import { cvAdapteSchema, type Profil, profilExtractionSchema, profilSchema } from '../schemas'
+import { type Profile, profileExtractionSchema, profileSchema, tailoredCvSchema } from '../schemas'
 import { genererHtmlCv } from './CvHtml'
 import { genererDocxCv } from './docx'
 import { construireModele } from './modele'
@@ -11,18 +11,18 @@ import { IDS_MODELES, MODELES_CV, trouverModele } from './modeles'
 const PHOTO =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
 
-const profil: Profil = profilSchema.parse({
-  nom: 'Julien Moreau',
+const profil: Profile = profileSchema.parse({
+  fullName: 'Julien Moreau',
   email: 'julien@exemple.fr',
   photo: PHOTO,
 })
-const cv = cvAdapteSchema.parse({
-  titre: 'Chargé de recrutement',
-  accroche: 'Je fais preuve d’autonomie.',
-  competencesCles: ['LinkedIn Recruiter'],
-  competences: ['Rigueur', 'HTML / CSS'],
-  experiences: [{ poste: 'Développeur', entreprise: 'Webagence', periode: '2022', points: ['Intégration HTML'] }],
-  formations: [{ diplome: 'BAC +2', etablissement: 'École du Code' }],
+const cv = tailoredCvSchema.parse({
+  headline: 'Chargé de recrutement',
+  summary: 'Je fais preuve d’autonomie.',
+  keySkills: ['LinkedIn Recruiter'],
+  skills: ['Rigueur', 'HTML / CSS'],
+  experiences: [{ position: 'Développeur', company: 'Webagence', dateRange: '2022', bullets: ['Intégration HTML'] }],
+  education: [{ degree: 'BAC +2', school: 'École du Code' }],
 })
 
 describe('catalogue de modèles', () => {
@@ -64,10 +64,10 @@ describe.each(IDS_MODELES)('modèle %s', (id) => {
 
   it('n’affiche pas de nom d’entreprise parmi les coordonnées ni de diplôme parmi les expériences', () => {
     const sale = construireModele(
-      { ...profil, liensProfessionnels: ['Webagence', 'linkedin.com/in/julien'] },
+      { ...profil, links: ['Webagence', 'linkedin.com/in/julien'] },
       {
         ...cv,
-        experiences: [...cv.experiences, { poste: 'BAC +2', entreprise: '', lieu: '', periode: '', points: [] }],
+        experiences: [...cv.experiences, { position: 'BAC +2', company: '', location: '', dateRange: '', bullets: [] }],
       },
     )
     const rendu = genererHtmlCv(sale, id)
@@ -95,23 +95,23 @@ describe.each(IDS_MODELES)('modèle %s', (id) => {
 
 describe('photo du profil', () => {
   it('n’est jamais demandée au modèle de langage (absente du schéma d’extraction)', () => {
-    expect(Object.keys(profilExtractionSchema.shape)).not.toContain('photo')
-    expect(Object.keys(profilSchema.shape)).toContain('photo')
+    expect(Object.keys(profileExtractionSchema.shape)).not.toContain('photo')
+    expect(Object.keys(profileSchema.shape)).toContain('photo')
   })
 
   it('n’accepte que des images PNG, JPEG ou WebP', () => {
-    expect(profilSchema.safeParse({ photo: PHOTO }).success).toBe(true)
-    expect(profilSchema.safeParse({ photo: 'data:text/html;base64,PGgxPg==' }).success).toBe(false)
-    expect(profilSchema.safeParse({ photo: 'https://exemple.fr/moi.jpg' }).success).toBe(false)
+    expect(profileSchema.safeParse({ photo: PHOTO }).success).toBe(true)
+    expect(profileSchema.safeParse({ photo: 'data:text/html;base64,PGgxPg==' }).success).toBe(false)
+    expect(profileSchema.safeParse({ photo: 'https://exemple.fr/moi.jpg' }).success).toBe(false)
   })
 
   it('refuse une image démesurée', () => {
     const enorme = `data:image/jpeg;base64,${'A'.repeat(310_000)}`
-    expect(profilSchema.safeParse({ photo: enorme }).success).toBe(false)
+    expect(profileSchema.safeParse({ photo: enorme }).success).toBe(false)
   })
 
   it('l’assainissement d’un profil extrait ne fabrique pas de photo', () => {
-    const extrait = profilExtractionSchema.parse({ nom: 'Julien' })
-    expect(assainirProfil(extrait as Profil, 'Julien').photo).toBeUndefined()
+    const extrait = profileExtractionSchema.parse({ fullName: 'Julien' })
+    expect(assainirProfil(extrait as Profile, 'Julien').photo).toBeUndefined()
   })
 })

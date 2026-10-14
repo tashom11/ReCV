@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { construireModele } from '../export/modele'
 import { assainirProfil } from '../llm/assainissement'
 import { MoteurMock } from '../llm/moteurMock'
-import type { Offre, Profil } from '../schemas'
-import { cvAdapteSchema } from '../schemas'
+import type { JobPosting, Profile } from '../schemas'
+import { tailoredCvSchema } from '../schemas'
 import {
   eclaterCompetences,
   estCompetenceCourte,
@@ -67,43 +67,43 @@ describe('savoir-être et mise en forme', () => {
 
 describe('extraction : les phrases ne deviennent pas des compétences', () => {
   const cv = 'Compétences : Rigueur, SEO, RGAA. Installation et maintenance de matériel informatique.'
-  const profil: Profil = {
-    liensProfessionnels: [],
+  const profil: Profile = {
+    links: [],
     experiences: [],
-    competences: ['Rigueur', 'SEO, RGAA', 'Installation et maintenance de matériel informatique.'],
-    formations: [],
-    langues: [],
+    skills: ['Rigueur', 'SEO, RGAA', 'Installation et maintenance de matériel informatique.'],
+    education: [],
+    languages: [],
   }
 
   it('retire les phrases et éclate les listes', () => {
-    expect(assainirProfil(profil, cv).competences).toEqual(['Rigueur', 'SEO', 'RGAA'])
+    expect(assainirProfil(profil, cv).skills).toEqual(['Rigueur', 'SEO', 'RGAA'])
   })
 })
 
 describe('adapterCv : profil dont les compétences contiennent des phrases', () => {
-  const profil: Profil = {
-    liensProfessionnels: [],
-    titrePoste: 'Technicien informatique',
+  const profil: Profile = {
+    links: [],
+    headline: 'Technicien informatique',
     experiences: [
       {
-        poste: 'Développeur web',
-        entreprise: 'Webagence',
-        realisations: ['Intégration HTML et CSS', 'Collaboration avec l’équipe design'],
+        position: 'Développeur web',
+        company: 'Webagence',
+        achievements: ['Intégration HTML et CSS', 'Collaboration avec l’équipe design'],
       },
     ],
-    competences: [
+    skills: [
       'Rigueur',
       'Autonomie',
       'WordPress',
       'Collaboration avec les équipes design et back-end pour garantir la qualité des projets livrés.',
       'Installation et maintenance de matériel informatique',
     ],
-    formations: [],
-    langues: [],
+    education: [],
+    languages: [],
   }
-  const offre: Offre = {
-    titrePoste: 'Chargé(e) de création digitale (H/F)',
-    texteBrut: 'Création de contenus, collaboration avec le design, webmastering WordPress.',
+  const offre: JobPosting = {
+    jobTitle: 'Chargé(e) de création digitale (H/F)',
+    rawText: 'Création de contenus, collaboration avec le design, webmastering WordPress.',
   }
   const moteur = () =>
     new MoteurMock({
@@ -118,25 +118,25 @@ describe('adapterCv : profil dont les compétences contiennent des phrases', () 
 
   it('ne garde que des compétences courtes, savoir-être conservés', async () => {
     const cv = await adapterCv(moteur(), profil, offre)
-    const toutes = [...cv.competencesCles, ...cv.competences]
+    const toutes = [...cv.keySkills, ...cv.skills]
     expect(toutes.every(estCompetenceCourte)).toBe(true)
-    expect(cv.competences).toEqual(expect.arrayContaining(['Rigueur', 'Autonomie']))
+    expect(cv.skills).toEqual(expect.arrayContaining(['Rigueur', 'Autonomie']))
     expect(toutes.join(' ')).not.toMatch(/maintenance|back-end/)
   })
 
   it('place en compétences clés celles que demande l’offre et que le profil atteste', async () => {
     const cv = await adapterCv(moteur(), profil, offre)
-    expect(cv.competencesCles).toEqual(expect.arrayContaining(['WordPress']))
+    expect(cv.keySkills).toEqual(expect.arrayContaining(['WordPress']))
     // Pas de doublon entre compétences clés et autres compétences.
-    expect(cv.competences).not.toContain('WordPress')
+    expect(cv.skills).not.toContain('WordPress')
   })
 
   it('l’export structure les compétences en lignes étiquetées', async () => {
-    const cv = cvAdapteSchema.parse({
-      titre: 'Chargé de création digitale',
-      accroche: '',
-      competencesCles: ['WordPress', 'Création de contenus'],
-      competences: ['Rigueur', 'Autonomie', 'HTML / CSS'],
+    const cv = tailoredCvSchema.parse({
+      headline: 'Chargé de création digitale',
+      summary: '',
+      keySkills: ['WordPress', 'Création de contenus'],
+      skills: ['Rigueur', 'Autonomie', 'HTML / CSS'],
     })
     const modele = construireModele(profil, cv)
     const section = modele.sections.find((s) => s.titre === 'Compétences')

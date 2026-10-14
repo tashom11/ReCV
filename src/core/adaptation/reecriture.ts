@@ -28,7 +28,7 @@ export function nettoyerPoint(point: string): string {
 
 // Points d'origine du profil, utilisés si le LLM ne renvoie rien d'exploitable.
 export function pointsOrigine(experience: Experience): string[] {
-  if (experience.realisations.length > 0) return experience.realisations
+  if (experience.achievements.length > 0) return experience.achievements
   return experience.description ? [experience.description] : []
 }
 
@@ -92,10 +92,10 @@ export async function reecrireExperience(
     (terme) => !analyse.motsCles.includes(terme) && !analyse.competencesRequises.includes(terme),
   )
   const contenu = {
-    poste: experience.poste,
-    entreprise: experience.entreprise,
+    poste: experience.position,
+    entreprise: experience.company,
     description: experience.description,
-    realisations: experience.realisations,
+    realisations: experience.achievements,
   }
   const { points } = await moteur.genererObjet({
     nom: 'reecriture',

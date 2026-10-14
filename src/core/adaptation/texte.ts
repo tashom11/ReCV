@@ -24,5 +24,5 @@ export function nombres(texte: string): string[] {
 
 // Tout le texte source d'une expérience : référence pour vérifier ce que le LLM a le droit de citer.
 export function texteExperience(experience: Experience): string {
-  return [experience.poste, experience.description ?? '', ...experience.realisations].join('\n')
+  return [experience.position, experience.description ?? '', ...experience.achievements].join('\n')
 }

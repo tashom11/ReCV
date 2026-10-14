@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MoteurMock } from '../llm/moteurMock'
 import { extraireSections, preparerTexteAnalyse } from '../offre/sections'
-import type { Offre, Profil } from '../schemas'
+import type { JobPosting, Profile } from '../schemas'
 import { cleCompetence, estSavoirEtre, sansDoublons } from './competences'
 import { choixInitial, composerCv } from './composition'
 import { analyserCouverture, niveauEtudes } from './couverture'
@@ -56,15 +56,15 @@ describe('prérequis', () => {
     expect(niveauEtudes('CAP pâtisserie')).toBeNull()
   })
 
-  const profil: Profil = {
-    liensProfessionnels: [],
-    experiences: [{ poste: 'Développeur web', entreprise: 'Webagence', realisations: ['Intégration HTML'] }],
-    competences: ['Autonomie', 'Travail en équipe'],
-    formations: [
-      { diplome: 'BAC +2', etablissement: 'École du Code' },
-      { diplome: 'BAC PRO', etablissement: 'LP' },
+  const profil: Profile = {
+    links: [],
+    experiences: [{ position: 'Développeur web', company: 'Webagence', achievements: ['Intégration HTML'] }],
+    skills: ['Autonomie', 'Travail en équipe'],
+    education: [
+      { degree: 'BAC +2', school: 'École du Code' },
+      { degree: 'BAC PRO', school: 'LP' },
     ],
-    langues: [],
+    languages: [],
   }
   const analyse = {
     titreCible: 'Chargé de sourcing et de recrutement',
@@ -76,20 +76,20 @@ describe('prérequis', () => {
   }
 
   it('compare formation et expérience exigées au profil', () => {
-    const { prerequis } = analyserCouverture(profil, analyse)
-    expect(prerequis.formation).toEqual({ exigee: 'Bac +3 à Bac +5', statut: 'insuffisante', profil: 'BAC +2' })
-    expect(prerequis.experience).toEqual({ exigee: '2 ans minimum en recrutement', statut: 'non-retrouvee' })
+    const { requirements: prerequis } = analyserCouverture(profil, analyse)
+    expect(prerequis.education).toEqual({ required: 'Bac +3 à Bac +5', status: 'insufficient', profileValue: 'BAC +2' })
+    expect(prerequis.experience).toEqual({ required: '2 ans minimum en recrutement', status: 'not-found' })
   })
 
   it('reconnaît un niveau suffisant et une expérience du domaine', () => {
-    const fort: Profil = {
+    const fort: Profile = {
       ...profil,
-      formations: [{ diplome: 'Master RH', etablissement: 'Université' }],
-      experiences: [{ poste: 'Chargé de recrutement', entreprise: 'X', realisations: [] }],
+      education: [{ degree: 'Master RH', school: 'Université' }],
+      experiences: [{ position: 'Chargé de recrutement', company: 'X', achievements: [] }],
     }
-    const { prerequis } = analyserCouverture(fort, analyse)
-    expect(prerequis.formation?.statut).toBe('ok')
-    expect(prerequis.experience?.statut).toBe('retrouvee')
+    const { requirements: prerequis } = analyserCouverture(fort, analyse)
+    expect(prerequis.education?.status).toBe('ok')
+    expect(prerequis.experience?.status).toBe('found')
   })
 
   it('qualités et outils du profil recherché sont demandés ; intitulé et contexte sont écartés', () => {
@@ -97,9 +97,9 @@ describe('prérequis', () => {
       ...analyse,
       motsCles: ['Chargé de sourcing', 'Remplacement', 'stratégie', 'vivier de candidats'],
     })
-    expect(c.attestees).toContain('Autonomie')
-    expect(c.manquantes).toEqual(expect.arrayContaining(['LinkedIn Recruiter', 'CRM candidats', 'Orienté résultats']))
-    const tous = [...c.attestees, ...c.manquantes]
+    expect(c.evidenced).toContain('Autonomie')
+    expect(c.missing).toEqual(expect.arrayContaining(['LinkedIn Recruiter', 'CRM candidats', 'Orienté résultats']))
+    const tous = [...c.evidenced, ...c.missing]
     expect(tous).not.toContain('Chargé de sourcing')
     expect(tous).not.toContain('Remplacement')
     // Mot isolé vague non attesté : non proposé.
@@ -126,15 +126,15 @@ describe('savoir-être demandés et mise en forme', () => {
 })
 
 describe('adapterCv : profil recherché', () => {
-  const profil: Profil = {
-    liensProfessionnels: [],
-    titrePoste: 'Développeur web',
-    experiences: [{ poste: 'Développeur web', entreprise: 'Webagence', realisations: ['Intégration HTML et CSS'] }],
-    competences: ['Rigueur', 'Autonomie', 'Travail en équipe', 'HTML / CSS'],
-    formations: [{ diplome: 'BAC +2', etablissement: 'École du Code' }],
-    langues: [],
+  const profil: Profile = {
+    links: [],
+    headline: 'Développeur web',
+    experiences: [{ position: 'Développeur web', company: 'Webagence', achievements: ['Intégration HTML et CSS'] }],
+    skills: ['Rigueur', 'Autonomie', 'Travail en équipe', 'HTML / CSS'],
+    education: [{ degree: 'BAC +2', school: 'École du Code' }],
+    languages: [],
   }
-  const offre: Offre = { titrePoste: 'Chargé de sourcing et de recrutement (H/F)', texteBrut: OFFRE }
+  const offre: JobPosting = { jobTitle: 'Chargé de sourcing et de recrutement (H/F)', rawText: OFFRE }
   const moteur = () =>
     new MoteurMock({
       motsCles: {
@@ -150,22 +150,22 @@ describe('adapterCv : profil recherché', () => {
 
   it('place outils demandés en compétences clés et qualités demandées parmi les savoir-être, une fois cochés', async () => {
     const cv = await adapterCv(moteur(), profil, offre)
-    expect(cv.titre).toBe('Chargé de sourcing et de recrutement')
-    expect(cv.demandees.manquantes).toEqual(
+    expect(cv.headline).toBe('Chargé de sourcing et de recrutement')
+    expect(cv.requested.missing).toEqual(
       expect.arrayContaining(['LinkedIn Recruiter', 'CRM candidats', 'Orienté résultats', 'Sens du conseil']),
     )
-    expect(cv.demandees.prerequis.formation?.statut).toBe('insuffisante')
+    expect(cv.requested.requirements.education?.status).toBe('insufficient')
 
     const final = composerCv(
       profil,
       cv,
-      { ...choixInitial(cv), ajouterDemandees: cv.demandees.manquantes.map(() => true) },
-      cv.experiences.map((e) => e.points),
+      { ...choixInitial(cv), ajouterDemandees: cv.requested.missing.map(() => true) },
+      cv.experiences.map((e) => e.bullets),
     )
-    expect(final.competencesCles).toEqual(expect.arrayContaining(['LinkedIn Recruiter', 'CRM candidats']))
-    expect(final.competences).toEqual(expect.arrayContaining(['Orienté résultats', 'Sens du conseil', 'Autonomie']))
-    expect(final.competencesCles).not.toContain('Orienté résultats')
-    expect([...final.competencesCles, ...final.competences]).not.toContain('Remplacement')
+    expect(final.keySkills).toEqual(expect.arrayContaining(['LinkedIn Recruiter', 'CRM candidats']))
+    expect(final.skills).toEqual(expect.arrayContaining(['Orienté résultats', 'Sens du conseil', 'Autonomie']))
+    expect(final.keySkills).not.toContain('Orienté résultats')
+    expect([...final.keySkills, ...final.skills]).not.toContain('Remplacement')
   })
 
   it('donne le profil recherché au modèle d’analyse, en premier', async () => {

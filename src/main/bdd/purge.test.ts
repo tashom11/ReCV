@@ -1,12 +1,12 @@
-import { cvAdapteSchema, offreSchema, profilSchema } from '@core/schemas'
+import { jobPostingSchema, profileSchema, tailoredCvSchema } from '@core/schemas'
 import { describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './connexion'
 import { creerProfil, enregistrerCv, enregistrerOffre, obtenirProfilActif, purgeOldData } from './depots'
 import { cvGeneres, offres, profils } from './schema'
 
-const profil = (nom: string) => profilSchema.parse({ nom })
-const offre = (titrePoste: string) => offreSchema.parse({ titrePoste, texteBrut: `Annonce ${titrePoste}` })
-const cv = cvAdapteSchema.parse({ titre: 'Titre', accroche: 'Accroche' })
+const profil = (nom: string) => profileSchema.parse({ fullName: nom })
+const offre = (titrePoste: string) => jobPostingSchema.parse({ jobTitle: titrePoste, rawText: `Annonce ${titrePoste}` })
+const cv = tailoredCvSchema.parse({ headline: 'Titre', summary: 'Accroche' })
 
 describe('purgeOldData', () => {
   it('keeps only the active profile when no creation refers to the others', () => {
@@ -21,9 +21,9 @@ describe('purgeOldData', () => {
         .select()
         .from(profils)
         .all()
-        .map((p) => p.donnees.nom),
+        .map((p) => p.donnees.fullName),
     ).toEqual(['Actuel'])
-    expect(obtenirProfilActif(bdd)?.profil.nom).toBe('Actuel')
+    expect(obtenirProfilActif(bdd)?.profil.fullName).toBe('Actuel')
     bdd.fermer()
   })
 
@@ -40,7 +40,7 @@ describe('purgeOldData', () => {
         .select()
         .from(offres)
         .all()
-        .map((o) => o.donnees.titrePoste),
+        .map((o) => o.donnees.jobTitle),
     ).toEqual(['Poste 4', 'Poste 5'])
     bdd.fermer()
   })
@@ -58,7 +58,7 @@ describe('purgeOldData', () => {
         .select()
         .from(profils)
         .all()
-        .map((p) => p.donnees.nom),
+        .map((p) => p.donnees.fullName),
     ).toEqual(['Ancien', 'Actuel'])
     bdd.fermer()
   })

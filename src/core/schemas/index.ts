@@ -1,3 +1,3 @@
-export * from './cvAdapte'
-export * from './offre'
-export * from './profil'
+export * from './jobPosting'
+export * from './profile'
+export * from './tailoredCv'
