@@ -209,6 +209,32 @@
   animation: etape-finie 420ms var(--ease-courbe) backwards;
 }
 
+/*
+ * Windows High Contrast (forced colors): backgrounds and border colours are replaced by system colours, so states
+ * shown by a coloured background or border would vanish. They get a system-coloured outline or fill instead.
+ */
+@media (forced-colors: active) {
+  [role="radio"][aria-checked="true"],
+  [role="tab"][aria-selected="true"],
+  [aria-current="step"] > span:first-child {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  [role="progressbar"] {
+    border: 1px solid CanvasText;
+  }
+
+  [role="progressbar"] > div {
+    background: Highlight;
+    forced-color-adjust: none;
+  }
+
+  :focus-visible {
+    outline-color: Highlight;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --duree-rapide: 0ms;

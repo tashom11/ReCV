@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { messageErreur } from '../errors'
+import { errorMessage } from '../errors'
 import { savedLocation } from '../flow'
 import { Alert, Button, Icon } from '../ui'
 
@@ -20,7 +20,7 @@ export function SuccessScreen({
 
   const open = (action: (path: string) => Promise<void>) => {
     setError(null)
-    action(path).catch((e) => setError(messageErreur(e)))
+    action(path).catch((e) => setError(errorMessage(e)))
   }
 
   return (
@@ -44,7 +44,7 @@ export function SuccessScreen({
             {extension}
           </span>
           <div className="min-w-0">
-            <p className="truncate text-intro font-bold">{file}</p>
+            <p className="break-all text-intro font-bold">{file}</p>
             <p className="text-corps text-encre-douce">{place}</p>
           </div>
         </div>

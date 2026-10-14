@@ -91,9 +91,7 @@ export function WhatChanged({
       <Comparison
         title="Phrase de présentation"
         before={<p className="whitespace-pre-wrap">{profile.summary || '—'}</p>}
-        after={
-          <TextField label="Phrase adaptée à l’annonce" multiline toLines={4} value={summary} onChange={onSummary} />
-        }
+        after={<TextField label="Phrase adaptée à l’annonce" multiline rows={4} value={summary} onChange={onSummary} />}
         keep={
           <Checkbox
             label="Utiliser la phrase adaptée"
@@ -120,7 +118,7 @@ export function WhatChanged({
               <TextField
                 label="Ce que vous avez fait (une idée par ligne)"
                 multiline
-                toLines={Math.max(4, (bullets[i]?.length ?? 0) + 1)}
+                rows={Math.max(4, (bullets[i]?.length ?? 0) + 1)}
                 value={(bullets[i] ?? []).join('\n')}
                 onChange={(v) => onBullets(bullets.map((x, j) => (j === i ? toLines(v) : x)))}
               />

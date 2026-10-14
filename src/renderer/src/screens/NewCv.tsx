@@ -122,7 +122,7 @@ export function NewCvScreen({
 
           <Collapsible title="Titre et présentation" open>
             <TextField label="Titre du CV" value={title} onChange={setHeadline} />
-            <TextField label="Phrase de présentation" multiline toLines={5} value={summary} onChange={setSummary} />
+            <TextField label="Phrase de présentation" multiline rows={5} value={summary} onChange={setSummary} />
           </Collapsible>
 
           {(present.length > 0 || missing.length > 0) && (

@@ -1,20 +1,21 @@
-export { messageErreur } from '../errors'
-export { Alert, Confirmation } from './Alert'
+export { ActionBar } from './ActionBar'
+export { Alert } from './Alert'
 export { Button, LinkButton } from './Button'
+export { Card } from './Card'
+export { Checkbox } from './Checkbox'
+export { Collapsible } from './Collapsible'
+export { Confirmation } from './Confirmation'
+export { ConfirmDialog } from './ConfirmDialog'
 export { CvIllustration } from './CvIllustration'
 export { DropZone } from './DropZone'
+export { EmptyState } from './EmptyState'
 export { ErrorAlert } from './ErrorAlert'
-export { Checkbox, Select, TextField } from './fields'
 export { Icon, type IconName, Spinner } from './icons'
+export { Loading } from './Loading'
+export { PageTitle } from './PageTitle'
+export { Pill } from './Pill'
+export { SegmentedTabs } from './SegmentedTabs'
+export { Select } from './Select'
 export { Stepper } from './Stepper'
-export {
-  ActionBar,
-  Card,
-  Collapsible,
-  EmptyState,
-  Loading,
-  PageTitle,
-  Pill,
-  SegmentedTabs,
-  TemplateThumbnail,
-} from './structure'
+export { TemplateThumbnail } from './TemplateThumbnail'
+export { TextField } from './TextField'

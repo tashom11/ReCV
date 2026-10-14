@@ -2,7 +2,7 @@ import type { LocalModelState, ModelDownloadProgress, ModelsState, Settings, Set
 import { isLocalService } from '@core/serviceUrl'
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { downloadAnnouncement } from '../accessibility'
-import { describeError, type ErrorDescription, messageErreur } from '../errors'
+import { describeError, type ErrorDescription, errorMessage } from '../errors'
 import { formatSize } from '../estimate'
 import { hasUnsavedTextChanges } from '../settingsDraft'
 import {
@@ -11,6 +11,7 @@ import {
   Card,
   Checkbox,
   Confirmation,
+  ConfirmDialog,
   ErrorAlert,
   Icon,
   PageTitle,
@@ -61,7 +62,7 @@ function EngineChoiceCard({
       }`}
     >
       <label className="flex min-h-11 items-start gap-3.5 p-4">
-        <input type="radio" name="moteur" className="mt-1 size-5 shrink-0" checked={chosen} onChange={onChoose} />
+        <input type="radio" name="engine" className="mt-1 size-5 shrink-0" checked={chosen} onChange={onChoose} />
         <span className="min-w-0">
           <span className="flex flex-wrap items-center gap-2.5 text-intro font-bold text-encre">
             {title}
@@ -225,7 +226,7 @@ function ModelLevels({
                   aria-label={`Téléchargement du niveau ${level.name}`}
                   aria-valuemin={0}
                   aria-valuemax={100}
-                  aria-valuenow={percent}
+                  aria-valuenow={download.status === 'verifying' ? undefined : percent}
                   className="h-2.5 overflow-hidden rounded-full bg-creux"
                 >
                   {download.status === 'verifying' ? (
@@ -371,7 +372,7 @@ export function SettingsScreen({
     }
   }
 
-  const toutEffacer = async () => {
+  const eraseAll = async () => {
     setError(null)
     setBusyWith('erase')
     try {
@@ -381,7 +382,7 @@ export function SettingsScreen({
       setError({
         ...describeError('settings', e),
         title: 'Vos données n’ont pas pu être effacées',
-        text: messageErreur(e),
+        text: errorMessage(e),
       })
       setBusyWith(null)
     }
@@ -393,140 +394,150 @@ export function SettingsScreen({
       {error && <ErrorAlert description={error} onAction={() => setError(null)} />}
 
       <Card title="Moteur d’intelligence artificielle" subtitle="C’est lui qui lit votre CV et l’annonce.">
-        <EngineChoiceCard
-          chosen={local}
-          onChoose={() => void choose({ provider: 'local' })}
-          title="Sur mon ordinateur"
-          label={<Pill variant="recommended">Recommandé</Pill>}
-          description="Gratuit et privé : rien ne quitte votre ordinateur. Fonctionne sans internet."
-          highlighted
-        >
-          {local && (
-            <p className={`flex items-center gap-2 pl-[34px] font-bold ${ready ? 'text-marque' : 'text-alerte'}`}>
-              <Icon name={ready ? 'check-circle' : 'warning'} size={18} />
-              {ready ? 'Prêt à l’emploi' : 'Il manque un téléchargement : installez un niveau ci-dessous'}
-            </p>
-          )}
-        </EngineChoiceCard>
+        {/* One radio group for the three engines, two of which are in the collapsed advanced options. */}
+        <fieldset className="space-y-4">
+          <legend className="sr-only">
+            Où tourne le moteur : sur cet ordinateur, ou avec Ollama ou un service en ligne (options avancées)
+          </legend>
+          <EngineChoiceCard
+            chosen={local}
+            onChoose={() => void choose({ provider: 'local' })}
+            title="Sur mon ordinateur"
+            label={<Pill variant="recommended">Recommandé</Pill>}
+            description="Gratuit et privé : rien ne quitte votre ordinateur. Fonctionne sans internet."
+            highlighted
+          >
+            {local && (
+              <p className={`flex items-center gap-2 pl-[34px] font-bold ${ready ? 'text-marque' : 'text-alerte'}`}>
+                <Icon name={ready ? 'check-circle' : 'warning'} size={18} />
+                {ready ? 'Prêt à l’emploi' : 'Il manque un téléchargement : installez un niveau ci-dessous'}
+              </p>
+            )}
+          </EngineChoiceCard>
 
-        <ModelLevels activePath={state.localModelPath} onActive={onActiveModel} onState={onModelsState} />
+          <ModelLevels activePath={state.localModelPath} onActive={onActiveModel} onState={onModelsState} />
 
-        <details open={!local} className="group rounded-carte border border-trait bg-papier">
-          <summary className="flex min-h-16 items-center gap-4 rounded-carte px-5 py-3">
-            <span className="flex-1">
-              <span className="block font-titre text-intro font-bold">Options avancées</span>
-              <span className="block text-petit text-aide">Pour les personnes à l’aise avec l’informatique</span>
-            </span>
-            <Icon name="chevron-down" className="transition-transform duration-(--duree) group-open:rotate-180" />
-          </summary>
-          <div className="space-y-3 px-5 pb-5">
-            <EngineChoiceCard
-              chosen={state.provider === 'ollama'}
-              onChoose={() => void choose({ provider: 'ollama' })}
-              title="Ollama (installé séparément)"
-              description="Utilise un modèle servi par Ollama sur cet ordinateur. Les données restent chez vous."
-            >
-              {state.provider === 'ollama' && (
-                <>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <TextField
-                      label="Adresse d’Ollama"
-                      value={state.ollamaUrl}
-                      onChange={(v) => update({ ollamaUrl: v })}
-                    />
-                    <TextField label="Modèle" value={state.ollamaModel} onChange={(v) => update({ ollamaModel: v })} />
-                  </div>
-                  {!isLocalService(state.ollamaUrl) && (
-                    <Alert type="warning">
-                      <strong>Cette adresse n’est pas celle de votre ordinateur.</strong> Votre CV et l’annonce seront
-                      envoyés à cet appareil
-                      {state.ollamaUrl.startsWith('http:') ? ', sans chiffrement sur le réseau' : ''}.
-                    </Alert>
-                  )}
-                </>
-              )}
-            </EngineChoiceCard>
-
-            <EngineChoiceCard
-              chosen={state.provider === 'api'}
-              onChoose={() => void choose({ provider: 'api' })}
-              title="Service en ligne avec ma clé personnelle"
-              description="OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service."
-            >
-              {state.provider === 'api' && (
-                <>
-                  <Alert type="warning">
-                    <strong>Votre CV et l’annonce seront envoyés à ce service.</strong> Ils quittent votre ordinateur à
-                    chaque création de CV.
-                  </Alert>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Select
-                      label="Service"
-                      value={otherService ? OTHER_SERVICE : state.apiUrl}
-                      options={[...SERVICES, { value: OTHER_SERVICE, label: 'Autre adresse' }]}
-                      onChange={(v) => {
-                        setOtherService(v === OTHER_SERVICE)
-                        if (v !== OTHER_SERVICE) update({ apiUrl: v })
-                      }}
-                    />
-                    <TextField
-                      label="Clé personnelle (API)"
-                      type="password"
-                      value={key}
-                      onChange={setKey}
-                      placeholder={state.hasApiKey ? '•••••••••••• (enregistrée)' : ''}
-                    />
-                    {otherService && (
+          <details open={!local} className="group rounded-carte border border-trait bg-papier">
+            <summary className="flex min-h-16 items-center gap-4 rounded-carte px-5 py-3">
+              <span className="flex-1">
+                <span className="block font-titre text-intro font-bold">Options avancées</span>
+                <span className="block text-petit text-aide">Pour les personnes à l’aise avec l’informatique</span>
+              </span>
+              <Icon name="chevron-down" className="transition-transform duration-(--duree) group-open:rotate-180" />
+            </summary>
+            <div className="space-y-3 px-5 pb-5">
+              <EngineChoiceCard
+                chosen={state.provider === 'ollama'}
+                onChoose={() => void choose({ provider: 'ollama' })}
+                title="Ollama (installé séparément)"
+                description="Utilise un modèle servi par Ollama sur cet ordinateur. Les données restent chez vous."
+              >
+                {state.provider === 'ollama' && (
+                  <>
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <TextField
-                        label="Adresse du service"
-                        value={state.apiUrl}
-                        onChange={(v) => update({ apiUrl: v })}
-                        hint="Elle commence par https:// et finit souvent par /v1."
+                        label="Adresse d’Ollama"
+                        value={state.ollamaUrl}
+                        onChange={(v) => update({ ollamaUrl: v })}
                       />
+                      <TextField
+                        label="Modèle"
+                        value={state.ollamaModel}
+                        onChange={(v) => update({ ollamaModel: v })}
+                      />
+                    </div>
+                    {!isLocalService(state.ollamaUrl) && (
+                      <Alert type="warning">
+                        <strong>Cette adresse n’est pas celle de votre ordinateur.</strong> Votre CV et l’annonce seront
+                        envoyés à cet appareil
+                        {state.ollamaUrl.startsWith('http:') ? ', sans chiffrement sur le réseau' : ''}.
+                      </Alert>
                     )}
-                    <TextField
-                      label="Modèle"
-                      value={state.apiModel}
-                      onChange={(v) => update({ apiModel: v })}
-                      hint="Le nom donné par le service, par exemple « mistral-small-latest »."
-                    />
-                  </div>
-                  <p className="text-petit text-aide">
-                    {state.hasApiKey
-                      ? 'Une clé est enregistrée, chiffrée sur votre ordinateur. Elle n’est jamais réaffichée.'
-                      : 'Aucune clé enregistrée pour l’instant.'}
-                  </p>
-                  {state.hasApiKey && (
-                    <Button
-                      variant="danger"
-                      size="small"
-                      onClick={() => void removeKey()}
-                      busy={busyWith === 'key'}
-                      disabled={busyWith !== null}
-                    >
-                      Supprimer la clé
-                    </Button>
-                  )}
-                </>
-              )}
-            </EngineChoiceCard>
+                  </>
+                )}
+              </EngineChoiceCard>
 
-            <div className="rounded-carte border border-trait bg-surface px-4 py-2">
-              <Checkbox
-                label={<strong className="text-intro">Réécrire les phrases de mes expériences</strong>}
-                hint="Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes."
-                check={state.rewriteBullets}
-                onChange={(v) => void choose({ rewriteBullets: v })}
+              <EngineChoiceCard
+                chosen={state.provider === 'api'}
+                onChoose={() => void choose({ provider: 'api' })}
+                title="Service en ligne avec ma clé personnelle"
+                description="OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service."
+              >
+                {state.provider === 'api' && (
+                  <>
+                    <Alert type="warning">
+                      <strong>Votre CV et l’annonce seront envoyés à ce service.</strong> Ils quittent votre ordinateur
+                      à chaque création de CV.
+                    </Alert>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <Select
+                        label="Service"
+                        value={otherService ? OTHER_SERVICE : state.apiUrl}
+                        options={[...SERVICES, { value: OTHER_SERVICE, label: 'Autre adresse' }]}
+                        onChange={(v) => {
+                          setOtherService(v === OTHER_SERVICE)
+                          if (v !== OTHER_SERVICE) update({ apiUrl: v })
+                        }}
+                      />
+                      <TextField
+                        label="Clé personnelle (API)"
+                        type="password"
+                        value={key}
+                        onChange={setKey}
+                        placeholder={state.hasApiKey ? '•••••••••••• (enregistrée)' : ''}
+                      />
+                      {otherService && (
+                        <TextField
+                          label="Adresse du service"
+                          value={state.apiUrl}
+                          onChange={(v) => update({ apiUrl: v })}
+                          hint="Elle commence par https:// et finit souvent par /v1."
+                        />
+                      )}
+                      <TextField
+                        label="Modèle"
+                        value={state.apiModel}
+                        onChange={(v) => update({ apiModel: v })}
+                        hint="Le nom donné par le service, par exemple « mistral-small-latest »."
+                      />
+                    </div>
+                    <p className="text-petit text-aide">
+                      {state.hasApiKey
+                        ? 'Une clé est enregistrée, chiffrée sur votre ordinateur. Elle n’est jamais réaffichée.'
+                        : 'Aucune clé enregistrée pour l’instant.'}
+                    </p>
+                    {state.hasApiKey && (
+                      <Button
+                        variant="danger"
+                        size="small"
+                        onClick={() => void removeKey()}
+                        busy={busyWith === 'key'}
+                        disabled={busyWith !== null}
+                      >
+                        Supprimer la clé
+                      </Button>
+                    )}
+                  </>
+                )}
+              </EngineChoiceCard>
+
+              <div className="rounded-carte border border-trait bg-surface px-4 py-2">
+                <Checkbox
+                  label={<strong className="text-intro">Réécrire les phrases de mes expériences</strong>}
+                  hint="Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes."
+                  check={state.rewriteBullets}
+                  onChange={(v) => void choose({ rewriteBullets: v })}
+                />
+              </div>
+
+              <TextField
+                label="Fichier du modèle (.gguf)"
+                value={state.localModelPath ?? ''}
+                onChange={(v) => update({ localModelPath: v })}
               />
             </div>
-
-            <TextField
-              label="Fichier du modèle (.gguf)"
-              value={state.localModelPath ?? ''}
-              onChange={(v) => update({ localModelPath: v })}
-            />
-          </div>
-        </details>
+          </details>
+        </fieldset>
       </Card>
 
       <UpdatesCard />
@@ -535,34 +546,24 @@ export function SettingsScreen({
         title="Mes données"
         subtitle="Votre CV, vos annonces et les CV créés sont enregistrés uniquement sur cet ordinateur."
       >
-        {erasing ? (
-          <div
-            role="alertdialog"
-            aria-labelledby="titre-effacement"
-            className="space-y-3 rounded-carte border-2 border-erreur bg-erreur-fond p-5"
-          >
-            <h3 id="titre-effacement" className="font-titre text-intro font-bold text-erreur">
-              Tout effacer définitivement ?
-            </h3>
-            <p className="text-corps text-encre">
-              Votre CV importé, vos annonces et vos CV créés seront supprimés de Re:CV. Les fichiers déjà téléchargés
-              sur votre ordinateur ne sont pas touchés. Les réglages sont gardés
-              {state.hasApiKey ? ', sauf votre clé personnelle, effacée elle aussi' : ''}.
-            </p>
-            <div className="flex flex-wrap gap-3 pt-1">
-              <Button variant="danger-filled" onClick={() => void toutEffacer()} busy={busyWith === 'erase'}>
-                Oui, tout effacer
-              </Button>
-              <Button variant="secondary" onClick={() => setErasing(false)} disabled={busyWith !== null}>
-                Non, garder mes données
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button variant="danger" onClick={() => setErasing(true)}>
-            Tout effacer…
-          </Button>
-        )}
+        <Button variant="danger" onClick={() => setErasing(true)}>
+          Tout effacer…
+        </Button>
+        <ConfirmDialog
+          open={erasing}
+          title="Tout effacer définitivement ?"
+          confirmLabel="Oui, tout effacer"
+          cancelLabel="Non, garder mes données"
+          onConfirm={() => void eraseAll()}
+          onCancel={() => setErasing(false)}
+          busy={busyWith === 'erase'}
+        >
+          <p>
+            Votre CV importé, vos annonces et vos CV créés seront supprimés de Re:CV. Les fichiers déjà téléchargés sur
+            votre ordinateur ne sont pas touchés. Les réglages sont gardés
+            {state.hasApiKey ? ', sauf votre clé personnelle, effacée elle aussi' : ''}.
+          </p>
+        </ConfirmDialog>
       </Card>
 
       {confirmation && <Confirmation>{confirmation}</Confirmation>}
