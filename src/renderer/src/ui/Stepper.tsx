@@ -30,8 +30,8 @@ export function Stepper({
   stepStates?: Partial<Record<StepNumber, string>>
 }) {
   return (
-    <nav aria-label="Étapes" className="min-w-0 flex-1">
-      <ol className="flex items-center gap-3">
+    <nav aria-label="Étapes" className="min-w-0 flex-1 max-sm:order-last max-sm:basis-full">
+      <ol className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {STEP_NUMBERS.map((number) => {
           const isCurrent = number === currentStep
           const isDone = done.includes(number) && !isCurrent
@@ -52,7 +52,9 @@ export function Stepper({
                 {isDone ? <Icon name="check" size={20} strokeWidth={3} /> : number}
               </span>
               <span className="min-w-0 text-left leading-tight">
-                <span className={`block text-petit ${isDone ? 'font-bold text-marque' : 'text-encre-douce'}`}>
+                <span
+                  className={`block text-petit max-sm:sr-only ${isDone ? 'font-bold text-marque' : 'text-encre-douce'}`}
+                >
                   Étape {number} · {state}
                 </span>
                 <span

@@ -47,7 +47,12 @@ Reste dans ces étapes :
   commentaires et noms de tests de l'interface en anglais. Valeurs textuelles (5.5) en anglais partout : codes
   d'erreur, états, étapes, icônes, variantes, vues, identifiants des modèles de CV (migration 3 des réglages).
   Exceptions voulues : balises des prompts (`<offre>`, `<titre>`…), classes CSS du CV exporté, données de test
-  françaises. Reste de l'étape 7 : découpage des composants et accessibilité (7.1 à 7.6).
+  françaises.
+- Étape 7, découpage et accessibilité : fait. ui/ un composant par fichier ; écrans découpés (MyCv 650 → 192,
+  Settings 583 → 212, App 348 → 228, JobPosting, NewCv, TemplateGallery) ; A11Y-04, 05, 08, 10, 12, 13, 14, 15 ;
+  QUAL-04, QUAL-05. Vérifié dans l'application : retrait annulable, dialogue d'effacement, aucun défilement
+  horizontal à 320 et 640 px de large (zoom 400 % et 200 %). Reste à faire par une personne : un passage complet
+  au lecteur d'écran (NVDA) et en mode Contraste élevé de Windows.
 - Effet de bord connu de SEC-01 : le `localStorage` change d'origine (`file://` → `app://recv`) ; à la mise à jour,
   le nom du fichier CV affiché et la durée estimée repartent de zéro (aucune donnée du CV n'est perdue).
 
