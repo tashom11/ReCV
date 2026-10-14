@@ -13,7 +13,7 @@ export class MockEngine implements LlmEngine {
     this.requests.push(request as ObjectRequest<unknown>)
     const response = this.responses[request.name]
     if (response === undefined) {
-      throw new Error(`MoteurMock : aucune réponse prévue pour l'étape « ${request.name} »`)
+      throw new Error(`MockEngine: no reply scripted for step "${request.name}"`)
     }
     const raw = typeof response === 'function' ? response(request as ObjectRequest<unknown>) : response
     return request.schema.parse(raw)
