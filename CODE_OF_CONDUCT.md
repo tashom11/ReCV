@@ -8,7 +8,7 @@ any other project space.
 
 ## Reporting
 
-If someone's behaviour makes you uncomfortable, contact the maintainer privately: <!-- TODO: contact address -->.
+If someone's behaviour makes you uncomfortable, contact the maintainer privately at [thomas.m1104@protonmail.com](mailto:thomas.m1104@protonmail.com).
 Reports are handled confidentially.
 
 The maintainers may remove comments, commits or other contributions that do not follow this code, and may ban
