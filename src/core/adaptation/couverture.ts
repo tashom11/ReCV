@@ -1,18 +1,18 @@
 import { nettoyerTitreOffre } from '../offre/texte'
-import type { Prerequis, Profil } from '../schemas'
+import type { Profile, Requirements } from '../schemas'
 import type { AnalyseOffre } from './motsCles'
 import { contientMot, normaliser, texteExperience } from './texte'
 
 /**
  * Compétences demandées par l'offre, rapprochées du profil : c'est ce que cherche d'abord le recruteur (ou son ATS).
- * - `attestees` : déjà présentes dans le profil (compétences, expériences, titre) : on peut les afficher telles quelles ;
- * - `manquantes` : demandées mais absentes du profil. Le CV ne les ajoute JAMAIS de lui-même : c'est à l'utilisateur
+ * - `evidenced` : déjà présentes dans le profil (compétences, expériences, titre) : on peut les afficher telles quelles ;
+ * - `missing` : demandées mais absentes du profil. Le CV ne les ajoute JAMAIS de lui-même : c'est à l'utilisateur
  *   de dire s'il les maîtrise.
  */
 export interface CouvertureOffre {
-  attestees: string[]
-  manquantes: string[]
-  prerequis: Prerequis
+  evidenced: string[]
+  missing: string[]
+  requirements: Requirements
 }
 
 // Mots d'introduction qui ne désignent pas la compétence elle-même (« Maîtrise de WordPress » → « WordPress »).
@@ -57,14 +57,14 @@ function motsSignificatifs(terme: string): string[] {
 
 const racine = (mot: string) => mot.slice(0, 5)
 
-export function analyserCouverture(profil: Profil, analyse: AnalyseOffre): CouvertureOffre {
+export function analyserCouverture(profil: Profile, analyse: AnalyseOffre): CouvertureOffre {
   const source = normaliser(
     [
-      profil.titrePoste ?? '',
-      profil.accroche ?? '',
-      ...profil.competences,
+      profil.headline ?? '',
+      profil.summary ?? '',
+      ...profil.skills,
       ...profil.experiences.map(texteExperience),
-      ...profil.formations.map((f) => f.diplome),
+      ...profil.education.map((f) => f.degree),
     ].join('\n'),
   )
   const racinesSource = new Set((source.match(/[\p{L}\p{N}]{3,}/gu) ?? []).map(racine))
@@ -116,9 +116,9 @@ export function analyserCouverture(profil: Profil, analyse: AnalyseOffre): Couve
   const sansRedondance = (liste: string[]) =>
     liste.filter((t) => !liste.some((autre) => autre !== t && contientMot(normaliser(autre), normaliser(t))))
   return {
-    attestees: sansRedondance(attestees).slice(0, MAX_ATTESTEES),
-    manquantes: sansRedondance(manquantes).slice(0, MAX_MANQUANTES),
-    prerequis: evaluerPrerequis(profil, analyse, source),
+    evidenced: sansRedondance(attestees).slice(0, MAX_ATTESTEES),
+    missing: sansRedondance(manquantes).slice(0, MAX_MANQUANTES),
+    requirements: evaluerPrerequis(profil, analyse, source),
   }
 }
 
@@ -138,19 +138,19 @@ export function niveauEtudes(texte: string): number | null {
   return null
 }
 
-function evaluerPrerequis(profil: Profil, analyse: AnalyseOffre, source: string): Prerequis {
-  const resultat: Prerequis = {}
+function evaluerPrerequis(profil: Profile, analyse: AnalyseOffre, source: string): Requirements {
+  const resultat: Requirements = {}
 
   if (analyse.formationRequise.trim() !== '') {
     const exige = niveauEtudes(analyse.formationRequise)
-    const niveaux = profil.formations.map((f) => niveauEtudes(f.diplome)).filter((n): n is number => n !== null)
+    const niveaux = profil.education.map((f) => niveauEtudes(f.degree)).filter((n): n is number => n !== null)
     const meilleur = niveaux.length > 0 ? Math.max(...niveaux) : null
     const diplome =
-      meilleur === null ? undefined : profil.formations.find((f) => niveauEtudes(f.diplome) === meilleur)?.diplome
-    resultat.formation = {
-      exigee: analyse.formationRequise,
-      statut: exige === null || meilleur === null ? 'inconnue' : meilleur >= exige ? 'ok' : 'insuffisante',
-      profil: diplome,
+      meilleur === null ? undefined : profil.education.find((f) => niveauEtudes(f.degree) === meilleur)?.degree
+    resultat.education = {
+      required: analyse.formationRequise,
+      status: exige === null || meilleur === null ? 'unknown' : meilleur >= exige ? 'ok' : 'insufficient',
+      profileValue: diplome,
     }
   }
 
@@ -161,8 +161,8 @@ function evaluerPrerequis(profil: Profil, analyse: AnalyseOffre, source: string)
     )
     const racinesSource = new Set((source.match(/[\p{L}\p{N}]{3,}/gu) ?? []).map(racine))
     resultat.experience = {
-      exigee: analyse.experienceRequise,
-      statut: domaine.some((m) => racinesSource.has(racine(m))) ? 'retrouvee' : 'non-retrouvee',
+      required: analyse.experienceRequise,
+      status: domaine.some((m) => racinesSource.has(racine(m))) ? 'found' : 'not-found',
     }
   }
   return resultat

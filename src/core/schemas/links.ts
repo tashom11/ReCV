@@ -3,10 +3,10 @@
 
 const MOTIF_LIEN = /^(?:https?:\/\/|www\.)\S+$|^[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)*\.[a-z]{2,}(?:\/\S*)?$/iu
 
-export function estLienProfessionnel(valeur: string): boolean {
+export function isProfessionalLink(valeur: string): boolean {
   return MOTIF_LIEN.test(valeur.trim())
 }
 
-export function filtrerLiens(valeurs: readonly string[]): string[] {
-  return valeurs.map((v) => v.trim()).filter(estLienProfessionnel)
+export function filterLinks(valeurs: readonly string[]): string[] {
+  return valeurs.map((v) => v.trim()).filter(isProfessionalLink)
 }

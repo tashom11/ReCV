@@ -1,6 +1,6 @@
 import { eclaterCompetences, estCompetenceCourte } from '../adaptation/competences'
-import { type Profil, profilSchema } from '../schemas'
-import { filtrerLiens } from '../schemas/liens'
+import { type Profile, profileSchema } from '../schemas'
+import { filterLinks } from '../schemas/links'
 
 // Un modèle qui extrait un CV peut inventer des entrées (une « expérience » faite d'une ligne « Permis B –
 // Disponibilité immédiate »), ou en créer à partir d'une simple compétence. Ce contrôle en code garde uniquement
@@ -31,9 +31,9 @@ function presentDansSource(valeur: string | undefined, sourceCompacte: string): 
 }
 
 /** Un « poste » identique à l'intitulé d'une formation est un diplôme rangé à tort dans les expériences. */
-function estDiplome(poste: string | undefined, formations: Profil['formations']): boolean {
+function estDiplome(poste: string | undefined, formations: Profile['education']): boolean {
   const cle = compacter(poste ?? '')
-  return cle !== '' && formations.some((f) => compacter(f.diplome ?? '') === cle)
+  return cle !== '' && formations.some((f) => compacter(f.degree ?? '') === cle)
 }
 
 const vide = (valeur: string | undefined) => !valeur || valeur.trim() === ''
@@ -45,13 +45,13 @@ const vide = (valeur: string | undefined) => !valeur || valeur.trim() === ''
  * - formation, langue, compétence, e-mail ou téléphone absents du CV ;
  * - doublons et valeurs vides.
  */
-export function assainirProfil(profil: Profil, texteCv: string): Profil {
+export function assainirProfil(profil: Profile, texteCv: string): Profile {
   const source = compacter(texteCv)
   const chiffresSource = texteCv.replace(/\D/g, '')
 
   // Doublons (casse et accents ignorés) : la première occurrence est conservée.
   const vues = new Set<string>()
-  const competences = eclaterCompetences(profil.competences.map((c) => c.trim()))
+  const competences = eclaterCompetences(profil.skills.map((c) => c.trim()))
     // Une compétence est un terme court : les phrases décrivant des tâches n'en sont pas.
     .filter((c) => c !== '' && estCompetenceCourte(c) && presentDansSource(c, source))
     .filter((c) => {
@@ -62,31 +62,31 @@ export function assainirProfil(profil: Profil, texteCv: string): Profil {
     })
 
   const emailAttesté = !vide(profil.email) && source.includes(compacter(profil.email ?? ''))
-  const chiffresTel = (profil.telephone ?? '').replace(/\D/g, '')
+  const chiffresTel = (profil.phone ?? '').replace(/\D/g, '')
   const telAttesté = chiffresTel.length >= 6 && chiffresSource.includes(chiffresTel)
 
-  return profilSchema.parse({
+  return profileSchema.parse({
     ...profil,
-    nom: presentDansSource(profil.nom, source) ? profil.nom : undefined,
+    fullName: presentDansSource(profil.fullName, source) ? profil.fullName : undefined,
     email: emailAttesté ? profil.email : undefined,
-    telephone: telAttesté ? profil.telephone : undefined,
-    titrePoste: presentDansSource(profil.titrePoste, source) ? profil.titrePoste : undefined,
+    phone: telAttesté ? profil.phone : undefined,
+    headline: presentDansSource(profil.headline, source) ? profil.headline : undefined,
     experiences: profil.experiences.filter(
       (e) =>
-        !vide(e.poste) &&
-        !estDiplome(e.poste, profil.formations) &&
-        (!vide(e.entreprise) || !vide(e.periode)) &&
-        presentDansSource(e.poste, source) &&
-        presentDansSource(e.entreprise, source),
+        !vide(e.position) &&
+        !estDiplome(e.position, profil.education) &&
+        (!vide(e.company) || !vide(e.dateRange)) &&
+        presentDansSource(e.position, source) &&
+        presentDansSource(e.company, source),
     ),
-    formations: profil.formations.filter(
+    education: profil.education.filter(
       (f) =>
-        (!vide(f.diplome) || !vide(f.etablissement)) &&
-        presentDansSource(f.diplome, source) &&
-        presentDansSource(f.etablissement, source),
+        (!vide(f.degree) || !vide(f.school)) &&
+        presentDansSource(f.degree, source) &&
+        presentDansSource(f.school, source),
     ),
-    langues: profil.langues.filter((l) => !vide(l.nom) && presentDansSource(l.nom, source)),
-    competences,
-    liensProfessionnels: filtrerLiens(profil.liensProfessionnels),
+    languages: profil.languages.filter((l) => !vide(l.name) && presentDansSource(l.name, source)),
+    skills: competences,
+    links: filterLinks(profil.links),
   })
 }

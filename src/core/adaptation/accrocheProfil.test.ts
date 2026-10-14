@@ -1,22 +1,22 @@
 import { describe, expect, it } from 'vitest'
 import { MoteurMock } from '../llm/moteurMock'
-import type { Profil } from '../schemas'
+import type { Profile } from '../schemas'
 import { genererAccrocheProfil, MESSAGE_AUCUNE_COMPETENCE, motsNonAttestes } from './accrocheProfil'
 
-const profil: Profil = {
-  titrePoste: 'Développeur web / Carrossier peintre',
-  accroche: 'Expérience de 4 ans en développement web.',
-  liensProfessionnels: [],
+const profil: Profile = {
+  headline: 'Développeur web / Carrossier peintre',
+  summary: 'Expérience de 4 ans en développement web.',
+  links: [],
   experiences: [
     {
-      poste: 'Développeur web front',
-      entreprise: 'Webagence',
-      realisations: ['Collaborer avec les équipes design et back-end', 'Respect des délais'],
+      position: 'Développeur web front',
+      company: 'Webagence',
+      achievements: ['Collaborer avec les équipes design et back-end', 'Respect des délais'],
     },
   ],
-  competences: ['Rigueur', 'Autonomie', 'Organisation', 'HTML / CSS', 'WordPress / CMS'],
-  formations: [],
-  langues: [],
+  skills: ['Rigueur', 'Autonomie', 'Organisation', 'HTML / CSS', 'WordPress / CMS'],
+  education: [],
+  languages: [],
 }
 
 const moteur = (reponse: { competencesTransversales: string[]; accroche: string }) =>

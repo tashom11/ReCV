@@ -2,7 +2,7 @@ import { formaterCompetence } from '@core/adaptation/competences'
 import { type ChoixComposition, choixInitial, composerCv } from '@core/adaptation/composition'
 import type { FormatExport } from '@core/api'
 import { type IdModele, trouverModele } from '@core/export/modeles'
-import type { CvAdapte, Profil } from '@core/schemas'
+import type { Profile, TailoredCv } from '@core/schemas'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { type DescriptionErreur, decrireErreur } from '../erreurs'
 import { AlerteErreur, BarreActions, Bouton, CaseACocher, Champ, Icone, SectionRepliable } from '../ui'
@@ -21,14 +21,14 @@ export function EcranNouveauCv({
   adapte,
   onExporte,
 }: {
-  profil: Profil
-  adapte: CvAdapte
+  profil: Profile
+  adapte: TailoredCv
   onExporte: (chemin: string) => void
 }) {
-  const [titre, setTitre] = useState(adapte.titre)
-  const [accroche, setAccroche] = useState(adapte.accroche)
+  const [titre, setTitre] = useState(adapte.headline)
+  const [accroche, setAccroche] = useState(adapte.summary)
   const [choix, setChoix] = useState<ChoixComposition>(() => choixInitial(adapte))
-  const [points, setPoints] = useState<string[][]>(adapte.experiences.map((e) => e.points))
+  const [points, setPoints] = useState<string[][]>(adapte.experiences.map((e) => e.bullets))
   // Compétences déjà dans le CV que l'utilisateur décoche : elles sont seulement retirées de ce CV.
   const [retirees, setRetirees] = useState<ReadonlySet<string>>(new Set())
   const [modeleCv, setModeleCv] = useState<IdModele>('classique')
@@ -56,24 +56,24 @@ export function EcranNouveauCv({
 
   // Compétences demandées par l'annonce et réellement présentes dans le CV adapté.
   const presentes = useMemo(() => {
-    const dansLeCv = new Set([...adapte.competencesCles, ...adapte.competences].map(cle))
-    return adapte.demandees.attestees.filter((terme) => dansLeCv.has(cle(terme))).map(formaterCompetence)
+    const dansLeCv = new Set([...adapte.keySkills, ...adapte.skills].map(cle))
+    return adapte.requested.evidenced.filter((terme) => dansLeCv.has(cle(terme))).map(formaterCompetence)
   }, [adapte])
 
   const cvFinal = useMemo(() => {
-    const compose = composerCv(profil, { ...adapte, titre: titre.trim(), accroche: accroche.trim() }, choix, points)
+    const compose = composerCv(profil, { ...adapte, headline: titre.trim(), summary: accroche.trim() }, choix, points)
     const garder = (competence: string) => !retirees.has(cle(competence))
     return {
       ...compose,
-      competencesCles: compose.competencesCles.filter(garder),
-      competences: compose.competences.filter(garder),
+      competencesCles: compose.keySkills.filter(garder),
+      competences: compose.skills.filter(garder),
     }
   }, [profil, adapte, titre, accroche, choix, points, retirees])
 
   const { apercus } = useApercus(cvFinal)
-  const { ecartes } = adapte
-  const { manquantes } = adapte.demandees
-  const nbEcartes = ecartes.experiences.length + ecartes.competences.length + ecartes.formations.length
+  const { excluded: ecartes } = adapte
+  const { missing: manquantes } = adapte.requested
+  const nbEcartes = ecartes.experiences.length + ecartes.skills.length + ecartes.education.length
   const modele = trouverModele(modeleCv)
 
   const exporter = async (format: FormatExport) => {
@@ -172,22 +172,22 @@ export function EcranNouveauCv({
                 </legend>
                 {ecartes.experiences.map((e, i) => (
                   <CaseACocher
-                    key={`${e.indice ?? i}-${e.poste}-${e.entreprise}`}
-                    etiquette={`${e.poste} — ${e.entreprise}`}
-                    aide={e.periode}
+                    key={`${e.sourceIndex ?? i}-${e.position}-${e.company}`}
+                    etiquette={`${e.position} — ${e.company}`}
+                    aide={e.dateRange}
                     coche={choix.reintegrer.experiences[i] ?? false}
                     onChange={(v) => majReintegrer({ experiences: remplacer(choix.reintegrer.experiences, i, v) })}
                   />
                 ))}
-                {ecartes.formations.map((f, i) => (
+                {ecartes.education.map((f, i) => (
                   <CaseACocher
-                    key={`${f.diplome}-${f.etablissement}`}
-                    etiquette={`${f.diplome} — ${f.etablissement}`}
+                    key={`${f.degree}-${f.school}`}
+                    etiquette={`${f.degree} — ${f.school}`}
                     coche={choix.reintegrer.formations[i] ?? false}
                     onChange={(v) => majReintegrer({ formations: remplacer(choix.reintegrer.formations, i, v) })}
                   />
                 ))}
-                {ecartes.competences.map((c, i) => (
+                {ecartes.skills.map((c, i) => (
                   <CaseACocher
                     key={c}
                     etiquette={c}

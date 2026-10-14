@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3'
+import { jobPostingFromV1, profileFromV1, tailoredCvFromV1 } from './legacyData'
 
 /**
  * A database schema change. Its `version` is stored in `PRAGMA user_version` once applied: every migration runs
@@ -45,6 +46,22 @@ export const MIGRATIONS: readonly Migration[] = [
           cree_le TEXT NOT NULL
         );
       `),
+  },
+  {
+    // Code moved to English: the JSON stored in `donnees` takes the English keys of the schemas.
+    version: 2,
+    up: (sqlite) => {
+      const tables = [
+        ['profils', profileFromV1],
+        ['offres', jobPostingFromV1],
+        ['cv_generes', tailoredCvFromV1],
+      ] as const
+      for (const [table, convert] of tables) {
+        const update = sqlite.prepare(`UPDATE ${table} SET donnees = ? WHERE id = ?`)
+        const rows = sqlite.prepare(`SELECT id, donnees FROM ${table}`).all() as { id: number; donnees: string }[]
+        for (const { id, donnees } of rows) update.run(JSON.stringify(convert(JSON.parse(donnees))), id)
+      }
+    },
   },
 ]
 

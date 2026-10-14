@@ -1,6 +1,6 @@
 import type { AnalyseOffre } from '../adaptation/motsCles'
 import type { CleEtape } from '../etapes'
-import type { CvAdapte, Offre, Profil } from '../schemas'
+import type { JobPosting, Profile, TailoredCv } from '../schemas'
 
 /** Étape d'un traitement long, pour l'affichage de la progression. */
 export interface EtapeAdaptation {
@@ -23,13 +23,13 @@ export interface OptionsAdaptation {
 }
 
 export interface FournisseurLLM {
-  extraireProfil(texteCv: string): Promise<Profil>
-  extraireOffre(texteOffre: string): Promise<Offre>
+  extraireProfil(texteCv: string): Promise<Profile>
+  extraireOffre(texteOffre: string): Promise<JobPosting>
   /** Exigences de l'offre (compétences, qualités, prérequis) : première étape de l'adaptation, réutilisable. */
-  analyserOffre(offre: Offre): Promise<AnalyseOffre>
-  adapterCv(profil: Profil, offre: Offre, options?: OptionsAdaptation): Promise<CvAdapte>
+  analyserOffre(offre: JobPosting): Promise<AnalyseOffre>
+  adapterCv(profil: Profile, offre: JobPosting, options?: OptionsAdaptation): Promise<TailoredCv>
   /** Accroche générique du profil, fondée sur ses seules compétences transversales (savoir-être). */
-  genererAccroche(profil: Profil): Promise<string>
+  genererAccroche(profil: Profile): Promise<string>
   /** Où tourne le calcul (modèle embarqué uniquement). */
   modeCalcul?(): 'gpu' | 'cpu' | null
   /** Libère les ressources natives (modèle local) ; absent pour les fournisseurs distants. */

@@ -26,9 +26,9 @@ describe('extraireOffreDepuisHtml', () => {
   it('extrait le titre, l’entreprise et le texte principal', () => {
     const offre = extraireOffreDepuisHtml(HTML_OFFRE)
     expect(offre).not.toBeNull()
-    expect(offre?.titrePoste).toContain('Développeur React')
-    expect(offre?.entreprise).toBe('Acme')
-    expect(offre?.texteBrut).toContain('TypeScript et React')
+    expect(offre?.jobTitle).toContain('Développeur React')
+    expect(offre?.company).toBe('Acme')
+    expect(offre?.rawText).toContain('TypeScript et React')
   })
 
   it('retourne null pour une page sans contenu (rendue en JS)', () => {
@@ -73,7 +73,7 @@ describe('recupererOffre', () => {
   it('retourne l’offre extraite via fetch', async () => {
     const fetchImpl = vi.fn(async () => reponseHtml(HTML_OFFRE)) as unknown as typeof fetch
     const offre = await recupererOffre('https://exemple.test/offre', { fetchImpl })
-    expect(offre.texteBrut).toContain('développeur confirmé')
+    expect(offre.rawText).toContain('développeur confirmé')
   })
 
   it('utilise le rendu navigateur quand la page statique est vide', async () => {
@@ -81,7 +81,7 @@ describe('recupererOffre', () => {
     const rendreHtml = vi.fn(async () => HTML_OFFRE)
     const offre = await recupererOffre('https://exemple.test/offre', { fetchImpl, rendreHtml })
     expect(rendreHtml).toHaveBeenCalledWith('https://exemple.test/offre')
-    expect(offre.entreprise).toBe('Acme')
+    expect(offre.company).toBe('Acme')
   })
 
   it('lève une erreur claire si tout échoue (page vide, repli en échec)', async () => {
@@ -99,7 +99,7 @@ describe('recupererOffre', () => {
     const fetchImpl = vi.fn(async () => reponseHtml('', { status: 403 })) as unknown as typeof fetch
     const rendreHtml = vi.fn(async () => HTML_OFFRE)
     const offre = await recupererOffre('https://exemple.test/offre', { fetchImpl, rendreHtml })
-    expect(offre.titrePoste).toContain('Développeur')
+    expect(offre.jobTitle).toContain('Développeur')
 
     await expect(recupererOffre('https://exemple.test/offre', { fetchImpl })).rejects.toMatchObject({
       code: 'http',

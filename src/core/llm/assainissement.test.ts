@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { Profil } from '../schemas'
+import type { Profile } from '../schemas'
 import { assainirProfil } from './assainissement'
 
 const CV = `MOREAU Julien
@@ -20,29 +20,29 @@ LANGUES
 Français, Anglais
 Permis : B - Disponibilités : Immédiatement - Site : julien-moreau.exemple.dev`
 
-const base: Profil = {
-  nom: 'Julien Moreau',
+const base: Profile = {
+  fullName: 'Julien Moreau',
   email: 'julien.moreau@exemple.fr',
-  telephone: '06.00.00.00.01',
-  liensProfessionnels: [],
-  titrePoste: 'Développeur web / Carrossier peintre',
+  phone: '06.00.00.00.01',
+  links: [],
+  headline: 'Développeur web / Carrossier peintre',
   experiences: [
     {
-      poste: 'Développeur web front',
-      entreprise: 'Agence Pixel',
-      periode: '2021-2022',
-      realisations: ['Développement d’interfaces web responsives'],
+      position: 'Développeur web front',
+      company: 'Agence Pixel',
+      dateRange: '2021-2022',
+      achievements: ['Développement d’interfaces web responsives'],
     },
     {
-      poste: 'Carrossier peintre',
-      entreprise: 'Carrosserie Dupont',
-      periode: '2016 - 2020',
-      realisations: [],
+      position: 'Carrossier peintre',
+      company: 'Carrosserie Dupont',
+      dateRange: '2016 - 2020',
+      achievements: [],
     },
   ],
-  competences: ['Rigueur', 'Autonomie', 'HTML / CSS', 'SEO', 'Permis : B'],
-  formations: [{ diplome: 'BAC PRO', etablissement: 'Lycée Jean Moulin, Douai', periode: '2015' }],
-  langues: [{ nom: 'Français' }, { nom: 'Anglais' }],
+  skills: ['Rigueur', 'Autonomie', 'HTML / CSS', 'SEO', 'Permis : B'],
+  education: [{ degree: 'BAC PRO', school: 'Lycée Jean Moulin, Douai', dateRange: '2015' }],
+  languages: [{ name: 'Français' }, { name: 'Anglais' }],
 }
 
 describe('assainirProfil', () => {
@@ -51,34 +51,34 @@ describe('assainirProfil', () => {
   })
 
   it('ne garde pour liens que de vraies adresses web, pas des noms d’entreprises', () => {
-    const profil: Profil = {
+    const profil: Profile = {
       ...base,
-      liensProfessionnels: ['Agence Pixel', 'Carrosserie Dupont', 'julien-moreau.exemple.dev', 'https://github.com/x'],
+      links: ['Agence Pixel', 'Carrosserie Dupont', 'julien-moreau.exemple.dev', 'https://github.com/x'],
     }
-    expect(assainirProfil(profil, CV).liensProfessionnels).toEqual(['julien-moreau.exemple.dev', 'https://github.com/x'])
+    expect(assainirProfil(profil, CV).links).toEqual(['julien-moreau.exemple.dev', 'https://github.com/x'])
   })
 
   it('retire un diplôme rangé à tort dans les expériences', () => {
-    const profil: Profil = {
+    const profil: Profile = {
       ...base,
       experiences: [
         ...base.experiences,
-        { poste: 'BAC PRO', entreprise: 'Lycée Jean Moulin', periode: '2015', realisations: [] },
+        { position: 'BAC PRO', company: 'Lycée Jean Moulin', dateRange: '2015', achievements: [] },
       ],
     }
     expect(assainirProfil(profil, CV).experiences).toEqual(base.experiences)
   })
 
   it('retire la « expérience » faite d’une ligne diverse (permis, disponibilité, site)', () => {
-    const profil: Profil = {
+    const profil: Profile = {
       ...base,
       experiences: [
         ...base.experiences,
         {
-          poste: '',
-          entreprise: '',
+          position: '',
+          company: '',
           description: 'Permis : B - Disponibilités : Immédiatement - Site : julien-moreau.exemple.dev',
-          realisations: [],
+          achievements: [],
         },
       ],
     }
@@ -86,62 +86,62 @@ describe('assainirProfil', () => {
   })
 
   it('retire une expérience sans entreprise ni période (poste tiré d’une compétence)', () => {
-    const profil: Profil = {
+    const profil: Profile = {
       ...base,
       experiences: [
         ...base.experiences,
         {
-          poste: 'Installation et maintenance de matériel informatique.',
-          entreprise: '',
+          position: 'Installation et maintenance de matériel informatique.',
+          company: '',
           description: 'Support et assistance technique aux utilisateurs.',
-          realisations: ['Diagnostic et résolution d’incidents'],
+          achievements: ['Diagnostic et résolution d’incidents'],
         },
       ],
     }
-    expect(assainirProfil(profil, CV).experiences.map((e) => e.entreprise)).toEqual([
+    expect(assainirProfil(profil, CV).experiences.map((e) => e.company)).toEqual([
       'Agence Pixel',
       'Carrosserie Dupont',
     ])
   })
 
   it('retire une expérience dont l’entreprise ou le poste n’apparaît pas dans le CV', () => {
-    const profil: Profil = {
+    const profil: Profile = {
       ...base,
       experiences: [
         ...base.experiences,
-        { poste: 'Chef de projet', entreprise: 'Société Fantôme', periode: '2018', realisations: [] },
+        { position: 'Chef de projet', company: 'Société Fantôme', dateRange: '2018', achievements: [] },
       ],
     }
     expect(assainirProfil(profil, CV).experiences).toHaveLength(2)
   })
 
   it('retire formations, langues, compétences, e-mail et téléphone inventés', () => {
-    const profil: Profil = {
+    const profil: Profile = {
       ...base,
       email: 'inconnu@exemple.fr',
-      telephone: '07 11 22 33 44',
-      formations: [...base.formations, { diplome: 'Master de physique quantique', etablissement: 'MIT' }],
-      langues: [...base.langues, { nom: 'Japonais' }],
-      competences: [...base.competences, 'Kubernetes', 'rigueur'],
+      phone: '07 11 22 33 44',
+      education: [...base.education, { degree: 'Master de physique quantique', school: 'MIT' }],
+      languages: [...base.languages, { name: 'Japonais' }],
+      skills: [...base.skills, 'Kubernetes', 'rigueur'],
     }
     const net = assainirProfil(profil, CV)
     expect(net.email).toBeUndefined()
-    expect(net.telephone).toBeUndefined()
-    expect(net.formations).toHaveLength(1)
-    expect(net.langues.map((l) => l.nom)).toEqual(['Français', 'Anglais'])
-    expect(net.competences).toEqual(base.competences)
+    expect(net.phone).toBeUndefined()
+    expect(net.education).toHaveLength(1)
+    expect(net.languages.map((l) => l.name)).toEqual(['Français', 'Anglais'])
+    expect(net.skills).toEqual(base.skills)
   })
 
   it('tolère les artefacts d’extraction PDF (retours à la ligne, tirets, casse, accents)', () => {
     const cvPdf = 'AGENCE\nPIXEL\nDEVELOPPEUR WEB\nFRONT 2021-2022'
-    const profil: Profil = {
-      liensProfessionnels: [],
+    const profil: Profile = {
+      links: [],
       experiences: [
-        { poste: 'Développeur web front', entreprise: 'Agence Pixel', periode: '2021-2022', realisations: [] },
+        { position: 'Développeur web front', company: 'Agence Pixel', dateRange: '2021-2022', achievements: [] },
       ],
-      competences: [],
-      formations: [],
-      langues: [],
+      skills: [],
+      education: [],
+      languages: [],
     }
     expect(assainirProfil(profil, cvPdf).experiences).toHaveLength(1)
   })

@@ -1,7 +1,7 @@
 import type { OptionsAdaptation } from '../llm/fournisseur'
 import type { MoteurLLM } from '../llm/moteur'
 import { nettoyerTitreOffre } from '../offre/texte'
-import { type CvAdapte, cvAdapteSchema, type ExperienceAdaptee, type Offre, type Profil } from '../schemas'
+import { type JobPosting, type Profile, type TailoredCv, type TailoredExperience, tailoredCvSchema } from '../schemas'
 import {
   eclaterCompetences,
   estCompetenceCourte,
@@ -44,23 +44,23 @@ export function prioriserCompetences(competences: string[], termesOffre: string[
   return [...competences.filter(citee), ...competences.filter((competence) => !citee(competence))]
 }
 
-function texteProfil(profil: Profil): string {
+function texteProfil(profil: Profile): string {
   return [
-    profil.titrePoste ?? '',
-    profil.accroche ?? '',
+    profil.headline ?? '',
+    profil.summary ?? '',
     ...profil.experiences.map(texteExperience),
-    ...profil.competences,
-    ...profil.formations.map((formation) => formation.diplome),
+    ...profil.skills,
+    ...profil.education.map((formation) => formation.degree),
   ].join('\n')
 }
 
 // Source de vérification de l'accroche et du titre : tout ce que le profil affirme, dates et lieux compris.
-function texteVerification(profil: Profil): string {
+function texteVerification(profil: Profile): string {
   return [
     texteProfil(profil),
-    ...profil.experiences.flatMap((e) => [e.entreprise, e.lieu ?? '', e.periode ?? '']),
-    ...profil.formations.flatMap((f) => [f.etablissement, f.lieu ?? '', f.periode ?? '', f.description ?? '']),
-    ...profil.langues.map((l) => `${l.nom} ${l.niveau ?? ''}`),
+    ...profil.experiences.flatMap((e) => [e.company, e.location ?? '', e.dateRange ?? '']),
+    ...profil.education.flatMap((f) => [f.school, f.location ?? '', f.dateRange ?? '', f.description ?? '']),
+    ...profil.languages.map((l) => `${l.name} ${l.level ?? ''}`),
   ].join('\n')
 }
 
@@ -89,8 +89,8 @@ export function borneAccroche(accroche: string): string {
 // Ce qui n'a aucun rapport avec l'offre est écarté du CV (et listé dans `ecartes` pour que l'utilisateur décide).
 // Une compétence est un terme court : les phrases décrivant des tâches (souvent issues d'un CV mal structuré)
 // n'ont pas leur place dans la section Compétences et ne sont jamais traitées comme telles.
-export function preparerProfil(profil: Profil): Profil {
-  return { ...profil, competences: eclaterCompetences(profil.competences).filter(estCompetenceCourte) }
+export function preparerProfil(profil: Profile): Profile {
+  return { ...profil, skills: eclaterCompetences(profil.skills).filter(estCompetenceCourte) }
 }
 
 // Annulation : chaque appel au modèle vérifie le signal avant de partir et le transmet au moteur.
@@ -106,10 +106,10 @@ function avecSignal(moteur: MoteurLLM, signal: AbortSignal | undefined): MoteurL
 
 export async function adapterCv(
   moteurBrut: MoteurLLM,
-  profilBrut: Profil,
-  offre: Offre,
+  profilBrut: Profile,
+  offre: JobPosting,
   options: OptionsAdaptation = {},
-): Promise<CvAdapte> {
+): Promise<TailoredCv> {
   const signaler = options.surEtape ?? (() => undefined)
   const moteur = avecSignal(moteurBrut, options.signal)
   const profil = preparerProfil(profilBrut)
@@ -123,7 +123,7 @@ export async function adapterCv(
   signaler({ cle: 'selection', etape: 'Choix des éléments du profil à mettre en avant' })
   const pertinence = await evaluerPertinence(moteur, profil, analyse)
 
-  const termesOffre = [...analyse.motsCles, ...analyse.competencesRequises, offre.texteBrut]
+  const termesOffre = [...analyse.motsCles, ...analyse.competencesRequises, offre.rawText]
   const termesNormalises = termesOffre.map(normaliser)
 
   const indicesExperiences = indicesConserves(pertinence.experiences)
@@ -137,7 +137,7 @@ export async function adapterCv(
   )
   // Les savoir-être (rigueur, autonomie, travail en équipe…) servent dans tous les métiers : toujours conservés.
   const citees = new Set(
-    profil.competences.flatMap((c, i) =>
+    profil.skills.flatMap((c, i) =>
       estSavoirEtre(c) || competenceCitee(c, termesNormalises) || competenceCitee(c, [texteConserve]) ? [i] : [],
     ),
   )
@@ -145,7 +145,7 @@ export async function adapterCv(
 
   // Ordre chronologique du profil conservé dans le CV ; la pertinence règle le niveau de détail.
   // Séquentiel volontairement : un modèle local ne traite qu'une requête à la fois.
-  const experiences: ExperienceAdaptee[] = []
+  const experiences: TailoredExperience[] = []
   for (const indice of indicesExperiences) {
     const experience = profil.experiences[indice]
     if (!experience) continue
@@ -168,12 +168,12 @@ export async function adapterCv(
       )
     }
     experiences.push({
-      indice,
-      poste: experience.poste,
-      entreprise: experience.entreprise,
-      lieu: experience.lieu,
-      periode: experience.periode,
-      points,
+      sourceIndex: indice,
+      position: experience.position,
+      company: experience.company,
+      location: experience.location,
+      dateRange: experience.dateRange,
+      bullets: points,
     })
   }
 
@@ -182,19 +182,19 @@ export async function adapterCv(
       ? []
       : [
           {
-            indice,
-            poste: e.poste,
-            entreprise: e.entreprise,
-            lieu: e.lieu,
-            periode: e.periode,
-            points: pointsOrigine(e),
+            sourceIndex: indice,
+            position: e.position,
+            company: e.company,
+            location: e.location,
+            dateRange: e.dateRange,
+            bullets: pointsOrigine(e),
           },
         ],
   )
-  const competencesGardees = indicesCompetences.flatMap((i) => profil.competences[i] ?? [])
-  const competencesEcartees = profil.competences.filter((_, i) => !indicesCompetences.includes(i))
-  const formationsGardees = indicesFormations.flatMap((i) => profil.formations[i] ?? [])
-  const formationsEcartees = profil.formations.filter((_, i) => !indicesFormations.includes(i))
+  const competencesGardees = indicesCompetences.flatMap((i) => profil.skills[i] ?? [])
+  const competencesEcartees = profil.skills.filter((_, i) => !indicesCompetences.includes(i))
+  const formationsGardees = indicesFormations.flatMap((i) => profil.education[i] ?? [])
+  const formationsEcartees = profil.education.filter((_, i) => !indicesFormations.includes(i))
   const aEcarte = experiencesEcartees.length > 0 || competencesEcartees.length > 0 || formationsEcartees.length > 0
 
   // Couverture des exigences de l'offre par le profil (réutilisée plus bas pour les compétences clés).
@@ -207,7 +207,7 @@ export async function adapterCv(
   const termesProches = [...analyse.competencesRequises, ...analyse.qualites, ...analyse.motsCles, analyse.titreCible]
   const contenuAccroche = {
     competences: sansDoublons([
-      ...couverture.attestees.filter(estCompetenceCourte),
+      ...couverture.evidenced.filter(estCompetenceCourte),
       ...competencesGardees.filter(estSavoirEtre),
     ]),
     realisations: indicesExperiences.flatMap((i) =>
@@ -226,21 +226,21 @@ export async function adapterCv(
       (terme) => !contientMot(normaliser(source), normaliser(terme)),
     ),
     ...competencesEcartees,
-    ...experiencesEcartees.flatMap((e) => [e.poste, e.entreprise]),
+    ...experiencesEcartees.flatMap((e) => [e.position, e.company]),
   ]
   // Titre : celui de l'offre visée (nettoyé de « H/F », du contrat et du nom de l'entreprise), comme le veut l'usage
   // pour passer le premier tri. Jamais rédigé par le modèle. Repli : titre du profil, puis poste conservé le plus pertinent.
   const rang = (indice: number) => pertinence.experiences[indice] ?? 0
-  const principale = [...experiences].sort((a, b) => rang(b.indice ?? 0) - rang(a.indice ?? 0))[0]
+  const principale = [...experiences].sort((a, b) => rang(b.sourceIndex ?? 0) - rang(a.sourceIndex ?? 0))[0]
   const titre =
-    nettoyerTitreOffre(offre.titrePoste, offre.entreprise) ||
-    (aEcarte ? principale?.poste : (profil.titrePoste ?? principale?.poste)) ||
+    nettoyerTitreOffre(offre.jobTitle, offre.company) ||
+    (aEcarte ? principale?.position : (profil.headline ?? principale?.position)) ||
     ''
   const proposee = borneAccroche(redige.accroche)
   // Vocabulaire autorisé : celui de l'offre et les données confiées au modèle. Un mot qui n'en vient pas (« maquettes »,
   // « atelier ») est une dérive vers le reste du profil ; au plus un écart est toléré.
   const vocabulaire = [
-    offre.texteBrut,
+    offre.rawText,
     ...termesProches,
     ...contenuAccroche.competences,
     ...contenuAccroche.realisations,
@@ -254,7 +254,7 @@ export async function adapterCv(
   // accroche du profil, souvent rédigée pour un autre métier.
   const qualitesAttestees = contenuAccroche.competences.filter(estSavoirEtre).slice(0, 4)
   const accrocheRepliQualites = phraseQualites(qualitesAttestees)
-  const attesteesCourtes = couverture.attestees.filter((t) => t.split(/\s+/).length <= 3).slice(0, 4)
+  const attesteesCourtes = couverture.evidenced.filter((t) => t.split(/\s+/).length <= 3).slice(0, 4)
   const accrocheRepliOffre =
     attesteesCourtes.length > 0 ? `Je mets en avant mes compétences en ${attesteesCourtes.join(', ')}.` : ''
   const accroche = accrocheFidele ? proposee : accrocheRepliQualites || accrocheRepliOffre
@@ -262,7 +262,7 @@ export async function adapterCv(
   const listees = prioriserCompetences(competencesGardees, termesOffre)
   // Compétences clés : celles que demande l'offre et que le profil atteste, avec la formulation de l'offre (c'est
   // elle que cherche un ATS). Retirées de la liste générale pour ne pas apparaître deux fois.
-  const demandesCourtes = couverture.attestees.filter(estCompetenceCourte).map(formaterCompetence)
+  const demandesCourtes = couverture.evidenced.filter(estCompetenceCourte).map(formaterCompetence)
   // Les qualités demandées (« autonomie », « sens du conseil ») vont dans la ligne Savoir-être, pas parmi les outils.
   const competencesCles = demandesCourtes
     .filter((t) => !estSavoirEtre(t))
@@ -274,15 +274,15 @@ export async function adapterCv(
   const savoirEtre = sansDoublons([...qualitesDemandees, ...generales.filter(estSavoirEtre)]).slice(0, MAX_SAVOIR_ETRE)
   const techniques = generales.filter((c) => !estSavoirEtre(c)).slice(0, MAX_TECHNIQUES)
 
-  return cvAdapteSchema.parse({
-    titre,
-    accroche,
+  return tailoredCvSchema.parse({
+    headline: titre,
+    summary: accroche,
     experiences,
-    competencesCles,
-    competences: [...savoirEtre, ...techniques],
-    demandees: couverture,
-    formations: formationsGardees,
-    langues: profil.langues,
-    ecartes: { experiences: experiencesEcartees, competences: competencesEcartees, formations: formationsEcartees },
+    keySkills: competencesCles,
+    skills: [...savoirEtre, ...techniques],
+    requested: couverture,
+    education: formationsGardees,
+    languages: profil.languages,
+    excluded: { experiences: experiencesEcartees, skills: competencesEcartees, education: formationsEcartees },
   })
 }

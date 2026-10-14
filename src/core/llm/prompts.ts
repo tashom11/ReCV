@@ -23,11 +23,11 @@ export function assainirLigne(texte: string, longueurMax = 80): string {
 export const PROMPT_EXTRACTION_PROFIL = `Tu es un assistant qui structure des CV.
 Extrais fidèlement le contenu du CV fourni dans le format JSON demandé.
 - Recopie les intitulés, entreprises, dates, diplômes et compétences tels qu'ils sont écrits.
-- "periode" : les dates d'une expérience ou d'une formation (ex. « Mars 2021 – présent », « 2017 – 2019 »), toujours dans "periode", jamais dans "description".
-- "lieu" : la ville ou le pays, séparé des dates (une ligne « Lyon | 2017 – 2019 » donne lieu « Lyon » et periode « 2017 – 2019 »).
-- "realisations" : les puces ou réalisations listées sous chaque expérience.
-- "competences" : une entrée par compétence citée dans le CV, sous forme de TERME COURT (1 à 4 mots : « Rigueur », « WordPress », « Travail en équipe »). Une liste « SEO, RGAA, CRM » donne trois entrées. Jamais de phrase : une tâche réalisée (« Installation et maintenance de matériel ») est une réalisation, pas une compétence.
-- N'ajoute une expérience que pour un poste réellement occupé, identifié par une entreprise ou des dates. Les informations diverses (permis de conduire, disponibilité, site web, centres d'intérêt, langues, compétences) ne sont JAMAIS des expériences : les compétences vont dans "competences", le reste est ignoré.
+- "dateRange" : les dates d'une expérience ou d'une formation (ex. « Mars 2021 – présent », « 2017 – 2019 »), toujours dans "dateRange", jamais dans "description".
+- "location" : la ville ou le pays, séparé des dates (une ligne « Lyon | 2017 – 2019 » donne location « Lyon » et dateRange « 2017 – 2019 »).
+- "achievements" : les puces ou réalisations listées sous chaque expérience.
+- "skills" : une entrée par compétence citée dans le CV, sous forme de TERME COURT (1 à 4 mots : « Rigueur », « WordPress », « Travail en équipe »). Une liste « SEO, RGAA, CRM » donne trois entrées. Jamais de phrase : une tâche réalisée (« Installation et maintenance de matériel ») est une réalisation, pas une compétence.
+- N'ajoute une expérience que pour un poste réellement occupé, identifié par une entreprise ou des dates. Les informations diverses (permis de conduire, disponibilité, site web, centres d'intérêt, langues, compétences) ne sont JAMAIS des expériences : les compétences vont dans "skills", le reste est ignoré.
 - Un champ absent du CV est omis (ou laissé en liste vide).
 
 ${REGLES_ANTI_INVENTION}`

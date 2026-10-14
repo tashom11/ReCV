@@ -1,51 +1,55 @@
 import { describe, expect, it } from 'vitest'
 import { MoteurMock } from '../llm/moteurMock'
-import type { Offre, Profil } from '../schemas'
+import type { JobPosting, Profile } from '../schemas'
 import { harmoniserExperiences } from './pertinence'
 import { adapterCv, borneAccroche } from './pipeline'
 import { nettoyerPoint } from './reecriture'
 
 describe('harmoniserExperiences', () => {
-  const postes = [{ poste: 'Développeur web front' }, { poste: 'Développeur Web Front' }, { poste: 'Carrossier' }]
+  const postes = [
+    { position: 'Développeur web front' },
+    { position: 'Développeur Web Front' },
+    { position: 'Carrossier' },
+  ]
 
   it('donne la même note aux expériences au même intitulé de poste', () => {
     expect(harmoniserExperiences([0, 1, 0], postes)).toEqual([1, 1, 0])
   })
 
   it('propage la note la plus haute entre expériences du même domaine', () => {
-    const experiences = [{ poste: 'Intégrateur' }, { poste: 'Webmaster' }, { poste: 'Carrossier' }]
+    const experiences = [{ position: 'Intégrateur' }, { position: 'Webmaster' }, { position: 'Carrossier' }]
     expect(
       harmoniserExperiences([0, 2, 0], experiences, ['développement web', 'Développement web', 'carrosserie']),
     ).toEqual([2, 2, 0])
   })
 
   it('ne change rien si les expériences n’ont ni poste ni domaine en commun', () => {
-    const experiences = [{ poste: 'A' }, { poste: 'B' }]
+    const experiences = [{ position: 'A' }, { position: 'B' }]
     expect(harmoniserExperiences([2, 0], experiences, ['x', 'y'])).toEqual([2, 0])
   })
 })
 
 describe('adapterCv : titre, durées et compétences attestées', () => {
-  const profil: Profil = {
-    titrePoste: 'Développeur web front',
-    accroche: 'Accroche d’origine',
-    liensProfessionnels: [],
+  const profil: Profile = {
+    headline: 'Développeur web front',
+    summary: 'Accroche d’origine',
+    links: [],
     experiences: [
       {
-        poste: 'Développeur web front',
-        entreprise: 'Agence Pixel',
-        periode: '2021 - 2022',
-        realisations: ['Respect des standards SEO et de l’accessibilité (RGAA)'],
+        position: 'Développeur web front',
+        company: 'Agence Pixel',
+        dateRange: '2021 - 2022',
+        achievements: ['Respect des standards SEO et de l’accessibilité (RGAA)'],
       },
-      { poste: 'Carrossier peintre', entreprise: 'Dupont', periode: '2016 - 2020', realisations: ['Ponçage'] },
+      { position: 'Carrossier peintre', company: 'Dupont', dateRange: '2016 - 2020', achievements: ['Ponçage'] },
     ],
-    competences: ['SEO', 'RGAA', 'PHP', 'Rigueur'],
-    formations: [],
-    langues: [],
+    skills: ['SEO', 'RGAA', 'PHP', 'Rigueur'],
+    education: [],
+    languages: [],
   }
-  const offre: Offre = {
-    titrePoste: 'Community Manager',
-    texteBrut: 'Animation des réseaux sociaux, gestion éditoriale, mise à jour du site internet.',
+  const offre: JobPosting = {
+    jobTitle: 'Community Manager',
+    rawText: 'Animation des réseaux sociaux, gestion éditoriale, mise à jour du site internet.',
   }
   const moteur = (accroche: string) =>
     new MoteurMock({
@@ -63,53 +67,53 @@ describe('adapterCv : titre, durées et compétences attestées', () => {
 
   it('le titre du CV est celui de l’offre, jamais rédigé par le modèle ; l’accroche ne s’en réclame pas', async () => {
     const cv = await adapterCv(moteur('Community Manager expérimenté.'), profil, offre)
-    expect(cv.titre).toBe('Community Manager')
+    expect(cv.headline).toBe('Community Manager')
     // Rejetée (le poste visé n'est pas à affirmer) : phrase de qualités attestées, jamais l'ancienne accroche.
-    expect(cv.accroche).not.toMatch(/expérimenté/)
-    expect(cv.accroche).toBe('Je fais preuve de rigueur.')
+    expect(cv.summary).not.toMatch(/expérimenté/)
+    expect(cv.summary).toBe('Je fais preuve de rigueur.')
   })
 
   it('rejette une durée déduite des dates (« 1 an »)', async () => {
     const cv = await adapterCv(moteur('Développeur web avec 1 an d’expérience en SEO.'), profil, offre)
-    expect(cv.accroche).not.toMatch(/1 an/)
+    expect(cv.summary).not.toMatch(/1 an/)
   })
 
   it('accepte une accroche fidèle sans durée', async () => {
     const fidele = 'Je fais preuve de rigueur pour la gestion éditoriale et l’animation des réseaux sociaux.'
     const cv = await adapterCv(moteur(fidele), profil, offre)
-    expect(cv.accroche).toBe(fidele)
+    expect(cv.summary).toBe(fidele)
   })
 
   it('conserve une compétence attestée dans une expérience conservée, même jugée sans rapport', async () => {
     const cv = await adapterCv(moteur('Développeur web front.'), profil, offre)
-    expect(cv.competences).toEqual(expect.arrayContaining(['SEO', 'RGAA', 'Rigueur']))
-    expect(cv.ecartes.competences).toEqual(['PHP'])
+    expect(cv.skills).toEqual(expect.arrayContaining(['SEO', 'RGAA', 'Rigueur']))
+    expect(cv.excluded.skills).toEqual(['PHP'])
   })
 
   it('nettoie l’intitulé de l’offre (genre, entreprise, contrat) pour en faire le titre', async () => {
-    const offreBrute: Offre = {
-      titrePoste: 'Community Manager (H/F) - Inéa - CDD',
-      entreprise: 'Inéa',
-      texteBrut: offre.texteBrut,
+    const offreBrute: JobPosting = {
+      jobTitle: 'Community Manager (H/F) - Inéa - CDD',
+      company: 'Inéa',
+      rawText: offre.rawText,
     }
     const cv = await adapterCv(moteur('Développeur web front.'), profil, offreBrute)
-    expect(cv.titre).toBe('Community Manager')
+    expect(cv.headline).toBe('Community Manager')
   })
 })
 
 describe('adapterCv : aucune expérience jugée pertinente', () => {
-  const profil: Profil = {
-    titrePoste: 'Développeur web / Carrossier peintre',
-    liensProfessionnels: [],
+  const profil: Profile = {
+    headline: 'Développeur web / Carrossier peintre',
+    links: [],
     experiences: [
-      { poste: 'Développeur web front', entreprise: 'Webagence', realisations: ['Intégration'] },
-      { poste: 'Carrossier peintre', entreprise: 'Dupont', realisations: ['Ponçage'] },
+      { position: 'Développeur web front', company: 'Webagence', achievements: ['Intégration'] },
+      { position: 'Carrossier peintre', company: 'Dupont', achievements: ['Ponçage'] },
     ],
-    competences: [],
-    formations: [],
-    langues: [],
+    skills: [],
+    education: [],
+    languages: [],
   }
-  const offre: Offre = { titrePoste: 'Community Manager', texteBrut: 'Animation des réseaux sociaux.' }
+  const offre: JobPosting = { jobTitle: 'Community Manager', rawText: 'Animation des réseaux sociaux.' }
   const notesNulles = {
     experiences: [
       { indice: 0, domaine: 'développement web', pertinence: 0 },
@@ -126,9 +130,9 @@ describe('adapterCv : aucune expérience jugée pertinente', () => {
       accroche: { accroche: '' },
     })
     const cv = await adapterCv(m, profil, offre)
-    expect(cv.experiences.map((e) => e.entreprise)).toEqual(['Webagence'])
-    expect(cv.ecartes.experiences.map((e) => e.entreprise)).toEqual(['Dupont'])
-    expect(cv.titre).toBe('Community Manager')
+    expect(cv.experiences.map((e) => e.company)).toEqual(['Webagence'])
+    expect(cv.excluded.experiences.map((e) => e.company)).toEqual(['Dupont'])
+    expect(cv.headline).toBe('Community Manager')
   })
 
   it('garde tout si le choix est incohérent', async () => {
@@ -165,15 +169,15 @@ describe('nettoyerPoint / borneAccroche (sorties négligées d’un petit modèl
 
 describe('adapterCv : signalement des étapes', () => {
   it('signale chaque étape, avec la progression expérience par expérience', async () => {
-    const profil: Profil = {
-      liensProfessionnels: [],
+    const profil: Profile = {
+      links: [],
       experiences: [
-        { poste: 'A', entreprise: 'X', realisations: ['Réalisation une'] },
-        { poste: 'B', entreprise: 'Y', realisations: ['Réalisation deux'] },
+        { position: 'A', company: 'X', achievements: ['Réalisation une'] },
+        { position: 'B', company: 'Y', achievements: ['Réalisation deux'] },
       ],
-      competences: [],
-      formations: [],
-      langues: [],
+      skills: [],
+      education: [],
+      languages: [],
     }
     const m = new MoteurMock({
       motsCles: { titreCible: 'Dev', motsCles: [] },
@@ -185,7 +189,7 @@ describe('adapterCv : signalement des étapes', () => {
     await adapterCv(
       m,
       profil,
-      { titrePoste: 'Dev', texteBrut: 'Offre' },
+      { jobTitle: 'Dev', rawText: 'Offre' },
       { reformuler: true, surEtape: (e) => etapes.push(e) },
     )
     expect(etapes.map((e) => e.etape)).toEqual([
@@ -200,22 +204,22 @@ describe('adapterCv : signalement des étapes', () => {
 })
 
 describe('adapterCv : compétences composées', () => {
-  const profil: Profil = {
-    liensProfessionnels: [],
+  const profil: Profile = {
+    links: [],
     experiences: [
       {
-        poste: 'Carrossier peintre',
-        entreprise: 'Dupont',
-        realisations: ['Gestion du diagnostic des dégâts', 'Ponçage'],
+        position: 'Carrossier peintre',
+        company: 'Dupont',
+        achievements: ['Gestion du diagnostic des dégâts', 'Ponçage'],
       },
     ],
-    competences: ['Gestion & créa. de landing pages', 'HTML / CSS', 'Rigueur'],
-    formations: [],
-    langues: [],
+    skills: ['Gestion & créa. de landing pages', 'HTML / CSS', 'Rigueur'],
+    education: [],
+    languages: [],
   }
-  const offre: Offre = {
-    titrePoste: 'Carrossier peintre',
-    texteBrut: 'Gestion des véhicules confiés, ponçage, peinture. Rigueur exigée.',
+  const offre: JobPosting = {
+    jobTitle: 'Carrossier peintre',
+    rawText: 'Gestion des véhicules confiés, ponçage, peinture. Rigueur exigée.',
   }
 
   it('ne valide pas « Gestion & créa. de landing pages » sur le seul mot « gestion »', async () => {
@@ -229,7 +233,7 @@ describe('adapterCv : compétences composées', () => {
       accroche: { accroche: '' },
     })
     const cv = await adapterCv(m, profil, offre)
-    expect(cv.competences).toEqual(['Rigueur'])
-    expect(cv.ecartes.competences).toEqual(['Gestion & créa. de landing pages', 'HTML / CSS'])
+    expect(cv.skills).toEqual(['Rigueur'])
+    expect(cv.excluded.skills).toEqual(['Gestion & créa. de landing pages', 'HTML / CSS'])
   })
 })

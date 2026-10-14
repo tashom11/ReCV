@@ -31,9 +31,9 @@ describe('BDD', () => {
     const bdd = ouvrirBdd(':memory:')
     expect(obtenirProfilActif(bdd)).toBeNull()
     const premier = enregistrerProfil(bdd, profilCanned)
-    const second = enregistrerProfil(bdd, { ...profilCanned, nom: 'Autre' })
+    const second = enregistrerProfil(bdd, { ...profilCanned, fullName: 'Autre' })
     expect(second.id).toBe(premier.id)
-    expect(obtenirProfilActif(bdd)?.profil.nom).toBe('Autre')
+    expect(obtenirProfilActif(bdd)?.profil.fullName).toBe('Autre')
     bdd.fermer()
   })
 })
@@ -96,20 +96,20 @@ describe('service', () => {
 
   it('importe un CV puis adapte à une offre et enregistre le résultat', async () => {
     const { api } = service()
-    expect(await api.adapterCv({ titrePoste: 'Dev', texteBrut: 'x' }).catch((e: Error) => e.message)).toMatch(
+    expect(await api.adapterCv({ jobTitle: 'Dev', rawText: 'x' }).catch((e: Error) => e.message)).toMatch(
       /importez d’abord/,
     )
     const importe = await api.importerCv()
-    expect(importe?.profil.nom).toBeTruthy()
+    expect(importe?.profil.fullName).toBeTruthy()
     const offre = await api.analyserTexteOffre('Offre développeur React')
     const genere = await api.adapterCv(offre)
-    expect(genere.cv.titre).toBeTruthy()
+    expect(genere.cv.headline).toBeTruthy()
     expect(genere.id).toBeGreaterThan(0)
   })
 
   it('exporte le CV validé en PDF et DOCX avec les coordonnées du profil', async () => {
     const { api } = service()
-    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { titrePoste: 'Dev', texteBrut: 'x' })
+    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { jobTitle: 'Dev', rawText: 'x' })
     await expect(api.exporterCv(cvCanned, 'pdf')).rejects.toThrow(/importez d’abord/)
     await api.importerCv()
     const pdf = await api.exporterCv(cvCanned, 'pdf')
@@ -122,7 +122,7 @@ describe('service', () => {
   it('importe un CV déposé dans la fenêtre, désigné par son chemin', async () => {
     const { api } = service()
     const importe = await api.importerCvDepose('C:\\cv\\mon-cv.pdf')
-    expect(importe.profil.nom).toBeTruthy()
+    expect(importe.profil.fullName).toBeTruthy()
     expect((await api.obtenirProfil())?.id).toBe(importe.id)
   })
 
@@ -143,7 +143,7 @@ describe('service', () => {
         return mock.adapterCv(p, o, options)
       },
     }))
-    const offre = { titrePoste: 'Développeur React', texteBrut: 'Poste en CDI à temps plein. React, Figma.' }
+    const offre = { jobTitle: 'Développeur React', rawText: 'Poste en CDI à temps plein. React, Figma.' }
     await expect(api.analyserAnnonce(offre)).rejects.toMatchObject({ code: 'profil-absent' })
 
     await api.importerCv()
@@ -177,7 +177,7 @@ describe('service', () => {
         }),
     }))
     await api.importerCv()
-    const adaptation = api.adapterCv({ titrePoste: 'Dev', texteBrut: 'x' })
+    const adaptation = api.adapterCv({ jobTitle: 'Dev', rawText: 'x' })
     await enCours
     await api.annulerAdaptation()
     await expect(adaptation).rejects.toMatchObject({ code: 'annule' })
@@ -187,7 +187,7 @@ describe('service', () => {
 
   it('n’ouvre que les fichiers créés par l’export de la session', async () => {
     const { api, ouverts } = service()
-    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { titrePoste: 'Dev', texteBrut: 'x' })
+    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { jobTitle: 'Dev', rawText: 'x' })
     await api.importerCv()
     const pdf = (await api.exporterCv(cvCanned, 'pdf')) as string
 
@@ -226,7 +226,7 @@ describe('service', () => {
       creerFournisseur: async () => new FournisseurMock(),
     })
     await api.importerCv()
-    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { titrePoste: 'Dev', texteBrut: 'x' })
+    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { jobTitle: 'Dev', rawText: 'x' })
     await expect(api.exporterCv(cvCanned, 'pdf')).rejects.toMatchObject({ code: 'ecriture-impossible' })
   })
 

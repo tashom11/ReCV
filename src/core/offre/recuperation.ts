@@ -1,4 +1,4 @@
-import type { Offre } from '../schemas/offre'
+import type { JobPosting } from '../schemas/jobPosting'
 import { extraireOffreDepuisHtml } from './extraction'
 
 export type CodeErreurOffre =
@@ -158,7 +158,7 @@ async function lireTexteBorne(reponse: Response): Promise<string> {
  * Récupère une offre depuis une URL : `fetch` + Readability, puis repli
  * par rendu navigateur si la page est vide. Lève toujours `ErreurRecuperationOffre`.
  */
-export async function recupererOffre(urlBrute: string, options: OptionsRecuperation = {}): Promise<Offre> {
+export async function recupererOffre(urlBrute: string, options: OptionsRecuperation = {}): Promise<JobPosting> {
   const { fetchImpl = fetch, rendreHtml, delaiMs = 15_000, userAgent } = options
   const url = validerUrl(urlBrute)
 

@@ -43,7 +43,7 @@ describe('migrate', () => {
     ancienne.close()
 
     const bdd = ouvrirBdd(chemin)
-    expect(obtenirProfilActif(bdd)?.profil.nom).toBe('Camille Martin')
+    expect(obtenirProfilActif(bdd)?.profil.fullName).toBe('Camille Martin')
     bdd.fermer()
     const relue = new Database(chemin)
     expect(version(relue)).toBe(LATEST_VERSION)

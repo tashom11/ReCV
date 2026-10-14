@@ -1,6 +1,6 @@
 import { Readability } from '@mozilla/readability'
 import { parseHTML } from 'linkedom'
-import { type Offre, offreSchema } from '../schemas/offre'
+import { type JobPosting, jobPostingSchema } from '../schemas/jobPosting'
 import { extraireOffreStructuree } from './donneesStructurees'
 import { htmlVersTexte, nettoyerTexteOffre } from './texte'
 
@@ -22,17 +22,17 @@ function meta(document: DocumentMinimal, selecteur: string): string | undefined 
  * Extrait le contenu principal d'une page HTML d'offre d'emploi.
  * Retourne `null` si aucun texte exploitable n'est trouvé.
  */
-export function extraireOffreDepuisHtml(html: string): Offre | null {
+export function extraireOffreDepuisHtml(html: string): JobPosting | null {
   // 1. Données structurées (JobPosting) : intitulé, entreprise, lieu et description propres.
   const structuree = extraireOffreStructuree(html)
   if (structuree) {
     const texte = nettoyerTexteOffre(structuree.description)
     if (texte.length >= LONGUEUR_MIN_TEXTE) {
-      return offreSchema.parse({
-        titrePoste: structuree.titre,
-        entreprise: structuree.entreprise,
-        lieu: structuree.lieu,
-        texteBrut: texte,
+      return jobPostingSchema.parse({
+        jobTitle: structuree.titre,
+        company: structuree.entreprise,
+        location: structuree.lieu,
+        rawText: texte,
       })
     }
   }
@@ -48,9 +48,9 @@ export function extraireOffreDepuisHtml(html: string): Offre | null {
   if (texteBrut.length < LONGUEUR_MIN_TEXTE) return null
 
   const titrePoste = (article?.title || titreMeta || document.title || '').trim()
-  return offreSchema.parse({
-    titrePoste: titrePoste || 'Offre sans titre',
-    entreprise,
-    texteBrut,
+  return jobPostingSchema.parse({
+    jobTitle: titrePoste || 'Offre sans titre',
+    company: entreprise,
+    rawText: texteBrut,
   })
 }

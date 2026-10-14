@@ -1,7 +1,7 @@
 import { genererAccrocheProfil } from '../adaptation/accrocheProfil'
 import { type AnalyseOffre, analyserOffre } from '../adaptation/motsCles'
 import { adapterCv } from '../adaptation/pipeline'
-import type { CvAdapte, Offre, Profil } from '../schemas'
+import type { JobPosting, Profile, TailoredCv } from '../schemas'
 import { extraireOffre, extraireProfil } from './extraction'
 import type { FournisseurLLM, OptionsAdaptation } from './fournisseur'
 import type { MoteurLLM } from './moteur'
@@ -10,23 +10,23 @@ import type { MoteurLLM } from './moteur'
 export class FournisseurStructure implements FournisseurLLM {
   constructor(private readonly moteur: MoteurLLM) {}
 
-  extraireProfil(texteCv: string): Promise<Profil> {
+  extraireProfil(texteCv: string): Promise<Profile> {
     return extraireProfil(this.moteur, texteCv)
   }
 
-  extraireOffre(texteOffre: string): Promise<Offre> {
+  extraireOffre(texteOffre: string): Promise<JobPosting> {
     return extraireOffre(this.moteur, texteOffre)
   }
 
-  analyserOffre(offre: Offre): Promise<AnalyseOffre> {
+  analyserOffre(offre: JobPosting): Promise<AnalyseOffre> {
     return analyserOffre(this.moteur, offre)
   }
 
-  adapterCv(profil: Profil, offre: Offre, options?: OptionsAdaptation): Promise<CvAdapte> {
+  adapterCv(profil: Profile, offre: JobPosting, options?: OptionsAdaptation): Promise<TailoredCv> {
     return adapterCv(this.moteur, profil, offre, options)
   }
 
-  genererAccroche(profil: Profil): Promise<string> {
+  genererAccroche(profil: Profile): Promise<string> {
     return genererAccrocheProfil(this.moteur, profil)
   }
 

@@ -5,13 +5,13 @@ export { CANAUX, type ResultatIpc } from './canaux'
 import type { CleEtape } from './etapes'
 import { IDS_MODELES } from './export/modeles'
 import {
-  type CvAdapte,
-  cvAdapteSchema,
-  type Offre,
-  offreSchema,
-  type Prerequis,
-  type Profil,
-  profilSchema,
+  type JobPosting,
+  jobPostingSchema,
+  type Profile,
+  profileSchema,
+  type Requirements,
+  type TailoredCv,
+  tailoredCvSchema,
 } from './schemas'
 
 export type { CodeErreur } from './erreurs'
@@ -63,7 +63,7 @@ export interface EtatParametres extends Parametres {
 
 export interface ProfilEnregistre {
   id: number
-  profil: Profil
+  profil: Profile
   /** Nom du fichier d'origine, connu seulement au moment de l'import. */
   nomFichier?: string
 }
@@ -73,7 +73,7 @@ export type FormatExport = 'pdf' | 'docx'
 export interface CvGenere {
   id: number
   offreId: number
-  cv: CvAdapte
+  cv: TailoredCv
 }
 
 /** Ce que l'annonce demande, rapproché du CV : affiché sur la carte de confirmation, avant toute création. */
@@ -82,7 +82,7 @@ export interface ApercuAnnonce {
   recherchees: string[]
   /** Type de contrat et temps de travail, s'ils sont écrits dans l'annonce (« CDI · temps plein »). */
   contrat?: string
-  prerequis: Prerequis
+  prerequis: Requirements
 }
 
 /** Fichier déposé dans la fenêtre : le preload en retrouve le chemin, le renderer ne le voit jamais. */
@@ -157,27 +157,27 @@ export interface ApiService {
   /** Même traitement pour un fichier déposé dans la fenêtre, désigné par son chemin. */
   importerCvDepose(chemin: string): Promise<ProfilEnregistre>
   obtenirProfil(): Promise<ProfilEnregistre | null>
-  enregistrerProfil(profil: Profil): Promise<ProfilEnregistre>
-  recupererOffre(url: string): Promise<Offre>
-  analyserTexteOffre(texte: string): Promise<Offre>
+  enregistrerProfil(profil: Profile): Promise<ProfilEnregistre>
+  recupererOffre(url: string): Promise<JobPosting>
+  analyserTexteOffre(texte: string): Promise<JobPosting>
   /** Analyse l'annonce avec le modèle (résultat mémorisé pour `adapterCv`) et la rapproche du profil enregistré. */
-  analyserAnnonce(offre: Offre): Promise<ApercuAnnonce>
+  analyserAnnonce(offre: JobPosting): Promise<ApercuAnnonce>
   /** Adapte le profil enregistré à l'offre, puis enregistre l'offre et le CV obtenu. */
-  adapterCv(offre: Offre): Promise<CvGenere>
+  adapterCv(offre: JobPosting): Promise<CvGenere>
   /** Interrompt l'adaptation en cours : `adapterCv` échoue alors avec le code `annule`. */
   annulerAdaptation(): Promise<void>
   lireParametres(): Promise<EtatParametres>
   enregistrerParametres(parametres: Parametres): Promise<EtatParametres>
   /** Enregistre le CV validé (coordonnées du profil actif) via un sélecteur de fichier. Chemin écrit, ou `null` si annulé. */
-  exporterCv(cv: CvAdapte, format: FormatExport, modeleId?: string): Promise<string | null>
+  exporterCv(cv: TailoredCv, format: FormatExport, modeleId?: string): Promise<string | null>
   /** HTML complet du CV mis en page avec un modèle (photo comprise), à afficher dans un cadre isolé. */
-  htmlModeleCv(cv: CvAdapte, modeleId: string): Promise<string>
+  htmlModeleCv(cv: TailoredCv, modeleId: string): Promise<string>
   /** Ouvre un CV exporté pendant cette session (tout autre chemin est refusé). */
   ouvrirFichier(chemin: string): Promise<void>
   /** Montre dans l'explorateur un CV exporté pendant cette session (tout autre chemin est refusé). */
   montrerDansDossier(chemin: string): Promise<void>
   /** Accroche générique fondée sur les compétences transversales du profil fourni (même non enregistré). */
-  genererAccroche(profil: Profil): Promise<string>
+  genererAccroche(profil: Profile): Promise<string>
   /** Chaîne vide : supprime la clé. */
   definirCleApi(cle: string): Promise<EtatParametres>
   lireEtatModeles(): Promise<EtatModeles>
@@ -212,11 +212,11 @@ const borne = <T extends z.ZodType>(schema: T) =>
   schema.refine((v) => JSON.stringify(v).length <= TAILLE_MAX_JSON, 'Données trop volumineuses.')
 
 export const entreesIpc = {
-  cv: borne(cvAdapteSchema),
+  cv: borne(tailoredCvSchema),
   format: z.enum(['pdf', 'docx']),
   idModeleCv: z.enum(IDS_MODELES),
-  profil: borne(profilSchema),
-  offre: borne(offreSchema),
+  profil: borne(profileSchema),
+  offre: borne(jobPostingSchema),
   parametres: parametresSchema,
   texte: z.string().min(1).max(200_000),
   url: z.string().min(1).max(2_048),

@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { CANAUX, estServiceLocal, parametresSchema, type ResultatIpc } from '@core/api'
 import { ErreurCodee } from '@core/erreurs'
 import { type FournisseurLLM, FournisseurMock } from '@core/llm'
-import { profilSchema } from '@core/schemas'
+import { profileSchema } from '@core/schemas'
 import type { IpcMain } from 'electron'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './bdd/connexion'
@@ -40,7 +40,7 @@ describe('erasing personal data', () => {
     const chemin = join(dossier, 'recv.db')
     const bdd = ouvrirBdd(chemin)
     try {
-      creerProfil(bdd, profilSchema.parse({ nom: 'Zoé Trace-Unique', experiences: [] }))
+      creerProfil(bdd, profileSchema.parse({ fullName: 'Zoé Trace-Unique', experiences: [] }))
       effacerDonnees(bdd)
       for (const fichier of [chemin, `${chemin}-wal`]) {
         if (!(await existe(fichier))) continue
@@ -172,14 +172,14 @@ describe('service : cycle de vie du fournisseur et données', () => {
   it('keeps no more than 20 tailored CVs', async () => {
     const { service, bdd } = creer()
     await service.importerCv()
-    for (let i = 0; i < 22; i++) await service.adapterCv({ titrePoste: `Poste ${i}`, texteBrut: 'x' })
+    for (let i = 0; i < 22; i++) await service.adapterCv({ jobTitle: `Poste ${i}`, rawText: 'x' })
     expect(bdd.select().from(cvGeneres).all()).toHaveLength(20)
   })
 
   it('efface profils, offres, CV et clé API', async () => {
     const { service, parametres } = creer()
     await service.importerCv()
-    await service.adapterCv({ titrePoste: 'Dev', texteBrut: 'x' })
+    await service.adapterCv({ jobTitle: 'Dev', rawText: 'x' })
     await service.definirCleApi('sk-abc')
 
     await service.effacerDonnees()
@@ -255,7 +255,7 @@ describe('handlers IPC', () => {
 
   it('refuse un profil démesuré', async () => {
     const { handlers, appelees } = branche(() => true)
-    const enorme = { competences: Array.from({ length: 20_000 }, (_, i) => `compétence numéro ${i} ${'x'.repeat(20)}`) }
+    const enorme = { skills: Array.from({ length: 20_000 }, (_, i) => `compétence numéro ${i} ${'x'.repeat(20)}`) }
     const resultat = await handlers.get(CANAUX.enregistrerProfil)?.({}, enorme)
     expect(resultat?.ok).toBe(false)
     expect(appelees).toHaveLength(0)

@@ -1,5 +1,5 @@
 import type { ApercuAnnonce } from '@core/api'
-import type { Offre, Prerequis } from '@core/schemas'
+import type { JobPosting, Requirements } from '@core/schemas'
 import { useState } from 'react'
 import { type ActionErreur, type DescriptionErreur, decrireErreur } from '../erreurs'
 import { dureeAnnoncee } from '../estimation'
@@ -9,21 +9,21 @@ import { AlerteErreur, Bouton, BoutonLien, Champ, Chargement, Icone, OngletsSegm
 type Mode = 'lien' | 'texte'
 
 export interface AnnonceLue {
-  offre: Offre
+  offre: JobPosting
   apercu: ApercuAnnonce
 }
 
 const ID_PANNEAU = 'saisie-annonce'
 
 /** Ce que l'annonce souhaite et que le CV ne montre pas : dit sans décourager. */
-function bonASavoir(prerequis: Prerequis): string | null {
+function bonASavoir(prerequis: Requirements): string | null {
   const phrases: string[] = []
-  if (prerequis.experience?.statut === 'non-retrouvee') {
-    phrases.push(`l’annonce souhaite « ${prerequis.experience.exigee} ». Cela n’apparaît pas dans votre CV`)
+  if (prerequis.experience?.status === 'not-found') {
+    phrases.push(`l’annonce souhaite « ${prerequis.experience.required} ». Cela n’apparaît pas dans votre CV`)
   }
-  if (prerequis.formation?.statut === 'insuffisante') {
-    const profil = prerequis.formation.profil ? ` (votre CV indique « ${prerequis.formation.profil} »)` : ''
-    phrases.push(`l’annonce demande « ${prerequis.formation.exigee} »${profil}`)
+  if (prerequis.education?.status === 'insufficient') {
+    const profil = prerequis.education.profileValue ? ` (votre CV indique « ${prerequis.education.profileValue} »)` : ''
+    phrases.push(`l’annonce demande « ${prerequis.education.required} »${profil}`)
   }
   if (phrases.length === 0) return null
   return `${phrases.join(' ; ')}, mais cela ne vous empêche pas de postuler.`
@@ -54,11 +54,11 @@ export function EcranAnnonce({
   const [texte, setTexte] = useState('')
   const [occupe, setOccupe] = useState<'lecture' | 'analyse' | null>(null)
   const [erreur, setErreur] = useState<DescriptionErreur | null>(null)
-  const [correction, setCorrection] = useState<Offre | null>(null)
+  const [correction, setCorrection] = useState<JobPosting | null>(null)
   const progression = useProgressionTache('offre', occupe !== null)
 
   // Lit l'annonce (lien ou texte), puis repère ce que l'employeur recherche : la carte de confirmation en dépend.
-  const lire = async (source: Mode | Offre) => {
+  const lire = async (source: Mode | JobPosting) => {
     setErreur(null)
     setOccupe('lecture')
     try {
@@ -96,7 +96,7 @@ export function EcranAnnonce({
   if (annonce) {
     const { offre, apercu } = annonce
     const note = bonASavoir(apercu.prerequis)
-    const details = [offre.entreprise, offre.lieu, apercu.contrat].filter((v) => v && v.trim() !== '')
+    const details = [offre.company, offre.location, apercu.contrat].filter((v) => v && v.trim() !== '')
     return (
       <div className="mx-auto w-full max-w-4xl space-y-7 px-6 py-12">
         <Titre surtitre="Annonce lue">C’est bien cette annonce ?</Titre>
@@ -115,7 +115,7 @@ export function EcranAnnonce({
                 <Icone nom="mallette" taille={28} />
               </span>
               <div className="min-w-0">
-                <h2 className="text-[1.75rem] leading-tight font-bold text-encre">{offre.titrePoste}</h2>
+                <h2 className="text-[1.75rem] leading-tight font-bold text-encre">{offre.jobTitle}</h2>
                 {details.length > 0 && (
                   <p className="mt-1.5 flex flex-wrap gap-x-5 text-intro text-encre-douce">
                     {details.map((d) => (
@@ -160,21 +160,21 @@ export function EcranAnnonce({
                 <>
                   <Champ
                     etiquette="Intitulé du poste"
-                    valeur={correction.titrePoste}
-                    onChange={(v) => setCorrection({ ...correction, titrePoste: v })}
+                    valeur={correction.jobTitle}
+                    onChange={(v) => setCorrection({ ...correction, jobTitle: v })}
                   />
                   <Champ
                     etiquette="Texte de l’annonce"
                     multiligne
                     lignes={12}
-                    valeur={correction.texteBrut}
-                    onChange={(v) => setCorrection({ ...correction, texteBrut: v })}
+                    valeur={correction.rawText}
+                    onChange={(v) => setCorrection({ ...correction, rawText: v })}
                   />
                   <div className="flex flex-wrap gap-3">
                     <Bouton
                       onClick={() => void lire(correction)}
                       enCours={occupe !== null}
-                      desactive={!correction.titrePoste.trim() || !correction.texteBrut.trim()}
+                      desactive={!correction.jobTitle.trim() || !correction.rawText.trim()}
                     >
                       Relire l’annonce corrigée
                     </Bouton>
@@ -187,7 +187,7 @@ export function EcranAnnonce({
               ) : (
                 <>
                   <p className="max-h-80 overflow-y-auto rounded-champ bg-papier p-4 whitespace-pre-wrap text-encre">
-                    {offre.texteBrut}
+                    {offre.rawText}
                   </p>
                   <Bouton variante="secondaire" icone="crayon" onClick={() => setCorrection(offre)}>
                     Corriger le texte
