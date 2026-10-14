@@ -22,7 +22,11 @@ App bureau Windows open source (gratuite) : import d'un CV (PDF/DOCX) → profil
 - `src/renderer/` : UI React
 
 ## Règles
-- Code, noms et commentaires en FRANÇAIS.
+- Code en ANGLAIS (projet open source) : identifiants, noms de fichiers/dossiers, commentaires, noms de tests,
+  messages de commit. Conventions TypeScript/React standard (camelCase, PascalCase pour types et composants).
+  Le code existant est encore en français : migration en cours (glossaire dans `docs/audit/GLOSSAIRE.md`) ;
+  tout code nouveau ou réécrit est en anglais.
+- Textes affichés à l'utilisateur en FRANÇAIS (vouvoiement), hors du code de logique.
 - Le LLM ne doit JAMAIS inventer : il reformule/priorise uniquement ce qui existe dans le profil.
 - Toute sortie LLM passe par un schéma Zod validé.
 - En test, utiliser `FournisseurMock` (jamais d'appel LLM réel dans Vitest).
