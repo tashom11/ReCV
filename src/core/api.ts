@@ -1,9 +1,8 @@
 import { z } from 'zod'
 
-export { CANAUX, type ResultatIpc } from './canaux'
+export { CHANNELS, type IpcResult } from './channels'
 
-import type { CleEtape } from './etapes'
-import { IDS_MODELES } from './export/modeles'
+import { TEMPLATE_IDS } from './export/templates'
 import {
   type JobPosting,
   jobPostingSchema,
@@ -13,37 +12,38 @@ import {
   type TailoredCv,
   tailoredCvSchema,
 } from './schemas'
+import type { StepKey } from './steps'
 
-export type { CodeErreur } from './erreurs'
+export type { ErrorCode } from './errors'
 
-import { analyserUrl, HOTES_LOCAUX } from './serviceUrl'
+import { LOCAL_HOSTS, parseServiceUrl } from './serviceUrl'
 
-export { estServiceLocal } from './serviceUrl'
+export { isLocalService } from './serviceUrl'
 
 // Contrat IPC partagé entre `src/main` (handlers), `src/preload` (pont) et `src/renderer` (appels).
 
 // Une URL de service est une destination de données personnelles (et de la clé API) : on la valide.
-const urlService = z
+const serviceUrl = z
   .string()
   .max(2048)
-  .refine((v) => analyserUrl(v) !== null, 'Adresse invalide : une URL http(s) sans identifiants est attendue.')
+  .refine((v) => parseServiceUrl(v) !== null, 'Adresse invalide : une URL http(s) sans identifiants est attendue.')
 
-const urlApiSure = urlService.refine((v) => {
-  const url = analyserUrl(v)
-  return url !== null && (url.protocol === 'https:' || HOTES_LOCAUX.has(url.hostname))
+const safeApiUrl = serviceUrl.refine((v) => {
+  const url = parseServiceUrl(v)
+  return url !== null && (url.protocol === 'https:' || LOCAL_HOSTS.has(url.hostname))
 }, 'L’adresse de l’API doit être en https (http n’est accepté que pour localhost).')
 
-export const parametresSchema = z.object({
-  fournisseur: z.enum(['ollama', 'api', 'local']).default('local'),
-  modeleOllama: z.string().max(200).default('qwen3:8b'),
-  urlOllama: urlService.default('http://localhost:11434/v1'),
-  urlApi: urlApiSure.default('https://api.openai.com/v1'),
-  modeleApi: z.string().max(200).default(''),
+export const settingsSchema = z.object({
+  provider: z.enum(['ollama', 'api', 'local']).default('local'),
+  ollamaModel: z.string().max(200).default('qwen3:8b'),
+  ollamaUrl: serviceUrl.default('http://localhost:11434/v1'),
+  apiUrl: safeApiUrl.default('https://api.openai.com/v1'),
+  apiModel: z.string().max(200).default(''),
   /** Reformuler les puces avec le modèle (plus lent). Par défaut : sélection des puces, sans modèle. */
-  reformulerPuces: z.boolean().default(false),
+  rewriteBullets: z.boolean().default(false),
   /** Modèle de mise en page du CV exporté (voir `core/export/modeles.ts`). */
-  modeleCv: z.enum(IDS_MODELES).default('classique'),
-  cheminModeleLocal: z
+  cvTemplate: z.enum(TEMPLATE_IDS).default('classique'),
+  localModelPath: z
     .string()
     .max(1024)
     .refine((v) => v === '' || v.toLowerCase().endsWith('.gguf'), 'Le modèle local doit être un fichier .gguf.')
@@ -51,176 +51,176 @@ export const parametresSchema = z.object({
 })
 
 /** Origine (schéma + hôte + port) d'une URL de service, pour détecter un changement de destination. */
-export function origineUrl(valeur: string): string | null {
-  return analyserUrl(valeur)?.origin ?? null
+export function urlOrigin(value: string): string | null {
+  return parseServiceUrl(value)?.origin ?? null
 }
-export type Parametres = z.infer<typeof parametresSchema>
+export type Settings = z.infer<typeof settingsSchema>
 
-export interface EtatParametres extends Parametres {
+export interface SettingsState extends Settings {
   /** La clé elle-même ne quitte jamais le process principal. */
-  cleApiDefinie: boolean
+  hasApiKey: boolean
 }
 
-export interface ProfilEnregistre {
+export interface SavedProfile {
   id: number
-  profil: Profile
+  profile: Profile
   /** Nom du fichier d'origine, connu seulement au moment de l'import. */
-  nomFichier?: string
+  fileName?: string
 }
 
-export type FormatExport = 'pdf' | 'docx'
+export type ExportFormat = 'pdf' | 'docx'
 
-export interface CvGenere {
+export interface GeneratedCv {
   id: number
-  offreId: number
+  jobPostingId: number
   cv: TailoredCv
 }
 
 /** Ce que l'annonce demande, rapproché du CV : affiché sur la carte de confirmation, avant toute création. */
-export interface ApercuAnnonce {
+export interface JobPostingPreview {
   /** Compétences et qualités recherchées par l'employeur (8 au plus), dans l'ordre de l'annonce. */
-  recherchees: string[]
+  soughtSkills: string[]
   /** Type de contrat et temps de travail, s'ils sont écrits dans l'annonce (« CDI · temps plein »). */
-  contrat?: string
-  prerequis: Requirements
+  contractType?: string
+  requirements: Requirements
 }
 
 /** Fichier déposé dans la fenêtre : le preload en retrouve le chemin, le renderer ne le voit jamais. */
-export interface FichierDepose {
+export interface DroppedFile {
   readonly name: string
   readonly size: number
 }
 
-export interface ModeleEmbarqueEtat {
+export interface LocalModelState {
   id: string
-  nom: string
+  name: string
   description: string
-  tailleOctets: number
-  chemin: string
-  installe: boolean
+  sizeBytes: number
+  path: string
+  installed: boolean
   /** Adapté à la mémoire détectée sur cette machine. */
-  recommande: boolean
+  recommended: boolean
   compatible: boolean
 }
 
-export interface ProgressionModele {
+export interface ModelDownloadProgress {
   id: string
-  recuOctets: number
-  totalOctets: number
-  etat: 'en-cours' | 'verification' | 'termine' | 'erreur' | 'annule'
+  receivedBytes: number
+  totalBytes: number
+  status: 'en-cours' | 'verification' | 'termine' | 'erreur' | 'annule'
   message?: string
 }
 
-export interface EtatModeles {
-  ramGo: number
-  vramGo: number
-  modeles: ModeleEmbarqueEtat[]
+export interface ModelsState {
+  ramGb: number
+  vramGb: number
+  models: LocalModelState[]
   /** Téléchargement en cours (ou dernier état connu pendant celui-ci). */
-  telechargement: ProgressionModele | null
+  download: ModelDownloadProgress | null
 }
 
 /** Où en est la mise à jour de l'application (releases GitHub). */
-export interface EtatMiseAJour {
+export interface UpdateState {
   /** Version en cours d'exécution. */
   version: string
   /**
    * `indisponible` : application non installée (développement). `prete` : téléchargée, installée à la fermeture.
    * `erreur` : vérification impossible (hors ligne, dépôt inaccessible).
    */
-  etat: 'indisponible' | 'inactif' | 'verification' | 'a-jour' | 'telechargement' | 'prete' | 'erreur'
-  nouvelleVersion?: string
+  status: 'indisponible' | 'inactif' | 'verification' | 'a-jour' | 'telechargement' | 'prete' | 'erreur'
+  newVersion?: string
   /** Avancement du téléchargement, de 0 à 100. */
-  pourcentage?: number
+  percent?: number
   /** Message technique de la dernière erreur. */
   message?: string
   /** Horodatage (ms) de la dernière vérification aboutie. */
-  verifieLe?: number
+  checkedAt?: number
 }
 
 /** Étape en cours d'une tâche longue (import du CV, analyse d'offre, adaptation) : le renderer l'affiche. */
-export interface ProgressionTache {
-  tache: 'import' | 'offre' | 'adaptation' | 'accroche'
+export interface TaskProgress {
+  task: 'import' | 'offre' | 'adaptation' | 'accroche'
   /** Étape stable de l'adaptation (l'interface la traduit en langage courant). */
-  cle?: CleEtape
+  key?: StepKey
   /** Libellé lisible, ex. « Réécriture des expériences ». */
-  etape: string
-  courant?: number
+  label: string
+  current?: number
   total?: number
   /** Où tourne le modèle embarqué : sur le processeur, le calcul est bien plus lent. */
-  calcul?: 'gpu' | 'cpu'
+  compute?: 'gpu' | 'cpu'
 }
 
 /** Méthodes requête/réponse, implémentées par le service du process principal. */
 export interface ApiService {
   /** Ouvre le sélecteur de fichier (PDF/DOCX), extrait le profil et l'enregistre. `null` si annulé. */
-  importerCv(): Promise<ProfilEnregistre | null>
+  importCv(): Promise<SavedProfile | null>
   /** Même traitement pour un fichier déposé dans la fenêtre, désigné par son chemin. */
-  importerCvDepose(chemin: string): Promise<ProfilEnregistre>
-  obtenirProfil(): Promise<ProfilEnregistre | null>
-  enregistrerProfil(profil: Profile): Promise<ProfilEnregistre>
-  recupererOffre(url: string): Promise<JobPosting>
-  analyserTexteOffre(texte: string): Promise<JobPosting>
+  importDroppedCv(path: string): Promise<SavedProfile>
+  getProfile(): Promise<SavedProfile | null>
+  saveProfile(profile: Profile): Promise<SavedProfile>
+  fetchJobPosting(url: string): Promise<JobPosting>
+  parseJobPostingText(text: string): Promise<JobPosting>
   /** Analyse l'annonce avec le modèle (résultat mémorisé pour `adapterCv`) et la rapproche du profil enregistré. */
-  analyserAnnonce(offre: JobPosting): Promise<ApercuAnnonce>
+  previewJobPosting(jobPosting: JobPosting): Promise<JobPostingPreview>
   /** Adapte le profil enregistré à l'offre, puis enregistre l'offre et le CV obtenu. */
-  adapterCv(offre: JobPosting): Promise<CvGenere>
+  tailorCv(jobPosting: JobPosting): Promise<GeneratedCv>
   /** Interrompt l'adaptation en cours : `adapterCv` échoue alors avec le code `annule`. */
-  annulerAdaptation(): Promise<void>
-  lireParametres(): Promise<EtatParametres>
-  enregistrerParametres(parametres: Parametres): Promise<EtatParametres>
+  cancelTailoring(): Promise<void>
+  getSettings(): Promise<SettingsState>
+  saveSettings(settings: Settings): Promise<SettingsState>
   /** Enregistre le CV validé (coordonnées du profil actif) via un sélecteur de fichier. Chemin écrit, ou `null` si annulé. */
-  exporterCv(cv: TailoredCv, format: FormatExport, modeleId?: string): Promise<string | null>
+  exportCv(cv: TailoredCv, format: ExportFormat, templateId?: string): Promise<string | null>
   /** HTML complet du CV mis en page avec un modèle (photo comprise), à afficher dans un cadre isolé. */
-  htmlModeleCv(cv: TailoredCv, modeleId: string): Promise<string>
+  templateHtml(cv: TailoredCv, templateId: string): Promise<string>
   /** Ouvre un CV exporté pendant cette session (tout autre chemin est refusé). */
-  ouvrirFichier(chemin: string): Promise<void>
+  openFile(path: string): Promise<void>
   /** Montre dans l'explorateur un CV exporté pendant cette session (tout autre chemin est refusé). */
-  montrerDansDossier(chemin: string): Promise<void>
+  revealInFolder(path: string): Promise<void>
   /** Accroche générique fondée sur les compétences transversales du profil fourni (même non enregistré). */
-  genererAccroche(profil: Profile): Promise<string>
+  generateSummary(profile: Profile): Promise<string>
   /** Chaîne vide : supprime la clé. */
-  definirCleApi(cle: string): Promise<EtatParametres>
-  lireEtatModeles(): Promise<EtatModeles>
+  setApiKey(key: string): Promise<SettingsState>
+  getModelsState(): Promise<ModelsState>
   /** Résout quand le fichier est téléchargé, vérifié et sélectionné dans les paramètres. */
-  telechargerModele(id: string): Promise<void>
-  annulerTelechargement(): Promise<void>
-  supprimerModele(id: string): Promise<void>
+  downloadModel(id: string): Promise<void>
+  cancelDownload(): Promise<void>
+  deleteModel(id: string): Promise<void>
   /** Supprime profil, offres, CV générés et clé API. Les paramètres et modèles sont conservés. */
-  effacerDonnees(): Promise<void>
-  lireEtatMiseAJour(): Promise<EtatMiseAJour>
+  eraseData(): Promise<void>
+  getUpdateState(): Promise<UpdateState>
   /** Vérifie maintenant ; résout avec l'état obtenu (le téléchargement éventuel continue ensuite). */
-  verifierMiseAJour(): Promise<EtatMiseAJour>
+  checkForUpdate(): Promise<UpdateState>
   /** Ferme l'application et installe la version déjà téléchargée. */
-  installerMiseAJour(): Promise<void>
+  installUpdate(): Promise<void>
 }
 
 /** API complète vue par le renderer. */
-export interface ApiReCV extends Omit<ApiService, 'importerCvDepose'> {
-  importerCvDepose(fichier: FichierDepose): Promise<ProfilEnregistre>
+export interface RecvApi extends Omit<ApiService, 'importDroppedCv'> {
+  importDroppedCv(fileName: DroppedFile): Promise<SavedProfile>
   /** Retourne la fonction de désabonnement. */
-  surProgressionModele(rappel: (progression: ProgressionModele) => void): () => void
+  onModelProgress(callback: (progress: ModelDownloadProgress) => void): () => void
   /** Étapes des tâches longues (adaptation…). Retourne la fonction de désabonnement. */
-  surProgressionTache(rappel: (progression: ProgressionTache) => void): () => void
+  onTaskProgress(callback: (progress: TaskProgress) => void): () => void
   /** Changements d'état de la mise à jour. Retourne la fonction de désabonnement. */
-  surMiseAJour(rappel: (etat: EtatMiseAJour) => void): () => void
+  onUpdate(callback: (status: UpdateState) => void): () => void
 }
 
 // Bornes de taille : le renderer n'est pas fiable (les schémas métier eux-mêmes ne sont pas bornés,
 // car ils valident aussi les sorties du LLM).
-const TAILLE_MAX_JSON = 500_000
-const borne = <T extends z.ZodType>(schema: T) =>
-  schema.refine((v) => JSON.stringify(v).length <= TAILLE_MAX_JSON, 'Données trop volumineuses.')
+const MAX_JSON_SIZE = 500_000
+const bounded = <T extends z.ZodType>(schema: T) =>
+  schema.refine((v) => JSON.stringify(v).length <= MAX_JSON_SIZE, 'Données trop volumineuses.')
 
-export const entreesIpc = {
-  cv: borne(tailoredCvSchema),
+export const ipcInputs = {
+  cv: bounded(tailoredCvSchema),
   format: z.enum(['pdf', 'docx']),
-  idModeleCv: z.enum(IDS_MODELES),
-  profil: borne(profileSchema),
-  offre: borne(jobPostingSchema),
-  parametres: parametresSchema,
-  texte: z.string().min(1).max(200_000),
+  cvTemplateId: z.enum(TEMPLATE_IDS),
+  profile: bounded(profileSchema),
+  jobPosting: bounded(jobPostingSchema),
+  settings: settingsSchema,
+  text: z.string().min(1).max(200_000),
   url: z.string().min(1).max(2_048),
-  cle: z.string().max(1_024),
-  idModele: z.string().min(1).max(64),
-  chemin: z.string().min(1).max(1_024),
+  key: z.string().max(1_024),
+  templateId: z.string().min(1).max(64),
+  path: z.string().min(1).max(1_024),
 }

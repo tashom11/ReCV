@@ -5,14 +5,14 @@
     "src/preload/*.d.ts",
     "src/core/schemas/*.ts",
     "src/core/api.ts",
-    "src/core/adaptation/composition.ts",
-    "src/core/adaptation/competences.ts",
-    "src/core/export/modeles.ts",
-    "src/core/adaptation/texte.ts",
-    "src/core/canaux.ts",
+    "src/core/tailoring/composition.ts",
+    "src/core/tailoring/skills.ts",
+    "src/core/export/templates.ts",
+    "src/core/tailoring/text.ts",
+    "src/core/channels.ts",
     "src/core/serviceUrl.ts",
-    "src/core/erreurs.ts",
-    "src/core/etapes.ts"
+    "src/core/errors.ts",
+    "src/core/steps.ts"
   ],
   "exclude": ["src/**/*.test.ts"],
   "compilerOptions": {

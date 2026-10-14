@@ -1,7 +1,7 @@
-import type { ApiReCV } from '@core/api'
+import type { RecvApi } from '@core/api'
 
 declare global {
   interface Window {
-    api: ApiReCV
+    api: RecvApi
   }
 }

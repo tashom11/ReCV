@@ -1,4 +1,4 @@
-import { decoderErreur } from '@core/canaux'
+import { decodeError } from '@core/channels'
 
 // Chaque problème dit ce qui se passe, et quoi faire : un titre court, une phrase sans jargon, une action.
 // Le message technique brut ne s'affiche jamais directement : il reste dans « Détails », replié.
@@ -36,7 +36,7 @@ export const LIBELLES_ACTIONS: Record<ActionErreur, string> = {
 
 /** Code et message d'une erreur venue du process principal (le code voyage en tête du message). */
 export function lireErreur(erreur: unknown): { code?: string; message: string } {
-  return decoderErreur(erreur instanceof Error ? erreur.message : String(erreur))
+  return decodeError(erreur instanceof Error ? erreur.message : String(erreur))
 }
 
 /** Message lisible d'une erreur, sans son code. */

@@ -1,4 +1,4 @@
-import type { ApercuAnnonce } from '@core/api'
+import type { JobPostingPreview } from '@core/api'
 import type { JobPosting, Requirements } from '@core/schemas'
 import { useState } from 'react'
 import { type ActionErreur, type DescriptionErreur, decrireErreur } from '../erreurs'
@@ -10,7 +10,7 @@ type Mode = 'lien' | 'texte'
 
 export interface AnnonceLue {
   offre: JobPosting
-  apercu: ApercuAnnonce
+  apercu: JobPostingPreview
 }
 
 const ID_PANNEAU = 'saisie-annonce'
@@ -66,10 +66,10 @@ export function EcranAnnonce({
         typeof source !== 'string'
           ? source
           : source === 'lien'
-            ? await window.api.recupererOffre(url.trim())
-            : await window.api.analyserTexteOffre(texte)
+            ? await window.api.fetchJobPosting(url.trim())
+            : await window.api.parseJobPostingText(texte)
       setOccupe('analyse')
-      onAnnonce({ offre, apercu: await window.api.analyserAnnonce(offre) })
+      onAnnonce({ offre, apercu: await window.api.previewJobPosting(offre) })
       setCorrection(null)
     } catch (e) {
       setErreur(decrireErreur('annonce', e))
@@ -95,8 +95,8 @@ export function EcranAnnonce({
 
   if (annonce) {
     const { offre, apercu } = annonce
-    const note = bonASavoir(apercu.prerequis)
-    const details = [offre.company, offre.location, apercu.contrat].filter((v) => v && v.trim() !== '')
+    const note = bonASavoir(apercu.requirements)
+    const details = [offre.company, offre.location, apercu.contractType].filter((v) => v && v.trim() !== '')
     return (
       <div className="mx-auto w-full max-w-4xl space-y-7 px-6 py-12">
         <Titre surtitre="Annonce lue">C’est bien cette annonce ?</Titre>
@@ -126,11 +126,11 @@ export function EcranAnnonce({
               </div>
             </header>
 
-            {apercu.recherchees.length > 0 && (
+            {apercu.soughtSkills.length > 0 && (
               <section className="space-y-3">
                 <h3 className="text-corps font-bold text-encre">Ce que l’employeur recherche</h3>
                 <ul className="flex flex-wrap gap-2.5">
-                  {apercu.recherchees.map((terme) => (
+                  {apercu.soughtSkills.map((terme) => (
                     <li key={terme}>
                       <Pastille>{terme}</Pastille>
                     </li>

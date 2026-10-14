@@ -1,11 +1,11 @@
 import mammoth from 'mammoth'
 import { describe, expect, it } from 'vitest'
 import { profileSchema, tailoredCvSchema } from '../schemas'
-import { genererHtmlCv } from './CvHtml'
-import { genererDocxCv } from './docx'
-import { construireModele, nomFichierCv, TITRES_SECTIONS } from './modele'
+import { generateHtmlCv } from './CvHtml'
+import { buildCvDocument, cvFileName, SECTION_TITLES } from './cvDocument'
+import { generateDocxCv } from './docx'
 
-const profil = profileSchema.parse({
+const profile = profileSchema.parse({
   fullName: 'Claire Dubois',
   email: 'claire@exemple.fr',
   phone: '06 12 34 56 78',
@@ -29,36 +29,36 @@ const cv = tailoredCvSchema.parse({
 })
 
 describe('construireModele', () => {
-  const modele = construireModele(profil, cv)
+  const model = buildCvDocument(profile, cv)
 
   it('ordonne les sections avec des titres standards', () => {
-    expect(modele.sections.map((s) => s.titre)).toEqual([
-      TITRES_SECTIONS.profil,
-      TITRES_SECTIONS.competences,
-      TITRES_SECTIONS.experience,
-      TITRES_SECTIONS.formation,
-      TITRES_SECTIONS.langues,
+    expect(model.sections.map((s) => s.title)).toEqual([
+      SECTION_TITLES.profile,
+      SECTION_TITLES.skills,
+      SECTION_TITLES.experience,
+      SECTION_TITLES.education,
+      SECTION_TITLES.languages,
     ])
   })
 
   it('reprend les coordonnées du profil', () => {
-    expect(modele.contact).toEqual(['claire@exemple.fr', '06 12 34 56 78', 'Lyon'])
+    expect(model.contact).toEqual(['claire@exemple.fr', '06 12 34 56 78', 'Lyon'])
   })
 
   it('omet les sections vides', () => {
-    const vide = construireModele(profil, { ...cv, summary: ' ', skills: [], education: [], languages: [] })
-    expect(vide.sections.map((s) => s.titre)).toEqual([TITRES_SECTIONS.experience])
+    const vide = buildCvDocument(profile, { ...cv, summary: ' ', skills: [], education: [], languages: [] })
+    expect(vide.sections.map((s) => s.title)).toEqual([SECTION_TITLES.experience])
   })
 
   it('produit un nom de fichier sûr', () => {
-    expect(nomFichierCv(modele, 'pdf')).toBe('CV-Claire-Dubois.pdf')
-    expect(nomFichierCv({ ...modele, nom: 'Éloïse O’Brien / Ñ' }, 'docx')).toBe('CV-Eloise-O-Brien-N.docx')
-    expect(nomFichierCv({ ...modele, nom: '' }, 'pdf')).toBe('CV.pdf')
+    expect(cvFileName(model, 'pdf')).toBe('CV-Claire-Dubois.pdf')
+    expect(cvFileName({ ...model, name: 'Éloïse O’Brien / Ñ' }, 'docx')).toBe('CV-Eloise-O-Brien-N.docx')
+    expect(cvFileName({ ...model, name: '' }, 'pdf')).toBe('CV.pdf')
   })
 })
 
 describe('genererHtmlCv', () => {
-  const html = genererHtmlCv(construireModele(profil, cv))
+  const html = generateHtmlCv(buildCvDocument(profile, cv))
 
   it('contient le texte réel, sans tableau ni image', () => {
     expect(html).toContain('Claire Dubois')
@@ -74,7 +74,7 @@ describe('genererHtmlCv', () => {
 
 describe('genererDocxCv', () => {
   it('produit un DOCX relisible contenant les sections et les puces', async () => {
-    const buffer = await genererDocxCv(construireModele(profil, cv))
+    const buffer = await generateDocxCv(buildCvDocument(profile, cv))
     expect(buffer.subarray(0, 2).toString()).toBe('PK')
     const { value } = await mammoth.extractRawText({ buffer })
     expect(value).toContain('Claire Dubois')

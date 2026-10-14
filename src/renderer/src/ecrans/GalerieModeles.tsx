@@ -1,9 +1,9 @@
-import { type IdModele, MODELES_CV } from '@core/export/modeles'
+import { CV_TEMPLATES, type TemplateId } from '@core/export/templates'
 import type { TailoredCv } from '@core/schemas'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Spinner, VignetteModele } from '../ui'
 
-export type Apercus = Partial<Record<IdModele, { html?: string; erreur?: string }>>
+export type Apercus = Partial<Record<TemplateId, { html?: string; erreur?: string }>>
 
 // Taille de la page A4 en pixels CSS (96 dpi) : le CV est rendu à cette taille puis réduit à la largeur disponible.
 const LARGEUR_PAGE = 794
@@ -24,10 +24,10 @@ export function useApercus(cv: TailoredCv): { apercus: Apercus; enCours: boolean
     const numero = ++generation.current
     setEnCours(true)
     const minuteur = setTimeout(async () => {
-      for (const modele of MODELES_CV) {
+      for (const modele of CV_TEMPLATES) {
         let apercu: { html?: string; erreur?: string }
         try {
-          apercu = { html: await window.api.htmlModeleCv(cv, modele.id) }
+          apercu = { html: await window.api.templateHtml(cv, modele.id) }
         } catch (e) {
           apercu = { erreur: e instanceof Error ? e.message : String(e) }
         }
@@ -82,19 +82,19 @@ export function BandeModeles({
   onChange,
 }: {
   apercus: Apercus
-  valeur: IdModele
-  onChange: (id: IdModele) => void
+  valeur: TemplateId
+  onChange: (id: TemplateId) => void
 }) {
   return (
     <fieldset>
       <legend className="pb-2.5 text-corps font-bold text-encre">Mise en page</legend>
       <div className="flex flex-wrap gap-3">
-        {MODELES_CV.map((m) => {
+        {CV_TEMPLATES.map((m) => {
           const html = apercus[m.id]?.html
           return (
-            <VignetteModele key={m.id} nom={m.nom} choisi={m.id === valeur} onChoisir={() => onChange(m.id)}>
+            <VignetteModele key={m.id} nom={m.name} choisi={m.id === valeur} onChoisir={() => onChange(m.id)}>
               {html ? (
-                <PageReduite html={html} titre={`Aperçu de la mise en page ${m.nom}`} />
+                <PageReduite html={html} titre={`Aperçu de la mise en page ${m.name}`} />
               ) : (
                 <span className="flex aspect-[794/1123] items-center justify-center rounded-[4px] border border-trait bg-white text-trait-fort">
                   {apercus[m.id]?.erreur ? <span className="text-petit text-aide">—</span> : <Spinner taille={18} />}

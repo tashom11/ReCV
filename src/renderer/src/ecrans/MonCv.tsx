@@ -112,7 +112,7 @@ export function EcranMonCv({
   const [autosave] = useState(() =>
     createAutosave<Profile>({
       delayMs: AUTOSAVE_DELAY_MS,
-      save: async (draft) => void (await window.api.enregistrerProfil(nettoyerProfil(draft))),
+      save: async (draft) => void (await window.api.saveProfile(nettoyerProfil(draft))),
       onStatus: setSaveStatus,
     }),
   )
@@ -148,8 +148,8 @@ export function EcranMonCv({
     setOccupe('import')
     setErreur(null)
     try {
-      const resultat = fichier ? await window.api.importerCvDepose(fichier) : await window.api.importerCv()
-      if (resultat) onProfil(resultat.profil, resultat.nomFichier)
+      const resultat = fichier ? await window.api.importDroppedCv(fichier) : await window.api.importCv()
+      if (resultat) onProfil(resultat.profile, resultat.fileName)
     } catch (e) {
       setErreur(decrireErreur('cv', e))
     } finally {
@@ -170,7 +170,7 @@ export function EcranMonCv({
     setErreur(null)
     autosave.cancel()
     try {
-      const { profil: enregistre } = await window.api.enregistrerProfil(nettoyerProfil(brouillon))
+      const { profile: enregistre } = await window.api.saveProfile(nettoyerProfil(brouillon))
       dirty.current = false
       onProfil(enregistre)
       onSuivant()
@@ -193,7 +193,7 @@ export function EcranMonCv({
     setOccupe('accroche')
     setRetourAccroche(null)
     try {
-      const accroche = await window.api.genererAccroche(nettoyerProfil(brouillon))
+      const accroche = await window.api.generateSummary(nettoyerProfil(brouillon))
       maj({ summary: accroche })
       setRetourAccroche({ type: 'succes', texte: 'Voici une proposition : relisez-la et ajustez-la si besoin.' })
     } catch (e) {

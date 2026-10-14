@@ -1,7 +1,7 @@
-import { choixInitial, composerCv } from '@core/adaptation/composition'
-import type { CvGenere } from '@core/api'
+import type { GeneratedCv } from '@core/api'
 import type { JobPosting, Profile } from '@core/schemas'
-import { estServiceLocal } from '@core/serviceUrl'
+import { isLocalService } from '@core/serviceUrl'
+import { composeCv, initialChoices } from '@core/tailoring/composition'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { focusScreenTitle, windowTitle } from './accessibility'
 import logo from './assets/logo.png'
@@ -34,7 +34,7 @@ interface Resultat {
   /** Profil au moment de la création : les indices des expériences doivent correspondre. */
   profil: Profile
   offre: JobPosting
-  genere: CvGenere
+  genere: GeneratedCv
 }
 
 const CLE_NOM_FICHIER = 'recv.nomFichierCv'
@@ -57,11 +57,11 @@ export default function App() {
 
   const verifierMoteur = useCallback(
     () =>
-      Promise.all([window.api.lireParametres(), window.api.lireEtatModeles()]).then(
+      Promise.all([window.api.getSettings(), window.api.getModelsState()]).then(
         ([p, m]) => {
           // "Online": the CV leaves this computer (online service, or Ollama on another machine).
-          const enLigne = p.fournisseur === 'api' || (p.fournisseur === 'ollama' && !estServiceLocal(p.urlOllama))
-          const etat = { pret: moteurPret(p, m.modeles), enLigne }
+          const enLigne = p.provider === 'api' || (p.provider === 'ollama' && !isLocalService(p.ollamaUrl))
+          const etat = { pret: moteurPret(p, m.models), enLigne }
           setMoteur(etat)
           return etat
         },
@@ -72,9 +72,9 @@ export default function App() {
 
   useEffect(() => {
     void verifierMoteur()
-    window.api.obtenirProfil().then(
+    window.api.getProfile().then(
       (existant) => {
-        if (existant) setProfil(existant.profil)
+        if (existant) setProfil(existant.profile)
         setVue(vueInitiale(existant !== null))
       },
       () => setVue('accueil'),
@@ -122,15 +122,15 @@ export default function App() {
     setMiseEnPage(false)
     aller('creation')
     try {
-      const genere = await window.api.adapterCv(offre)
+      const genere = await window.api.tailorCv(offre)
       enregistrerDuree(localStorage, (Date.now() - debut) / 1000)
       setEstimation(lireEstimation(localStorage))
       // Dernière étape annoncée : on prépare l'aperçu avant de montrer le résultat.
       setMiseEnPage(true)
-      const { modeleCv } = await window.api.lireParametres()
+      const { cvTemplate: modeleCv } = await window.api.getSettings()
       const points = genere.cv.experiences.map((e) => e.bullets)
       await window.api
-        .htmlModeleCv(composerCv(profil, genere.cv, choixInitial(genere.cv), points), modeleCv)
+        .templateHtml(composeCv(profil, genere.cv, initialChoices(genere.cv), points), modeleCv)
         .catch(() => '')
       setResultat({ profil, offre, genere })
       setExporte(null)
@@ -207,7 +207,7 @@ export default function App() {
             </BoutonLien>
           )}
           {/* Une version téléchargée se signale partout où les réglages sont accessibles. */}
-          {entete.reglages && miseAJour?.etat === 'prete' && (
+          {entete.reglages && miseAJour?.status === 'prete' && (
             <button
               type="button"
               onClick={() => aller('reglages')}
@@ -303,7 +303,7 @@ export default function App() {
             miseEnPage={miseEnPage}
             estimationS={estimation}
             enLigne={moteur.enLigne}
-            onAnnuler={() => void window.api.annulerAdaptation()}
+            onAnnuler={() => void window.api.cancelTailoring()}
           />
         )}
         {/* Gardé monté tant qu'un CV existe : les ajustements ne sont pas perdus en passant par un autre écran. */}

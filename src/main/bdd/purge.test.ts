@@ -23,7 +23,7 @@ describe('purgeOldData', () => {
         .all()
         .map((p) => p.donnees.fullName),
     ).toEqual(['Actuel'])
-    expect(obtenirProfilActif(bdd)?.profil.fullName).toBe('Actuel')
+    expect(obtenirProfilActif(bdd)?.profile.fullName).toBe('Actuel')
     bdd.fermer()
   })
 

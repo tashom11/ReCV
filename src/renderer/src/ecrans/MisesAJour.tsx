@@ -1,13 +1,13 @@
-import type { EtatMiseAJour } from '@core/api'
+import type { UpdateState } from '@core/api'
 import { useEffect, useState } from 'react'
 import { Bouton, Carte, Icone, type NomIcone, Spinner } from '../ui'
 
 /** État de la mise à jour, suivi en direct (lecture initiale puis changements envoyés par l'application). */
-export function useMiseAJour(): EtatMiseAJour | null {
-  const [etat, setEtat] = useState<EtatMiseAJour | null>(null)
+export function useMiseAJour(): UpdateState | null {
+  const [etat, setEtat] = useState<UpdateState | null>(null)
   useEffect(() => {
-    window.api.lireEtatMiseAJour().then(setEtat, () => undefined)
-    return window.api.surMiseAJour(setEtat)
+    window.api.getUpdateState().then(setEtat, () => undefined)
+    return window.api.onUpdate(setEtat)
   }, [])
   return etat
 }
@@ -15,13 +15,13 @@ export function useMiseAJour(): EtatMiseAJour | null {
 const heure = (instantMs: number) =>
   new Date(instantMs).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 
-function decrire(etat: EtatMiseAJour): { icone: NomIcone | null; ton: string; texte: string } {
-  switch (etat.etat) {
+function decrire(etat: UpdateState): { icone: NomIcone | null; ton: string; texte: string } {
+  switch (etat.status) {
     case 'a-jour':
       return {
         icone: 'coche-cercle',
         ton: 'text-marque',
-        texte: `Re:CV est à jour${etat.verifieLe ? ` (vérifié à ${heure(etat.verifieLe)})` : ''}.`,
+        texte: `Re:CV est à jour${etat.checkedAt ? ` (vérifié à ${heure(etat.checkedAt)})` : ''}.`,
       }
     case 'verification':
       return { icone: null, ton: 'text-encre', texte: 'Recherche d’une mise à jour…' }
@@ -29,13 +29,13 @@ function decrire(etat: EtatMiseAJour): { icone: NomIcone | null; ton: string; te
       return {
         icone: null,
         ton: 'text-encre',
-        texte: `Téléchargement de la version ${etat.nouvelleVersion ?? 'suivante'}… ${etat.pourcentage ?? 0} %`,
+        texte: `Téléchargement de la version ${etat.newVersion ?? 'suivante'}… ${etat.percent ?? 0} %`,
       }
     case 'prete':
       return {
         icone: 'telecharger',
         ton: 'text-marque',
-        texte: `La version ${etat.nouvelleVersion ?? 'suivante'} est prête. Elle s’installera à la fermeture de Re:CV.`,
+        texte: `La version ${etat.newVersion ?? 'suivante'} est prête. Elle s’installera à la fermeture de Re:CV.`,
       }
     case 'erreur':
       return {
@@ -61,12 +61,12 @@ export function CarteMisesAJour() {
   if (!etat) return null
 
   const { icone, ton, texte } = decrire(etat)
-  const occupe = demande || etat.etat === 'verification' || etat.etat === 'telechargement'
+  const occupe = demande || etat.status === 'verification' || etat.status === 'telechargement'
 
   const verifier = () => {
     setDemande(true)
     window.api
-      .verifierMiseAJour()
+      .checkForUpdate()
       .catch(() => undefined)
       .finally(() => setDemande(false))
   }
@@ -77,22 +77,19 @@ export function CarteMisesAJour() {
         {icone ? <Icone nom={icone} className="mt-0.5" /> : <Spinner taille={20} />}
         {texte}
       </p>
-      {etat.etat === 'telechargement' && (
+      {etat.status === 'telechargement' && (
         <div
           role="progressbar"
           aria-label="Téléchargement de la mise à jour"
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-valuenow={etat.pourcentage ?? 0}
+          aria-valuenow={etat.percent ?? 0}
           className="h-2.5 overflow-hidden rounded-full bg-creux"
         >
-          <div
-            className="h-full rounded-full bg-marque transition-all"
-            style={{ width: `${etat.pourcentage ?? 0}%` }}
-          />
+          <div className="h-full rounded-full bg-marque transition-all" style={{ width: `${etat.percent ?? 0}%` }} />
         </div>
       )}
-      {etat.etat === 'erreur' && etat.message && (
+      {etat.status === 'erreur' && etat.message && (
         <details>
           <summary className="inline-flex min-h-11 items-center font-bold text-marque underline underline-offset-4">
             Détails
@@ -102,12 +99,12 @@ export function CarteMisesAJour() {
           </p>
         </details>
       )}
-      {etat.etat === 'prete' ? (
-        <Bouton icone="recommencer" onClick={() => void window.api.installerMiseAJour().catch(() => undefined)}>
+      {etat.status === 'prete' ? (
+        <Bouton icone="recommencer" onClick={() => void window.api.installUpdate().catch(() => undefined)}>
           Redémarrer maintenant
         </Bouton>
       ) : (
-        etat.etat !== 'indisponible' && (
+        etat.status !== 'indisponible' && (
           <Bouton variante="secondaire" icone="recommencer" onClick={verifier} enCours={occupe}>
             Rechercher une mise à jour
           </Bouton>

@@ -1,8 +1,8 @@
-import { formaterCompetence } from '@core/adaptation/competences'
-import { type ChoixComposition, choixInitial, composerCv } from '@core/adaptation/composition'
-import type { FormatExport } from '@core/api'
-import { type IdModele, trouverModele } from '@core/export/modeles'
+import type { ExportFormat } from '@core/api'
+import { findTemplate, type TemplateId } from '@core/export/templates'
 import type { Profile, TailoredCv } from '@core/schemas'
+import { type CompositionChoices, composeCv, initialChoices } from '@core/tailoring/composition'
+import { formatSkill } from '@core/tailoring/skills'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { type DescriptionErreur, decrireErreur } from '../erreurs'
 import { AlerteErreur, BarreActions, Bouton, CaseACocher, Champ, Icone, SectionRepliable } from '../ui'
@@ -10,7 +10,7 @@ import { CeQuiAChange } from './CeQuiAChange'
 import { BandeModeles, GrandApercu, useApercus } from './GalerieModeles'
 
 const remplacer = <T,>(liste: T[], indice: number, valeur: T) => liste.map((x, i) => (i === indice ? valeur : x))
-const cle = (terme: string) => formaterCompetence(terme).toLowerCase()
+const cle = (terme: string) => formatSkill(terme).toLowerCase()
 
 /**
  * Étape ③ : le CV adapté en grand, des ajustements simples à côté, et le téléchargement toujours visible.
@@ -27,41 +27,41 @@ export function EcranNouveauCv({
 }) {
   const [titre, setTitre] = useState(adapte.headline)
   const [accroche, setAccroche] = useState(adapte.summary)
-  const [choix, setChoix] = useState<ChoixComposition>(() => choixInitial(adapte))
+  const [choix, setChoix] = useState<CompositionChoices>(() => initialChoices(adapte))
   const [points, setPoints] = useState<string[][]>(adapte.experiences.map((e) => e.bullets))
   // Compétences déjà dans le CV que l'utilisateur décoche : elles sont seulement retirées de ce CV.
   const [retirees, setRetirees] = useState<ReadonlySet<string>>(new Set())
-  const [modeleCv, setModeleCv] = useState<IdModele>('classique')
+  const [modeleCv, setModeleCv] = useState<TemplateId>('classique')
   const [comparatif, setComparatif] = useState(false)
   const [pages, setPages] = useState(1)
   const [erreur, setErreur] = useState<DescriptionErreur | null>(null)
-  const [export_, setExport] = useState<FormatExport | null>(null)
-  const dernierFormat = useRef<FormatExport>('pdf')
+  const [export_, setExport] = useState<ExportFormat | null>(null)
+  const dernierFormat = useRef<ExportFormat>('pdf')
 
   // Dernière mise en page choisie (réglage mémorisé).
   useEffect(() => {
-    window.api.lireParametres().then(
-      (p) => setModeleCv(p.modeleCv),
+    window.api.getSettings().then(
+      (p) => setModeleCv(p.cvTemplate),
       () => undefined,
     )
   }, [])
 
-  const choisirModele = (id: IdModele) => {
+  const choisirModele = (id: TemplateId) => {
     setModeleCv(id)
     window.api
-      .lireParametres()
-      .then(({ cleApiDefinie: _cle, ...p }) => window.api.enregistrerParametres({ ...p, modeleCv: id }))
+      .getSettings()
+      .then(({ hasApiKey: _cle, ...p }) => window.api.saveSettings({ ...p, cvTemplate: id }))
       .catch(() => undefined)
   }
 
   // Compétences demandées par l'annonce et réellement présentes dans le CV adapté.
   const presentes = useMemo(() => {
     const dansLeCv = new Set([...adapte.keySkills, ...adapte.skills].map(cle))
-    return adapte.requested.evidenced.filter((terme) => dansLeCv.has(cle(terme))).map(formaterCompetence)
+    return adapte.requested.evidenced.filter((terme) => dansLeCv.has(cle(terme))).map(formatSkill)
   }, [adapte])
 
   const cvFinal = useMemo(() => {
-    const compose = composerCv(profil, { ...adapte, headline: titre.trim(), summary: accroche.trim() }, choix, points)
+    const compose = composeCv(profil, { ...adapte, headline: titre.trim(), summary: accroche.trim() }, choix, points)
     const garder = (competence: string) => !retirees.has(cle(competence))
     return {
       ...compose,
@@ -74,14 +74,14 @@ export function EcranNouveauCv({
   const { excluded: ecartes } = adapte
   const { missing: manquantes } = adapte.requested
   const nbEcartes = ecartes.experiences.length + ecartes.skills.length + ecartes.education.length
-  const modele = trouverModele(modeleCv)
+  const modele = findTemplate(modeleCv)
 
-  const exporter = async (format: FormatExport) => {
+  const exporter = async (format: ExportFormat) => {
     dernierFormat.current = format
     setErreur(null)
     setExport(format)
     try {
-      const chemin = await window.api.exporterCv(cvFinal, format, modeleCv)
+      const chemin = await window.api.exportCv(cvFinal, format, modeleCv)
       if (chemin) onExporte(chemin)
     } catch (e) {
       setErreur(decrireErreur('export', e))
@@ -90,8 +90,8 @@ export function EcranNouveauCv({
     }
   }
 
-  const majReintegrer = (partiel: Partial<ChoixComposition['reintegrer']>) =>
-    setChoix((c) => ({ ...c, reintegrer: { ...c.reintegrer, ...partiel } }))
+  const majReintegrer = (partiel: Partial<CompositionChoices['reinstate']>) =>
+    setChoix((c) => ({ ...c, reinstate: { ...c.reinstate, ...partiel } }))
 
   const basculerPresente = (terme: string, gardee: boolean) =>
     setRetirees((actuelles) => {
@@ -148,11 +148,9 @@ export function EcranNouveauCv({
                   {manquantes.map((terme, i) => (
                     <CaseACocher
                       key={terme}
-                      etiquette={formaterCompetence(terme)}
-                      coche={choix.ajouterDemandees[i] ?? false}
-                      onChange={(v) =>
-                        setChoix((c) => ({ ...c, ajouterDemandees: remplacer(c.ajouterDemandees, i, v) }))
-                      }
+                      etiquette={formatSkill(terme)}
+                      coche={choix.addRequested[i] ?? false}
+                      onChange={(v) => setChoix((c) => ({ ...c, addRequested: remplacer(c.addRequested, i, v) }))}
                     />
                   ))}
                 </fieldset>
@@ -175,24 +173,24 @@ export function EcranNouveauCv({
                     key={`${e.sourceIndex ?? i}-${e.position}-${e.company}`}
                     etiquette={`${e.position} — ${e.company}`}
                     aide={e.dateRange}
-                    coche={choix.reintegrer.experiences[i] ?? false}
-                    onChange={(v) => majReintegrer({ experiences: remplacer(choix.reintegrer.experiences, i, v) })}
+                    coche={choix.reinstate.experiences[i] ?? false}
+                    onChange={(v) => majReintegrer({ experiences: remplacer(choix.reinstate.experiences, i, v) })}
                   />
                 ))}
                 {ecartes.education.map((f, i) => (
                   <CaseACocher
                     key={`${f.degree}-${f.school}`}
                     etiquette={`${f.degree} — ${f.school}`}
-                    coche={choix.reintegrer.formations[i] ?? false}
-                    onChange={(v) => majReintegrer({ formations: remplacer(choix.reintegrer.formations, i, v) })}
+                    coche={choix.reinstate.education[i] ?? false}
+                    onChange={(v) => majReintegrer({ education: remplacer(choix.reinstate.education, i, v) })}
                   />
                 ))}
                 {ecartes.skills.map((c, i) => (
                   <CaseACocher
                     key={c}
                     etiquette={c}
-                    coche={choix.reintegrer.competences[i] ?? false}
-                    onChange={(v) => majReintegrer({ competences: remplacer(choix.reintegrer.competences, i, v) })}
+                    coche={choix.reinstate.skills[i] ?? false}
+                    onChange={(v) => majReintegrer({ skills: remplacer(choix.reinstate.skills, i, v) })}
                   />
                 ))}
               </fieldset>
@@ -230,7 +228,7 @@ export function EcranNouveauCv({
               <GrandApercu
                 html={apercus[modeleCv]?.html}
                 erreur={apercus[modeleCv]?.erreur}
-                nomModele={modele.nom}
+                nomModele={modele.name}
                 onPages={setPages}
               />
             </>
@@ -240,7 +238,7 @@ export function EcranNouveauCv({
 
       <BarreActions
         largeur="max-w-7xl"
-        gauche={`Mise en page « ${modele.nom} » · ${pages} page${pages > 1 ? 's' : ''}`}
+        gauche={`Mise en page « ${modele.name} » · ${pages} page${pages > 1 ? 's' : ''}`}
       >
         <Bouton
           variante="sur-sombre"

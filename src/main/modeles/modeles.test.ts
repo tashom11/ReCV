@@ -4,28 +4,28 @@ import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { ProgressionModele } from '@core/api'
-import { MODELES_EMBARQUES, proposerModele } from '@core/llm'
+import type { ModelDownloadProgress } from '@core/api'
+import { LOCAL_MODELS, recommendModel } from '@core/llm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { GestionnaireModeles } from './gestionnaire'
 import { telechargerFichier } from './telechargement'
 
 describe('proposerModele', () => {
   it('choisit le plus gros modèle supporté par la RAM ou la VRAM', () => {
-    expect(proposerModele({ ramGo: 4, vramGo: 0 }).id).toBe('qwen3.5-2b')
-    expect(proposerModele({ ramGo: 8, vramGo: 0 }).id).toBe('qwen3.5-4b')
+    expect(recommendModel({ ramGb: 4, vramGb: 0 }).id).toBe('qwen3.5-2b')
+    expect(recommendModel({ ramGb: 8, vramGb: 0 }).id).toBe('qwen3.5-4b')
     // Le 9B n'est recommandé qu'avec une vraie carte graphique (≥ 10 Go) : sur CPU il est trop lent.
-    expect(proposerModele({ ramGo: 32, vramGo: 0 }).id).toBe('qwen3.5-4b')
-    expect(proposerModele({ ramGo: 32, vramGo: 8 }).id).toBe('qwen3.5-4b')
-    expect(proposerModele({ ramGo: 32, vramGo: 12 }).id).toBe('qwen3.5-9b')
+    expect(recommendModel({ ramGb: 32, vramGb: 0 }).id).toBe('qwen3.5-4b')
+    expect(recommendModel({ ramGb: 32, vramGb: 8 }).id).toBe('qwen3.5-4b')
+    expect(recommendModel({ ramGb: 32, vramGb: 12 }).id).toBe('qwen3.5-9b')
   })
 
   it('retombe sur le plus petit si la machine est sous tous les seuils', () => {
-    expect(proposerModele({ ramGo: 2, vramGo: 0 }).id).toBe('qwen3.5-2b')
+    expect(recommendModel({ ramGb: 2, vramGb: 0 }).id).toBe('qwen3.5-2b')
   })
 
   it('référence des URLs Hugging Face et des empreintes SHA-256 valides', () => {
-    for (const m of MODELES_EMBARQUES) {
+    for (const m of LOCAL_MODELS) {
       expect(m.url).toMatch(/^https:\/\/huggingface\.co\/.+\.gguf$/)
       expect(m.sha256).toMatch(/^[0-9a-f]{64}$/)
     }
@@ -101,11 +101,11 @@ describe('GestionnaireModeles', () => {
   })
 
   it('recommande un modèle, installe puis supprime', async () => {
-    const evenements: ProgressionModele[] = []
+    const evenements: ModelDownloadProgress[] = []
     const installes: string[] = []
     const gestionnaire = new GestionnaireModeles({
       dossier,
-      ressources: async () => ({ ramGo: 8, vramGo: 0 }),
+      ressources: async () => ({ ramGb: 8, vramGb: 0 }),
       emettre: (p) => evenements.push(p),
       apresInstallation: async (chemin) => void installes.push(chemin),
       telecharger: async ({ destination, tailleOctets, surProgression }) => {
@@ -117,23 +117,23 @@ describe('GestionnaireModeles', () => {
     })
 
     const avant = await gestionnaire.etat()
-    expect(avant.modeles.find((m) => m.recommande)?.id).toBe('qwen3.5-4b')
-    expect(avant.modeles.every((m) => !m.installe)).toBe(true)
+    expect(avant.models.find((m) => m.recommended)?.id).toBe('qwen3.5-4b')
+    expect(avant.models.every((m) => !m.installed)).toBe(true)
 
     await gestionnaire.telecharger('qwen3.5-4b')
     expect(installes).toHaveLength(1)
-    expect(evenements.at(-1)?.etat).toBe('termine')
-    expect((await gestionnaire.etat()).modeles.find((m) => m.id === 'qwen3.5-4b')?.installe).toBe(true)
+    expect(evenements.at(-1)?.status).toBe('termine')
+    expect((await gestionnaire.etat()).models.find((m) => m.id === 'qwen3.5-4b')?.installed).toBe(true)
 
     await gestionnaire.supprimer('qwen3.5-4b')
-    expect((await gestionnaire.etat()).modeles.every((m) => !m.installe)).toBe(true)
+    expect((await gestionnaire.etat()).models.every((m) => !m.installed)).toBe(true)
   })
 
   it('refuse un identifiant inconnu et deux téléchargements simultanés', async () => {
     let debloquer: () => void = () => undefined
     const gestionnaire = new GestionnaireModeles({
       dossier,
-      ressources: async () => ({ ramGo: 8, vramGo: 0 }),
+      ressources: async () => ({ ramGb: 8, vramGb: 0 }),
       emettre: () => undefined,
       telecharger: () => new Promise<void>((ok) => (debloquer = ok)),
     })

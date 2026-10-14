@@ -49,10 +49,10 @@ export function EcranSucces({
           </div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <Bouton icone="dossier" onClick={() => ouvrir(window.api.montrerDansDossier)}>
+          <Bouton icone="dossier" onClick={() => ouvrir(window.api.revealInFolder)}>
             Ouvrir le dossier
           </Bouton>
-          <Bouton variante="secondaire" onClick={() => ouvrir(window.api.ouvrirFichier)}>
+          <Bouton variante="secondaire" onClick={() => ouvrir(window.api.openFile)}>
             Ouvrir le CV
           </Bouton>
         </div>

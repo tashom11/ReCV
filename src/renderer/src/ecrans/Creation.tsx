@@ -27,7 +27,7 @@ export function EcranCreation({
   const secondes = useSecondesEcoulees(true)
   const [annulation, setAnnulation] = useState(false)
   const [patiente, setPatiente] = useState(false)
-  const courante = etapeCreationCourante(progression?.cle, annonceLue, miseEnPage)
+  const courante = etapeCreationCourante(progression?.key, annonceLue, miseEnPage)
   const part = miseEnPage ? 1 : Math.max(avancement(secondes, estimationS), courante / ETAPES_CREATION.length)
   const long = secondes >= SEUIL_LONG_S && !patiente && !miseEnPage
 
@@ -129,7 +129,7 @@ export function EcranCreation({
               </>
             }
           >
-            {progression?.calcul === 'cpu'
+            {progression?.compute === 'cpu'
               ? 'Votre ordinateur calcule sans aide de la carte graphique. '
               : 'Votre ordinateur calcule encore. '}
             Pour aller plus vite la prochaine fois, choisissez « Rapide » dans les Réglages.

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { type EtatParametres, origineUrl, type Parametres, parametresSchema } from '@core/api'
+import { type Settings, type SettingsState, settingsSchema, urlOrigin } from '@core/api'
 import { migrateSettings, SETTINGS_VERSION } from './settingsMigrations'
 
 /** Abstraction de `safeStorage` d'Electron (injectable pour les tests). */
@@ -29,31 +29,31 @@ export class StockageParametres {
     return join(this.dossier, 'cle-api.bin')
   }
 
-  async lire(): Promise<Parametres> {
+  async lire(): Promise<Settings> {
     try {
-      return parametresSchema.parse(migrateSettings(JSON.parse(await readFile(this.fichierParametres, 'utf8'))))
+      return settingsSchema.parse(migrateSettings(JSON.parse(await readFile(this.fichierParametres, 'utf8'))))
     } catch {
-      return parametresSchema.parse({})
+      return settingsSchema.parse({})
     }
   }
 
-  async etat(): Promise<EtatParametres> {
-    return { ...(await this.lire()), cleApiDefinie: existsSync(this.fichierCle) }
+  async etat(): Promise<SettingsState> {
+    return { ...(await this.lire()), hasApiKey: existsSync(this.fichierCle) }
   }
 
-  async enregistrer(parametres: Parametres): Promise<EtatParametres> {
-    const valides = parametresSchema.parse(parametres)
+  async enregistrer(parametres: Settings): Promise<SettingsState> {
+    const valides = settingsSchema.parse(parametres)
     // La clé est liée à la destination : si l'adresse de l'API change d'origine, elle est supprimée,
     // pour qu'une modification des paramètres ne puisse pas rediriger la clé vers un autre serveur.
-    const precedente = (await this.lire()).urlApi
-    if (origineUrl(precedente) !== origineUrl(valides.urlApi)) await rm(this.fichierCle, { force: true })
+    const precedente = (await this.lire()).apiUrl
+    if (urlOrigin(precedente) !== urlOrigin(valides.apiUrl)) await rm(this.fichierCle, { force: true })
     await mkdir(this.dossier, { recursive: true })
     await writeFile(this.fichierParametres, JSON.stringify({ version: SETTINGS_VERSION, ...valides }, null, 2))
     return this.etat()
   }
 
   /** Chaîne vide : supprime la clé. */
-  async definirCle(cle: string): Promise<EtatParametres> {
+  async definirCle(cle: string): Promise<SettingsState> {
     if (cle === '') {
       await rm(this.fichierCle, { force: true })
       return this.etat()

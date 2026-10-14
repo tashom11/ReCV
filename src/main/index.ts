@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { CANAUX } from '@core/canaux'
+import { CHANNELS } from '@core/channels'
 import { app, BrowserWindow, dialog, ipcMain, net, protocol, safeStorage, session, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { APP_ENTRY_URL, APP_SCHEME, isAppUrl, resolveAppFile } from './appProtocol'
@@ -112,12 +112,12 @@ app.whenReady().then(() => {
     ressources: detecterRessources,
     emettre: (progression) => {
       for (const fenetre of BrowserWindow.getAllWindows()) {
-        fenetre.webContents.send(CANAUX.progressionModele, progression)
+        fenetre.webContents.send(CHANNELS.modelProgress, progression)
       }
     },
     // Le modèle téléchargé devient le modèle local actif.
     apresInstallation: async (chemin) => {
-      await parametres.enregistrer({ ...(await parametres.lire()), cheminModeleLocal: chemin })
+      await parametres.enregistrer({ ...(await parametres.lire()), localModelPath: chemin })
     },
   })
   // Mises à jour (releases GitHub) : uniquement dans l'application installée.
@@ -127,7 +127,7 @@ app.whenReady().then(() => {
     moteur: () => autoUpdater,
     emettre: (etat) => {
       for (const fenetre of BrowserWindow.getAllWindows()) {
-        fenetre.webContents.send(CANAUX.etatMiseAJour, etat)
+        fenetre.webContents.send(CHANNELS.updateStatus, etat)
       }
     },
   })
@@ -138,7 +138,7 @@ app.whenReady().then(() => {
     misesAJour,
     emettreTache: (progression) => {
       for (const fenetre of BrowserWindow.getAllWindows()) {
-        fenetre.webContents.send(CANAUX.progressionTache, progression)
+        fenetre.webContents.send(CHANNELS.taskProgress, progression)
       }
     },
     choisirEtLireCv,

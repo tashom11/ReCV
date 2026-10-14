@@ -1,4 +1,4 @@
-import { decoderErreur, encoderErreur } from '@core/canaux'
+import { decodeError, encodeError } from '@core/channels'
 import { describe, expect, it } from 'vitest'
 import { decrireErreur, estAnnulation, messageErreur } from './erreurs'
 import {
@@ -39,11 +39,11 @@ describe('parcours', () => {
   })
 
   it('juge le moteur prêt avec un service configuré ou un modèle présent', () => {
-    expect(moteurPret({ fournisseur: 'local', cheminModeleLocal: undefined }, [{ installe: false }])).toBe(false)
-    expect(moteurPret({ fournisseur: 'local', cheminModeleLocal: undefined }, [{ installe: true }])).toBe(true)
-    expect(moteurPret({ fournisseur: 'local', cheminModeleLocal: 'C:\\m.gguf' }, [])).toBe(true)
-    expect(moteurPret({ fournisseur: 'ollama', cheminModeleLocal: undefined }, [])).toBe(true)
-    expect(moteurPret({ fournisseur: 'api', cheminModeleLocal: undefined }, [])).toBe(true)
+    expect(moteurPret({ provider: 'local', localModelPath: undefined }, [{ installed: false }])).toBe(false)
+    expect(moteurPret({ provider: 'local', localModelPath: undefined }, [{ installed: true }])).toBe(true)
+    expect(moteurPret({ provider: 'local', localModelPath: 'C:\\m.gguf' }, [])).toBe(true)
+    expect(moteurPret({ provider: 'ollama', localModelPath: undefined }, [])).toBe(true)
+    expect(moteurPret({ provider: 'api', localModelPath: undefined }, [])).toBe(true)
   })
 
   it('relie les vues aux trois étapes', () => {
@@ -110,14 +110,14 @@ describe('parcours', () => {
 })
 
 describe('erreurs', () => {
-  const erreur = (code: string | undefined, message = 'détail technique') => new Error(encoderErreur(message, code))
+  const erreur = (code: string | undefined, message = 'détail technique') => new Error(encodeError(message, code))
 
   it('fait voyager le code en tête du message et le retire à l’affichage', () => {
-    expect(decoderErreur(encoderErreur('Création annulée.', 'annule'))).toEqual({
+    expect(decodeError(encodeError('Création annulée.', 'annule'))).toEqual({
       code: 'annule',
       message: 'Création annulée.',
     })
-    expect(decoderErreur('Message [[sans]] code')).toEqual({ message: 'Message [[sans]] code' })
+    expect(decodeError('Message [[sans]] code')).toEqual({ message: 'Message [[sans]] code' })
     expect(messageErreur(erreur('reseau', 'site injoignable'))).toBe('site injoignable')
     expect(estAnnulation(erreur('annule'))).toBe(true)
     expect(estAnnulation(erreur(undefined))).toBe(false)
