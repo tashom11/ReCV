@@ -6,6 +6,7 @@ import { app, BrowserWindow, dialog, ipcMain, net, protocol, safeStorage, sessio
 import { autoUpdater } from 'electron-updater'
 import { APP_ENTRY_URL, APP_SCHEME, isAppUrl, resolveAppFile } from './appProtocol'
 import { openDatabaseSafely } from './bdd/connexion'
+import { DatabaseTooNewError } from './bdd/migrations'
 import { choisirEtLireCv } from './cv'
 import { choisirDestination, genererPdf } from './export'
 import { enregistrerHandlers } from './ipc'
@@ -89,10 +90,13 @@ app.whenReady().then(() => {
   try {
     ouverture = openDatabaseSafely(join(donnees, 'recv.db'))
   } catch (erreur) {
-    // Data folder not writable (disk full, permissions…): say so rather than leave a blank window.
+    // Say why rather than leave a blank window: data from a newer Re:CV, or a data folder not writable.
     dialog.showErrorBox(
       'Re:CV ne peut pas démarrer',
-      `Le dossier de données de Re:CV est inaccessible :\n${donnees}\n\n${erreur instanceof Error ? erreur.message : String(erreur)}`,
+      erreur instanceof DatabaseTooNewError
+        ? 'Vos données ont été enregistrées par une version plus récente de Re:CV. Installez la dernière version ' +
+            'depuis le site du projet : vos données sont intactes.'
+        : `Le dossier de données de Re:CV est inaccessible :\n${donnees}\n\n${erreur instanceof Error ? erreur.message : String(erreur)}`,
     )
     app.exit(1)
     return
