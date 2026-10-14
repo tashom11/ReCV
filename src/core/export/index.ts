@@ -1,4 +1,4 @@
-export { genererHtmlCv } from './CvHtml'
-export { genererDocxCv } from './docx'
-export * from './modele'
-export * from './modeles'
+export { generateHtmlCv } from './CvHtml'
+export * from './cvDocument'
+export { generateDocxCv } from './docx'
+export * from './templates'

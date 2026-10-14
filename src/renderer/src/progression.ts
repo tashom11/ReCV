@@ -1,17 +1,17 @@
-import type { ProgressionTache } from '@core/api'
+import type { TaskProgress } from '@core/api'
 import { useEffect, useState } from 'react'
 
 /** Dernière étape signalée par le process principal pour `tache`, tant que `actif` est vrai. */
-export function useProgressionTache(tache: ProgressionTache['tache'], actif: boolean): ProgressionTache | null {
-  const [progression, setProgression] = useState<ProgressionTache | null>(null)
+export function useProgressionTache(tache: TaskProgress['task'], actif: boolean): TaskProgress | null {
+  const [progression, setProgression] = useState<TaskProgress | null>(null)
 
   useEffect(() => {
     if (!actif) {
       setProgression(null)
       return
     }
-    return window.api.surProgressionTache((p) => {
-      if (p.tache === tache) setProgression(p)
+    return window.api.onTaskProgress((p) => {
+      if (p.task === tache) setProgression(p)
     })
   }, [tache, actif])
 

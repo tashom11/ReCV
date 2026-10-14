@@ -1,18 +1,18 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { type Bloc, type CvModele, type Section, TITRES_SECTIONS } from './modele'
-import { type IdModele, trouverModele } from './modeles'
+import { type Block, type CvDocument, SECTION_TITLES, type Section } from './cvDocument'
+import { findTemplate, type TemplateId } from './templates'
 
 // Mise en page ATS : une seule colonne, texte réel, pas de tableau ni d'icône, titres de section standards.
 // Le style vient du modèle choisi (voir modeles.ts) ; la structure est identique pour tous.
 
-function BlocHtml({ bloc }: { bloc: Bloc }) {
-  switch (bloc.type) {
+function BlockHtml({ block }: { block: Block }) {
+  switch (block.type) {
     case 'paragraphe':
-      return <p>{bloc.texte}</p>
+      return <p>{block.text}</p>
     case 'liste':
       return (
         <ul>
-          {bloc.elements.map((element, i) => (
+          {block.elements.map((element, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
             <li key={i}>{element}</li>
           ))}
@@ -21,15 +21,15 @@ function BlocHtml({ bloc }: { bloc: Bloc }) {
     case 'entree':
       return (
         <div>
-          <h3>{bloc.intitule}</h3>
-          {(bloc.sousTitre || bloc.periode) && (
-            <p className="meta">{[bloc.sousTitre, bloc.periode].filter(Boolean).join(' | ')}</p>
+          <h3>{block.heading}</h3>
+          {(block.subtitle || block.dateRange) && (
+            <p className="meta">{[block.subtitle, block.dateRange].filter(Boolean).join(' | ')}</p>
           )}
-          {bloc.points.length > 0 && (
+          {block.bullets.length > 0 && (
             <ul>
-              {bloc.points.map((point, i) => (
+              {block.bullets.map((bullet, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
-                <li key={i}>{point}</li>
+                <li key={i}>{bullet}</li>
               ))}
             </ul>
           )}
@@ -38,20 +38,20 @@ function BlocHtml({ bloc }: { bloc: Bloc }) {
   }
 }
 
-const TITRES_LATERAUX: string[] = [TITRES_SECTIONS.competences, TITRES_SECTIONS.langues]
+const SIDEBAR_TITLES: string[] = [SECTION_TITLES.skills, SECTION_TITLES.languages]
 
 /** Compétences en colonne étroite : « Étiquette : a, b, c » devient un sous-titre suivi d'une liste. */
-function BlocLateral({ bloc }: { bloc: Bloc }) {
-  if (bloc.type === 'paragraphe') {
-    const separation = bloc.texte.indexOf(' : ')
+function SidebarBlock({ block }: { block: Block }) {
+  if (block.type === 'paragraphe') {
+    const separation = block.text.indexOf(' : ')
     if (separation > 0) {
-      const elements = bloc.texte
+      const elements = block.text
         .slice(separation + 3)
         .split(', ')
         .filter((e) => e.trim() !== '')
       return (
         <>
-          <h3>{bloc.texte.slice(0, separation)}</h3>
+          <h3>{block.text.slice(0, separation)}</h3>
           <ul>
             {elements.map((element, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
@@ -62,73 +62,73 @@ function BlocLateral({ bloc }: { bloc: Bloc }) {
       )
     }
   }
-  return <BlocHtml bloc={bloc} />
+  return <BlockHtml block={block} />
 }
 
-function SectionHtml({ section, lateral }: { section: Section; lateral?: boolean }) {
+function SectionHtml({ section, sidebar }: { section: Section; sidebar?: boolean }) {
   return (
     <section>
-      <h2>{section.titre}</h2>
-      {section.blocs.map((bloc, i) =>
-        lateral ? (
+      <h2>{section.title}</h2>
+      {section.blocks.map((block, i) =>
+        sidebar ? (
           // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
-          <BlocLateral key={i} bloc={bloc} />
+          <SidebarBlock key={i} block={block} />
         ) : (
           // biome-ignore lint/suspicious/noArrayIndexKey: rendu statique, ordre fixe
-          <BlocHtml key={i} bloc={bloc} />
+          <BlockHtml key={i} block={block} />
         ),
       )}
     </section>
   )
 }
 
-export function CvHtml({ modele, idModele }: { modele: CvModele; idModele?: IdModele }) {
-  const style = trouverModele(idModele)
-  const contact = modele.contact.length > 0 && (
+export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: TemplateId }) {
+  const style = findTemplate(templateId)
+  const contact = model.contact.length > 0 && (
     <p className="contact">
-      {modele.contact.map((element) => (
+      {model.contact.map((element) => (
         <span key={element}>{element}</span>
       ))}
     </p>
   )
-  const identite = (
+  const identity = (
     <>
-      {modele.nom && <h1>{modele.nom}</h1>}
-      {modele.titre && <p className="titre-poste">{modele.titre}</p>}
+      {model.name && <h1>{model.name}</h1>}
+      {model.title && <p className="titre-poste">{model.title}</p>}
     </>
   )
   return (
     <html lang="fr">
       <head>
         <meta charSet="utf-8" />
-        <title>{modele.nom ? `CV - ${modele.nom}` : 'CV'}</title>
+        <title>{model.name ? `CV - ${model.name}` : 'CV'}</title>
         <style>{style.css}</style>
       </head>
       <body data-modele={style.id}>
-        {style.disposition === 'lateral' ? (
+        {style.layout === 'lateral' ? (
           <div className="colonnes">
             <main className="principal">
               <header className="entete">
-                <div className="identite">{identite}</div>
+                <div className="identite">{identity}</div>
               </header>
-              {modele.sections
-                .filter((s) => !TITRES_LATERAUX.includes(s.titre))
+              {model.sections
+                .filter((s) => !SIDEBAR_TITLES.includes(s.title))
                 .map((section) => (
-                  <SectionHtml key={section.titre} section={section} />
+                  <SectionHtml key={section.title} section={section} />
                 ))}
             </main>
             <aside className="lateral">
-              {modele.photo && <img className="photo" src={modele.photo} alt="" />}
+              {model.photo && <img className="photo" src={model.photo} alt="" />}
               {contact && (
                 <section>
                   <h2>Contact</h2>
                   {contact}
                 </section>
               )}
-              {modele.sections
-                .filter((s) => TITRES_LATERAUX.includes(s.titre))
+              {model.sections
+                .filter((s) => SIDEBAR_TITLES.includes(s.title))
                 .map((section) => (
-                  <SectionHtml key={section.titre} section={section} lateral />
+                  <SectionHtml key={section.title} section={section} sidebar />
                 ))}
             </aside>
           </div>
@@ -136,13 +136,13 @@ export function CvHtml({ modele, idModele }: { modele: CvModele; idModele?: IdMo
           <>
             <header className="entete">
               <div className="identite">
-                {identite}
+                {identity}
                 {contact}
               </div>
-              {modele.photo && <img className="photo" src={modele.photo} alt="" />}
+              {model.photo && <img className="photo" src={model.photo} alt="" />}
             </header>
-            {modele.sections.map((section) => (
-              <SectionHtml key={section.titre} section={section} />
+            {model.sections.map((section) => (
+              <SectionHtml key={section.title} section={section} />
             ))}
           </>
         )}
@@ -151,6 +151,6 @@ export function CvHtml({ modele, idModele }: { modele: CvModele; idModele?: IdMo
   )
 }
 
-export function genererHtmlCv(modele: CvModele, idModele?: IdModele): string {
-  return `<!doctype html>${renderToStaticMarkup(<CvHtml modele={modele} idModele={idModele} />)}`
+export function generateHtmlCv(model: CvDocument, templateId?: TemplateId): string {
+  return `<!doctype html>${renderToStaticMarkup(<CvHtml model={model} templateId={templateId} />)}`
 }

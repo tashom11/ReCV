@@ -1,4 +1,4 @@
-import type { ModeleEmbarqueEtat, ProgressionModele } from '@core/api'
+import type { LocalModelState, ModelDownloadProgress } from '@core/api'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { downloadAnnouncement } from '../accessibility'
 import { type DescriptionErreur, decrireErreur } from '../erreurs'
@@ -18,8 +18,8 @@ export function EcranPreparation({
   onPlusTard: () => void
   onReglages: () => void
 }) {
-  const [modele, setModele] = useState<ModeleEmbarqueEtat | null>(null)
-  const [progression, setProgression] = useState<ProgressionModele | null>(null)
+  const [modele, setModele] = useState<LocalModelState | null>(null)
+  const [progression, setProgression] = useState<ModelDownloadProgress | null>(null)
   const [erreur, setErreur] = useState<DescriptionErreur | null>(null)
   const [restant, setRestant] = useState<string | null>(null)
   // Premier relevé de la session : le débit se mesure depuis là (une reprise ne repart pas de zéro octet).
@@ -30,33 +30,33 @@ export function EcranPreparation({
     setErreur(null)
     depart.current = null
     try {
-      await window.api.telechargerModele(id)
+      await window.api.downloadModel(id)
     } catch (e) {
       // Déjà en cours (lancé depuis les Réglages) : on suit simplement sa progression.
-      const etat = await window.api.lireEtatModeles().catch(() => null)
-      if (!etat?.telechargement) setErreur(decrireErreur('preparation', e))
+      const etat = await window.api.getModelsState().catch(() => null)
+      if (!etat?.download) setErreur(decrireErreur('preparation', e))
     }
   }, [])
 
   useEffect(() => {
-    const desabonner = window.api.surProgressionModele((p) => {
+    const desabonner = window.api.onModelProgress((p) => {
       setProgression(p)
-      if (p.etat === 'en-cours') {
-        const releve = { octets: p.recuOctets, instantMs: Date.now() }
+      if (p.status === 'en-cours') {
+        const releve = { octets: p.receivedBytes, instantMs: Date.now() }
         depart.current ??= releve
-        setRestant(restantTelechargement(p.recuOctets, p.totalOctets, debit(depart.current, releve)))
+        setRestant(restantTelechargement(p.receivedBytes, p.totalBytes, debit(depart.current, releve)))
       }
-      if (p.etat === 'termine') onPret()
+      if (p.status === 'termine') onPret()
     })
     if (!lance.current) {
       lance.current = true
-      window.api.lireEtatModeles().then(
+      window.api.getModelsState().then(
         (etat) => {
-          const choisi = etat.modeles.find((m) => m.recommande) ?? etat.modeles[0]
+          const choisi = etat.models.find((m) => m.recommended) ?? etat.models[0]
           if (!choisi) return
           setModele(choisi)
-          if (etat.modeles.some((m) => m.installe)) onPret()
-          else if (etat.telechargement) setProgression(etat.telechargement)
+          if (etat.models.some((m) => m.installed)) onPret()
+          else if (etat.download) setProgression(etat.download)
           else void telecharger(choisi.id)
         },
         (e) => setErreur(decrireErreur('preparation', e)),
@@ -65,11 +65,11 @@ export function EcranPreparation({
     return desabonner
   }, [onPret, telecharger])
 
-  const total = progression?.totalOctets || modele?.tailleOctets || 0
-  const recu = progression?.recuOctets ?? 0
+  const total = progression?.totalBytes || modele?.sizeBytes || 0
+  const recu = progression?.receivedBytes ?? 0
   const pourcentage = total > 0 ? Math.min(100, Math.round((recu / total) * 100)) : 0
-  const verification = progression?.etat === 'verification'
-  const interrompu = progression?.etat === 'erreur' && !erreur
+  const verification = progression?.status === 'verification'
+  const interrompu = progression?.status === 'erreur' && !erreur
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-14">
@@ -88,7 +88,7 @@ export function EcranPreparation({
           {modele ? (
             <>
               {' '}
-              d’environ <strong className="text-encre">{formaterTaille(modele.tailleOctets)}</strong>
+              d’environ <strong className="text-encre">{formaterTaille(modele.sizeBytes)}</strong>
             </>
           ) : (
             ' volumineux'
@@ -156,7 +156,7 @@ export function EcranPreparation({
           <Bouton
             variante="secondaire"
             onClick={() => {
-              void window.api.annulerTelechargement()
+              void window.api.cancelDownload()
               onPlusTard()
             }}
           >

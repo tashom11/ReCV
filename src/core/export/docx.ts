@@ -11,60 +11,60 @@ import {
   TextRun,
   VerticalPositionRelativeFrom,
 } from 'docx'
-import type { Bloc, CvModele } from './modele'
-import { type IdModele, trouverModele } from './modeles'
+import type { Block, CvDocument } from './cvDocument'
+import { findTemplate, type TemplateId } from './templates'
 
 // Tailles en demi-points (docx).
-const TAILLE_CORPS = 21
-const TAILLE_TITRE = 40
+const BODY_SIZE = 21
+const TITLE_SIZE = 40
 
 interface Style {
-  police: string
+  font: string
   accent: string
-  texte: string
-  centre: boolean
-  bandeau?: string
-  titreCouleur: boolean
+  text: string
+  center: boolean
+  banner?: string
+  coloredTitle: boolean
 }
 
-function texte(style: Style, contenu: string, options: { gras?: boolean; taille?: number; couleur?: string } = {}) {
+function text(style: Style, content: string, options: { bold?: boolean; size?: number; color?: string } = {}) {
   return new TextRun({
-    text: contenu,
-    font: style.police,
-    size: options.taille ?? TAILLE_CORPS,
-    bold: options.gras,
-    color: options.couleur ?? style.texte,
+    text: content,
+    font: style.font,
+    size: options.size ?? BODY_SIZE,
+    bold: options.bold,
+    color: options.color ?? style.text,
   })
 }
 
-function paragrapheBloc(style: Style, bloc: Bloc): Paragraph[] {
-  switch (bloc.type) {
+function blockParagraphs(style: Style, block: Block): Paragraph[] {
+  switch (block.type) {
     case 'paragraphe':
-      return [new Paragraph({ children: [texte(style, bloc.texte)] })]
+      return [new Paragraph({ children: [text(style, block.text)] })]
     case 'liste':
-      return bloc.elements.map((e) => new Paragraph({ children: [texte(style, e)], bullet: { level: 0 } }))
+      return block.elements.map((e) => new Paragraph({ children: [text(style, e)], bullet: { level: 0 } }))
     case 'entree': {
-      const meta = [bloc.sousTitre, bloc.periode].filter(Boolean).join(' | ')
+      const meta = [block.subtitle, block.dateRange].filter(Boolean).join(' | ')
       return [
         new Paragraph({
           heading: HeadingLevel.HEADING_3,
           spacing: { before: 160 },
-          children: [texte(style, bloc.intitule, { gras: true })],
+          children: [text(style, block.heading, { bold: true })],
         }),
-        ...(meta ? [new Paragraph({ children: [texte(style, meta, { couleur: '666666' })] })] : []),
-        ...bloc.points.map((p) => new Paragraph({ children: [texte(style, p)], bullet: { level: 0 } })),
+        ...(meta ? [new Paragraph({ children: [text(style, meta, { color: '666666' })] })] : []),
+        ...block.bullets.map((p) => new Paragraph({ children: [text(style, p)], bullet: { level: 0 } })),
       ]
     }
   }
 }
 
 /** Décode une image « data:image/…;base64,… » ; `null` si le format n'est pas pris en charge. */
-function decoderPhoto(dataUrl: string): { donnees: Buffer; type: 'jpg' | 'png' } | null {
-  const correspondance = /^data:image\/(png|jpe?g);base64,(.+)$/i.exec(dataUrl)
-  if (!correspondance?.[2]) return null
+function decodePhoto(dataUrl: string): { data: Buffer; type: 'jpg' | 'png' } | null {
+  const match = /^data:image\/(png|jpe?g);base64,(.+)$/i.exec(dataUrl)
+  if (!match?.[2]) return null
   return {
-    donnees: Buffer.from(correspondance[2], 'base64'),
-    type: correspondance[1]?.toLowerCase() === 'png' ? 'png' : 'jpg',
+    data: Buffer.from(match[2], 'base64'),
+    type: match[1]?.toLowerCase() === 'png' ? 'png' : 'jpg',
   }
 }
 
@@ -72,27 +72,27 @@ function decoderPhoto(dataUrl: string): { donnees: Buffer; type: 'jpg' | 'png' }
  * DOCX lisible par un ATS : vrais styles de titres, listes natives, aucun tableau ni zone de texte.
  * La photo (facultative) est une image flottante en haut à droite, sans incidence sur le texte.
  */
-export async function genererDocxCv(modele: CvModele, idModele?: IdModele): Promise<Buffer> {
-  const choisi = trouverModele(idModele)
+export async function generateDocxCv(model: CvDocument, templateId?: TemplateId): Promise<Buffer> {
+  const chosen = findTemplate(templateId)
   const style: Style = {
-    police: choisi.docx.police,
-    accent: choisi.docx.accent,
-    texte: choisi.docx.texte,
-    centre: choisi.docx.entete === 'centre',
-    bandeau: choisi.docx.bandeau,
-    titreCouleur: choisi.docx.titreSectionCouleur,
+    font: chosen.docx.font,
+    accent: chosen.docx.accent,
+    text: chosen.docx.text,
+    center: chosen.docx.header === 'centre',
+    banner: chosen.docx.banner,
+    coloredTitle: chosen.docx.coloredSectionTitles,
   }
-  const alignement = style.centre ? AlignmentType.CENTER : AlignmentType.LEFT
-  const surBandeau = style.bandeau !== undefined
-  const couleurNom = surBandeau ? 'FFFFFF' : style.accent
-  const ombrage = style.bandeau ? { type: ShadingType.CLEAR, fill: style.bandeau, color: 'auto' } : undefined
+  const alignment = style.center ? AlignmentType.CENTER : AlignmentType.LEFT
+  const onBanner = style.banner !== undefined
+  const nameColor = onBanner ? 'FFFFFF' : style.accent
+  const shading = style.banner ? { type: ShadingType.CLEAR, fill: style.banner, color: 'auto' } : undefined
 
-  const photo = modele.photo ? decoderPhoto(modele.photo) : null
-  const imagePhoto = photo
+  const photo = model.photo ? decodePhoto(model.photo) : null
+  const photoImage = photo
     ? [
         new ImageRun({
           type: photo.type,
-          data: photo.donnees,
+          data: photo.data,
           transformation: { width: 90, height: 90 },
           floating: {
             horizontalPosition: { relative: HorizontalPositionRelativeFrom.MARGIN, offset: 5_000_000 },
@@ -102,70 +102,67 @@ export async function genererDocxCv(modele: CvModele, idModele?: IdModele): Prom
       ]
     : []
 
-  const entete: Paragraph[] = [
-    ...(modele.nom
+  const header: Paragraph[] = [
+    ...(model.name
       ? [
           new Paragraph({
             heading: HeadingLevel.TITLE,
-            alignment: alignement,
-            shading: ombrage,
-            children: [
-              ...imagePhoto,
-              texte(style, modele.nom, { gras: true, taille: TAILLE_TITRE, couleur: couleurNom }),
-            ],
+            alignment: alignment,
+            shading: shading,
+            children: [...photoImage, text(style, model.name, { bold: true, size: TITLE_SIZE, color: nameColor })],
           }),
         ]
       : []),
-    ...(modele.titre
+    ...(model.title
       ? [
           new Paragraph({
-            alignment: alignement,
-            shading: ombrage,
-            children: [texte(style, modele.titre, { taille: 24, couleur: surBandeau ? '38BDF8' : style.accent })],
+            alignment: alignment,
+            shading: shading,
+            children: [text(style, model.title, { size: 24, color: onBanner ? '38BDF8' : style.accent })],
           }),
         ]
       : []),
-    ...(modele.contact.length > 0
+    ...(model.contact.length > 0
       ? [
           new Paragraph({
-            alignment: alignement,
-            shading: ombrage,
-            children: [texte(style, modele.contact.join(' | '), { couleur: surBandeau ? 'CBD5E1' : '555555' })],
+            alignment: alignment,
+            shading: shading,
+            children: [text(style, model.contact.join(' | '), { color: onBanner ? 'CBD5E1' : '555555' })],
           }),
         ]
       : []),
   ]
 
-  const sections = modele.sections.flatMap((section) => [
+  const sections = model.sections.flatMap((section) => [
     new Paragraph({
       heading: HeadingLevel.HEADING_2,
-      alignment: style.centre ? AlignmentType.CENTER : AlignmentType.LEFT,
+      alignment: style.center ? AlignmentType.CENTER : AlignmentType.LEFT,
       spacing: { before: 280, after: 80 },
-      border: style.titreCouleur
+      border: style.coloredTitle
         ? { bottom: { style: BorderStyle.SINGLE, size: 6, space: 2, color: style.accent } }
         : undefined,
       children: [
-        texte(style, section.titre.toUpperCase(), {
-          gras: true,
-          taille: 23,
-          couleur: style.titreCouleur ? style.accent : style.texte,
+        text(style, section.title.toUpperCase(), {
+          bold: true,
+          size: 23,
+          color: style.coloredTitle ? style.accent : style.text,
         }),
       ],
     }),
-    ...section.blocs.flatMap((bloc) => paragrapheBloc(style, bloc)),
+    ...section.blocks.flatMap((block) => blockParagraphs(style, block)),
   ])
 
   const document = new Document({
-    title: modele.nom ? `CV - ${modele.nom}` : 'CV',
+    title: model.name ? `CV - ${model.name}` : 'CV',
     styles: {
       default: {
-        document: { run: { font: style.police, size: TAILLE_CORPS }, paragraph: { alignment: AlignmentType.LEFT } },
+        document: { run: { font: style.font, size: BODY_SIZE }, paragraph: { alignment: AlignmentType.LEFT } },
       },
     },
     sections: [
       {
         properties: { page: { margin: { top: 1000, bottom: 1000, left: 1100, right: 1100 } } },
-        children: [...entete, ...sections],
+        children: [...header, ...sections],
       },
     ],
   })

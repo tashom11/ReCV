@@ -1,8 +1,8 @@
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { Parametres } from '@core/api'
-import { type FournisseurLLM, FournisseurMock, profilCanned } from '@core/llm'
+import type { Settings } from '@core/api'
+import { cannedProfile, type LlmProvider, MockProvider } from '@core/llm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './bdd/connexion'
 import { enregistrerProfil, obtenirProfilActif } from './bdd/depots'
@@ -30,10 +30,10 @@ describe('BDD', () => {
   it('enregistre puis met à jour le profil actif', () => {
     const bdd = ouvrirBdd(':memory:')
     expect(obtenirProfilActif(bdd)).toBeNull()
-    const premier = enregistrerProfil(bdd, profilCanned)
-    const second = enregistrerProfil(bdd, { ...profilCanned, fullName: 'Autre' })
+    const premier = enregistrerProfil(bdd, cannedProfile)
+    const second = enregistrerProfil(bdd, { ...cannedProfile, fullName: 'Autre' })
     expect(second.id).toBe(premier.id)
-    expect(obtenirProfilActif(bdd)?.profil.fullName).toBe('Autre')
+    expect(obtenirProfilActif(bdd)?.profile.fullName).toBe('Autre')
     bdd.fermer()
   })
 })
@@ -42,11 +42,11 @@ describe('StockageParametres', () => {
   it('chiffre la clé API sur disque et ne l’expose pas dans l’état', async () => {
     const stockage = new StockageParametres(dossier, chiffreurFactice())
     const etat = await stockage.definirCle('sk-secret-123')
-    expect(etat.cleApiDefinie).toBe(true)
+    expect(etat.hasApiKey).toBe(true)
     expect(JSON.stringify(etat)).not.toContain('sk-secret')
     expect((await readFile(join(dossier, 'cle-api.bin'))).toString('utf8')).not.toContain('sk-secret')
     expect(await stockage.lireCle()).toBe('sk-secret-123')
-    expect((await stockage.definirCle('')).cleApiDefinie).toBe(false)
+    expect((await stockage.definirCle('')).hasApiKey).toBe(false)
   })
 
   it('refuse de stocker la clé sans chiffrement disponible', async () => {
@@ -56,28 +56,28 @@ describe('StockageParametres', () => {
 
   it('retombe sur les valeurs par défaut si le fichier est absent', async () => {
     const stockage = new StockageParametres(dossier, chiffreurFactice())
-    expect((await stockage.lire()).fournisseur).toBe('local')
+    expect((await stockage.lire()).provider).toBe('local')
   })
 })
 
 describe('service', () => {
-  function service(fabrique: () => FournisseurLLM = () => new FournisseurMock()) {
+  function service(fabrique: () => LlmProvider = () => new MockProvider()) {
     const bdd = ouvrirBdd(':memory:')
     const parametres = new StockageParametres(dossier, chiffreurFactice())
-    let recu: { parametres: Parametres; cle: string | null } | undefined
+    let recu: { parametres: Settings; cle: string | null } | undefined
     const ouverts: string[] = []
     const api = creerService({
       bdd,
       parametres,
       modeles: new GestionnaireModeles({
         dossier: join(dossier, 'modeles'),
-        ressources: async () => ({ ramGo: 8, vramGo: 0 }),
+        ressources: async () => ({ ramGb: 8, vramGb: 0 }),
         emettre: () => undefined,
       }),
       choisirEtLireCv: async () => ({ texte: 'texte du cv', nom: 'mon-cv.pdf' }),
       misesAJour: {
-        etat: () => ({ version: '0.0.0', etat: 'indisponible' as const }),
-        verifier: async () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        etat: () => ({ version: '0.0.0', status: 'indisponible' as const }),
+        verifier: async () => ({ version: '0.0.0', status: 'indisponible' as const }),
         installer: () => undefined,
       },
       lireCv: async (chemin) => `texte de ${chemin}`,
@@ -96,24 +96,24 @@ describe('service', () => {
 
   it('importe un CV puis adapte à une offre et enregistre le résultat', async () => {
     const { api } = service()
-    expect(await api.adapterCv({ jobTitle: 'Dev', rawText: 'x' }).catch((e: Error) => e.message)).toMatch(
+    expect(await api.tailorCv({ jobTitle: 'Dev', rawText: 'x' }).catch((e: Error) => e.message)).toMatch(
       /importez d’abord/,
     )
-    const importe = await api.importerCv()
-    expect(importe?.profil.fullName).toBeTruthy()
-    const offre = await api.analyserTexteOffre('Offre développeur React')
-    const genere = await api.adapterCv(offre)
+    const importe = await api.importCv()
+    expect(importe?.profile.fullName).toBeTruthy()
+    const offre = await api.parseJobPostingText('Offre développeur React')
+    const genere = await api.tailorCv(offre)
     expect(genere.cv.headline).toBeTruthy()
     expect(genere.id).toBeGreaterThan(0)
   })
 
   it('exporte le CV validé en PDF et DOCX avec les coordonnées du profil', async () => {
     const { api } = service()
-    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { jobTitle: 'Dev', rawText: 'x' })
-    await expect(api.exporterCv(cvCanned, 'pdf')).rejects.toThrow(/importez d’abord/)
-    await api.importerCv()
-    const pdf = await api.exporterCv(cvCanned, 'pdf')
-    const docx = await api.exporterCv(cvCanned, 'docx')
+    const cvCanned = await new MockProvider().tailorCv(cannedProfile, { jobTitle: 'Dev', rawText: 'x' })
+    await expect(api.exportCv(cvCanned, 'pdf')).rejects.toThrow(/importez d’abord/)
+    await api.importCv()
+    const pdf = await api.exportCv(cvCanned, 'pdf')
+    const docx = await api.exportCv(cvCanned, 'docx')
     expect(pdf).toMatch(/CV-Claire-Dubois.pdf$/)
     expect((await readFile(pdf as string)).toString().startsWith('%PDF')).toBe(true)
     expect((await readFile(docx as string)).subarray(0, 2).toString()).toBe('PK')
@@ -121,82 +121,82 @@ describe('service', () => {
 
   it('importe un CV déposé dans la fenêtre, désigné par son chemin', async () => {
     const { api } = service()
-    const importe = await api.importerCvDepose('C:\\cv\\mon-cv.pdf')
-    expect(importe.profil.fullName).toBeTruthy()
-    expect((await api.obtenirProfil())?.id).toBe(importe.id)
+    const importe = await api.importDroppedCv('C:\\cv\\mon-cv.pdf')
+    expect(importe.profile.fullName).toBeTruthy()
+    expect((await api.getProfile())?.id).toBe(importe.id)
   })
 
   it('analyse l’annonce une seule fois : la carte de confirmation et l’adaptation partagent le résultat', async () => {
-    const mock = new FournisseurMock()
+    const mock = new MockProvider()
     let analysesDemandees = 0
     let analyseRecue = false
     const { api } = service(() => ({
-      extraireProfil: (t) => mock.extraireProfil(t),
-      extraireOffre: (t) => mock.extraireOffre(t),
-      genererAccroche: (p) => mock.genererAccroche(p),
-      analyserOffre: (o) => {
+      extractProfile: (t) => mock.extractProfile(t),
+      extractJobPosting: (t) => mock.extractJobPosting(t),
+      generateSummary: (p) => mock.generateSummary(p),
+      analyzeJobPosting: (o) => {
         analysesDemandees++
-        return mock.analyserOffre(o)
+        return mock.analyzeJobPosting(o)
       },
-      adapterCv: (p, o, options) => {
-        analyseRecue = options?.analyse !== undefined
-        return mock.adapterCv(p, o, options)
+      tailorCv: (p, o, options) => {
+        analyseRecue = options?.analysis !== undefined
+        return mock.tailorCv(p, o, options)
       },
     }))
     const offre = { jobTitle: 'Développeur React', rawText: 'Poste en CDI à temps plein. React, Figma.' }
-    await expect(api.analyserAnnonce(offre)).rejects.toMatchObject({ code: 'profil-absent' })
+    await expect(api.previewJobPosting(offre)).rejects.toMatchObject({ code: 'profil-absent' })
 
-    await api.importerCv()
-    const apercu = await api.analyserAnnonce(offre)
+    await api.importCv()
+    const apercu = await api.previewJobPosting(offre)
     // « React » et « TypeScript » sont dans le profil, « Figma » non : tout ce que l'annonce demande est listé.
-    expect(apercu.recherchees).toEqual(['React', 'TypeScript', 'Figma', 'Autonomie'])
-    expect(apercu.contrat).toBe('CDI · temps plein')
+    expect(apercu.soughtSkills).toEqual(['React', 'TypeScript', 'Figma', 'Autonomie'])
+    expect(apercu.contractType).toBe('CDI · temps plein')
 
-    await api.analyserAnnonce(offre)
-    await api.adapterCv(offre)
+    await api.previewJobPosting(offre)
+    await api.tailorCv(offre)
     expect(analysesDemandees).toBe(1)
     expect(analyseRecue).toBe(true)
   })
 
   it('annule une adaptation en cours : l’appel échoue avec le code « annule » et rien n’est enregistré', async () => {
-    const mock = new FournisseurMock()
+    const mock = new MockProvider()
     let demarre: () => void = () => undefined
     const enCours = new Promise<void>((resoudre) => {
       demarre = resoudre
     })
     const { api } = service(() => ({
-      extraireProfil: (t) => mock.extraireProfil(t),
-      extraireOffre: (t) => mock.extraireOffre(t),
-      genererAccroche: (p) => mock.genererAccroche(p),
-      analyserOffre: (o) => mock.analyserOffre(o),
+      extractProfile: (t) => mock.extractProfile(t),
+      extractJobPosting: (t) => mock.extractJobPosting(t),
+      generateSummary: (p) => mock.generateSummary(p),
+      analyzeJobPosting: (o) => mock.analyzeJobPosting(o),
       // Attend l'annulation, comme un modèle en pleine génération.
-      adapterCv: (_p, _o, options) =>
+      tailorCv: (_p, _o, options) =>
         new Promise((_resoudre, rejeter) => {
           options?.signal?.addEventListener('abort', () => rejeter(options.signal?.reason))
           demarre()
         }),
     }))
-    await api.importerCv()
-    const adaptation = api.adapterCv({ jobTitle: 'Dev', rawText: 'x' })
+    await api.importCv()
+    const adaptation = api.tailorCv({ jobTitle: 'Dev', rawText: 'x' })
     await enCours
-    await api.annulerAdaptation()
+    await api.cancelTailoring()
     await expect(adaptation).rejects.toMatchObject({ code: 'annule' })
     // Annuler sans adaptation en cours ne fait rien.
-    await expect(api.annulerAdaptation()).resolves.toBeUndefined()
+    await expect(api.cancelTailoring()).resolves.toBeUndefined()
   })
 
   it('n’ouvre que les fichiers créés par l’export de la session', async () => {
     const { api, ouverts } = service()
-    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { jobTitle: 'Dev', rawText: 'x' })
-    await api.importerCv()
-    const pdf = (await api.exporterCv(cvCanned, 'pdf')) as string
+    const cvCanned = await new MockProvider().tailorCv(cannedProfile, { jobTitle: 'Dev', rawText: 'x' })
+    await api.importCv()
+    const pdf = (await api.exportCv(cvCanned, 'pdf')) as string
 
-    await api.ouvrirFichier(pdf)
-    await api.montrerDansDossier(pdf)
+    await api.openFile(pdf)
+    await api.revealInFolder(pdf)
     expect(ouverts).toEqual([`ouvrir:${pdf}`, `montrer:${pdf}`])
 
-    await expect(api.ouvrirFichier('C:\\Windows\\System32\\cmd.exe')).rejects.toThrow(/pas été créé par Re:CV/)
-    await expect(api.montrerDansDossier(join(dossier, 'autre.pdf'))).rejects.toThrow(/pas été créé par Re:CV/)
+    await expect(api.openFile('C:\\Windows\\System32\\cmd.exe')).rejects.toThrow(/pas été créé par Re:CV/)
+    await expect(api.revealInFolder(join(dossier, 'autre.pdf'))).rejects.toThrow(/pas été créé par Re:CV/)
     expect(ouverts).toHaveLength(2)
   })
 
@@ -207,13 +207,13 @@ describe('service', () => {
       parametres: new StockageParametres(dossier, chiffreurFactice()),
       modeles: new GestionnaireModeles({
         dossier: join(dossier, 'modeles'),
-        ressources: async () => ({ ramGo: 8, vramGo: 0 }),
+        ressources: async () => ({ ramGb: 8, vramGb: 0 }),
         emettre: () => undefined,
       }),
       choisirEtLireCv: async () => ({ texte: 'cv', nom: 'mon-cv.pdf' }),
       misesAJour: {
-        etat: () => ({ version: '0.0.0', etat: 'indisponible' as const }),
-        verifier: async () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+        etat: () => ({ version: '0.0.0', status: 'indisponible' as const }),
+        verifier: async () => ({ version: '0.0.0', status: 'indisponible' as const }),
         installer: () => undefined,
       },
       lireCv: async () => 'cv',
@@ -223,17 +223,17 @@ describe('service', () => {
       // Dossier inexistant : l'écriture échoue.
       choisirDestination: async () => join(dossier, 'absent', 'cv.pdf'),
       genererPdf: async () => Buffer.from('%PDF'),
-      creerFournisseur: async () => new FournisseurMock(),
+      creerFournisseur: async () => new MockProvider(),
     })
-    await api.importerCv()
-    const cvCanned = await new FournisseurMock().adapterCv(profilCanned, { jobTitle: 'Dev', rawText: 'x' })
-    await expect(api.exporterCv(cvCanned, 'pdf')).rejects.toMatchObject({ code: 'ecriture-impossible' })
+    await api.importCv()
+    const cvCanned = await new MockProvider().tailorCv(cannedProfile, { jobTitle: 'Dev', rawText: 'x' })
+    await expect(api.exportCv(cvCanned, 'pdf')).rejects.toMatchObject({ code: 'ecriture-impossible' })
   })
 
   it('transmet les paramètres et la clé au fabricant de fournisseur', async () => {
     const { api, lireRecu } = service()
-    await api.definirCleApi('sk-abc')
-    await api.importerCv()
+    await api.setApiKey('sk-abc')
+    await api.importCv()
     expect(lireRecu()?.cle).toBe('sk-abc')
   })
 })

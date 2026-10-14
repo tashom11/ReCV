@@ -10,6 +10,23 @@ export interface SettingsMigration {
 export const SETTINGS_MIGRATIONS: readonly SettingsMigration[] = [
   // Version 1: the v0.2.1 file, which had no version number. Nothing to change.
   { version: 1, up: (settings) => settings },
+  // Version 2: code moved to English, settings keys too.
+  {
+    version: 2,
+    up: (settings) => {
+      const keys: Record<string, string> = {
+        fournisseur: 'provider',
+        modeleOllama: 'ollamaModel',
+        urlOllama: 'ollamaUrl',
+        urlApi: 'apiUrl',
+        modeleApi: 'apiModel',
+        reformulerPuces: 'rewriteBullets',
+        modeleCv: 'cvTemplate',
+        cheminModeleLocal: 'localModelPath',
+      }
+      return Object.fromEntries(Object.entries(settings).map(([key, value]) => [keys[key] ?? key, value]))
+    },
+  },
 ]
 
 export const SETTINGS_VERSION = Math.max(...SETTINGS_MIGRATIONS.map((m) => m.version))

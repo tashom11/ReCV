@@ -1,5 +1,5 @@
-import type { Parametres } from '@core/api'
-import type { CleEtape } from '@core/etapes'
+import type { Settings } from '@core/api'
+import type { StepKey } from '@core/steps'
 
 // Règles du parcours en trois étapes, sans React ni accès à l'application : testables seules.
 
@@ -21,11 +21,11 @@ export function vueInitiale(profilPresent: boolean): Vue {
 
 /** Le moteur peut travailler : service configuré, ou modèle présent sur l'ordinateur. */
 export function moteurPret(
-  parametres: Pick<Parametres, 'fournisseur' | 'cheminModeleLocal'>,
-  modeles: readonly { installe: boolean }[],
+  parametres: Pick<Settings, 'provider' | 'localModelPath'>,
+  modeles: readonly { installed: boolean }[],
 ): boolean {
-  if (parametres.fournisseur !== 'local') return true
-  return Boolean(parametres.cheminModeleLocal) || modeles.some((m) => m.installe)
+  if (parametres.provider !== 'local') return true
+  return Boolean(parametres.localModelPath) || modeles.some((m) => m.installed)
 }
 
 /** Après « Commencer » : la préparation si le moteur manque, sinon l'étape ①. */
@@ -75,13 +75,13 @@ export const ETAPES_CREATION = [
   'Je mets votre CV en page',
 ] as const
 
-const RANG_CLE: Record<CleEtape, number> = { preparation: 0, analyse: 0, selection: 1, reformulation: 1, accroche: 2 }
+const RANG_CLE: Record<StepKey, number> = { preparation: 0, analyse: 0, selection: 1, reformulation: 1, accroche: 2 }
 
 /**
  * Rang (0 à 3) de l'étape de création en cours. L'annonce déjà lue à l'étape ② n'est pas relue :
  * la première ligne est alors faite d'emblée.
  */
-export function etapeCreationCourante(cle: CleEtape | undefined, annonceLue: boolean, miseEnPage: boolean): number {
+export function etapeCreationCourante(cle: StepKey | undefined, annonceLue: boolean, miseEnPage: boolean): number {
   if (miseEnPage) return 3
   const rang = cle ? RANG_CLE[cle] : 0
   return annonceLue ? Math.max(1, rang) : rang

@@ -1,5 +1,5 @@
-import type { ChoixComposition } from '@core/adaptation/composition'
 import type { Profile, TailoredCv } from '@core/schemas'
+import type { CompositionChoices } from '@core/tailoring/composition'
 import type { ReactNode } from 'react'
 import { CaseACocher, Champ } from '../ui'
 
@@ -62,8 +62,8 @@ export function CeQuiAChange({
   onAccroche: (accroche: string) => void
   points: string[][]
   onPoints: (points: string[][]) => void
-  choix: ChoixComposition
-  onChoix: (choix: ChoixComposition) => void
+  choix: CompositionChoices
+  onChoix: (choix: CompositionChoices) => void
 }) {
   const competencesFinales = [...cvFinal.keySkills, ...cvFinal.skills]
   return (
@@ -82,8 +82,8 @@ export function CeQuiAChange({
         garder={
           <CaseACocher
             etiquette="Utiliser le titre adapté"
-            coche={choix.titre}
-            onChange={(v) => onChoix({ ...choix, titre: v })}
+            coche={choix.title}
+            onChange={(v) => onChoix({ ...choix, title: v })}
           />
         }
       />
@@ -97,8 +97,8 @@ export function CeQuiAChange({
         garder={
           <CaseACocher
             etiquette="Utiliser la phrase adaptée"
-            coche={choix.accroche}
-            onChange={(v) => onChoix({ ...choix, accroche: v })}
+            coche={choix.summary}
+            onChange={(v) => onChoix({ ...choix, summary: v })}
           />
         }
       />
@@ -145,8 +145,8 @@ export function CeQuiAChange({
           <CaseACocher
             etiquette="Utiliser la sélection adaptée"
             aide="Les compétences utiles pour cette annonce, celles qu’elle demande en premier."
-            coche={choix.competences}
-            onChange={(v) => onChoix({ ...choix, competences: v })}
+            coche={choix.skills}
+            onChange={(v) => onChoix({ ...choix, skills: v })}
           />
         }
       />

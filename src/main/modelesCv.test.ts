@@ -1,7 +1,7 @@
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FournisseurMock, profilCanned } from '@core/llm'
+import { cannedProfile, MockProvider } from '@core/llm'
 import { tailoredCvSchema } from '@core/schemas'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ouvrirBdd } from './bdd/connexion'
@@ -32,13 +32,13 @@ function creer() {
     parametres,
     modeles: new GestionnaireModeles({
       dossier: join(dossier, 'modeles'),
-      ressources: async () => ({ ramGo: 8, vramGo: 0 }),
+      ressources: async () => ({ ramGb: 8, vramGb: 0 }),
       emettre: () => undefined,
     }),
     choisirEtLireCv: async () => ({ texte: 'cv', nom: 'mon-cv.pdf' }),
     misesAJour: {
-      etat: () => ({ version: '0.0.0', etat: 'indisponible' as const }),
-      verifier: async () => ({ version: '0.0.0', etat: 'indisponible' as const }),
+      etat: () => ({ version: '0.0.0', status: 'indisponible' as const }),
+      verifier: async () => ({ version: '0.0.0', status: 'indisponible' as const }),
       installer: () => undefined,
     },
     lireCv: async () => 'cv',
@@ -50,7 +50,7 @@ function creer() {
       pdfs.push(html)
       return Buffer.from('%PDF-fake')
     },
-    creerFournisseur: async () => new FournisseurMock(),
+    creerFournisseur: async () => new MockProvider(),
   })
   return { service, parametres, pdfs }
 }
@@ -60,28 +60,28 @@ const cv = tailoredCvSchema.parse({ headline: 'Dev', summary: 'Je fais preuve de
 describe('modèles de CV et photo', () => {
   it('renvoie le HTML d’un modèle avec la photo du profil', async () => {
     const { service } = creer()
-    await service.enregistrerProfil({ ...profilCanned, photo: PHOTO })
-    const html = await service.htmlModeleCv(cv, 'elegant')
+    await service.saveProfile({ ...cannedProfile, photo: PHOTO })
+    const html = await service.templateHtml(cv, 'elegant')
     expect(html).toContain('data-modele="elegant"')
     expect(html).toContain('<img class="photo"')
   })
 
   it('exporte avec le modèle demandé, à défaut avec celui des paramètres', async () => {
     const { service, parametres, pdfs } = creer()
-    await service.enregistrerProfil(profilCanned)
+    await service.saveProfile(cannedProfile)
 
-    await service.exporterCv(cv, 'pdf', 'bandeau')
+    await service.exportCv(cv, 'pdf', 'bandeau')
     expect(pdfs.at(-1)).toContain('data-modele="bandeau"')
 
-    await parametres.enregistrer({ ...(await parametres.lire()), modeleCv: 'moderne' })
-    await service.exporterCv(cv, 'pdf')
+    await parametres.enregistrer({ ...(await parametres.lire()), cvTemplate: 'moderne' })
+    await service.exportCv(cv, 'pdf')
     expect(pdfs.at(-1)).toContain('data-modele="moderne"')
   })
 
   it('importer un autre CV conserve la photo du profil actif', async () => {
     const { service } = creer()
-    await service.enregistrerProfil({ ...profilCanned, photo: PHOTO })
-    const importe = await service.importerCv()
-    expect(importe?.profil.photo).toBe(PHOTO)
+    await service.saveProfile({ ...cannedProfile, photo: PHOTO })
+    const importe = await service.importCv()
+    expect(importe?.profile.photo).toBe(PHOTO)
   })
 })

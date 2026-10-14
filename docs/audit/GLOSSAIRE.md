@@ -84,19 +84,19 @@ composants, kebab-case pour les canaux IPC, snake_case pour SQLite. Une fois val
 |---|---|
 | `AnalyseOffre` | `JobAnalysis` : `titreCible`→`targetTitle`, `competencesRequises`→`requiredSkills`, `qualites`→`softSkills`, `motsCles`→`keywords`, `formationRequise`→`requiredEducation`, `experienceRequise`→`requiredExperience` |
 | `Pertinence` / `Niveau` | `Relevance` / `RelevanceLevel` : `experiences`, `formations`→`education`, `competences`→`skills` |
-| `ChoixComposition` | `CompositionChoices` : `titre`→`headline`, `accroche`→`summary`, `competences`→`skills`, `experiences`, `reintegrer`→`reinstate` (`experiences`, `skills`, `education`), `ajouterDemandees`→`addRequested` |
+| `ChoixComposition` | `CompositionChoices` : `titre`→`title`, `accroche`→`summary`, `competences`→`skills`, `experiences`, `reintegrer`→`reinstate` (`experiences`, `skills`, `education`), `ajouterDemandees`→`addRequested` |
 | `ApercuAnnonce` | `JobPostingPreview` : `recherchees`→`soughtSkills`, `contrat`→`contractType`, `prerequis`→`requirements` |
 | `ProfilEnregistre` | `SavedProfile` : `id`, `profil`→`profile`, `nomFichier`→`fileName` |
 | `CvGenere` | `GeneratedCv` : `id`, `offreId`→`jobPostingId`, `cv` |
 | `EtatParametres` | `SettingsState` : `cleApiDefinie`→`hasApiKey` |
 | `FormatExport` / `FichierDepose` | `ExportFormat` / `DroppedFile` |
-| `ProgressionTache` | `TaskProgress` : `tache`→`task` (`import`, `offre`→`job-posting`, `adaptation`→`tailoring`, `accroche`→`summary`), `cle`→`stepKey`, `etape`→`label`, `courant`→`current`, `total`, `calcul`→`compute` |
+| `ProgressionTache` | `TaskProgress` : `tache`→`task` (`import`, `offre`→`job-posting`, `adaptation`→`tailoring`, `accroche`→`summary`), `cle`→`key`, `etape`→`label`, `courant`→`current`, `total`, `calcul`→`compute` |
 | `CleEtape` | `StepKey` : `preparation`, `analyse`→`analysis`, `selection`, `reformulation`→`rewriting`, `accroche`→`summary` |
 | `ProgressionModele` | `ModelDownloadProgress` : `recuOctets`→`receivedBytes`, `totalOctets`→`totalBytes`, `etat`→`status` (`en-cours`→`downloading`, `verification`→`verifying`, `termine`→`done`, `erreur`→`error`, `annule`→`cancelled`), `message` |
 | `EtatModeles` / `ModeleEmbarqueEtat` | `ModelsState` (`ramGo`→`ramGb`, `vramGo`→`vramGb`, `modeles`→`models`, `telechargement`→`download`) / `LocalModelState` (`nom`→`name`, `tailleOctets`→`sizeBytes`, `chemin`→`path`, `installe`→`installed`, `recommande`→`recommended`, `compatible`) |
 | `ModeleEmbarque` / `Ressources` | `LocalModel` (`fichier`→`fileName`, `ramMinGo`→`minRamGb`, `vramMinGo`→`minVramGb`…) / `Resources` (`ramGb`, `vramGb`) |
 | `EtatMiseAJour` | `UpdateState` : `etat`→`status` (`indisponible`→`unavailable`, `inactif`→`idle`, `verification`→`checking`, `a-jour`→`up-to-date`, `telechargement`→`downloading`, `prete`→`ready`, `erreur`→`error`), `nouvelleVersion`→`newVersion`, `pourcentage`→`percent`, `verifieLe`→`checkedAt` |
-| `CvModele` / `Section` / `Bloc` | `CvDocument` (`nom`→`fullName`, `titre`→`headline`, `contact`, `photo`, `sections`) / `Section` (`titre`→`title`, `blocs`→`blocks`) / `Block` (`paragraphe`→`paragraph` + `texte`→`text`, `liste`→`list` + `elements`→`items`, `entree`→`entry` + `intitule`→`heading`, `sousTitre`→`subtitle`, `periode`→`dateRange`, `points`→`bullets`) |
+| `CvModele` / `Section` / `Bloc` | `CvDocument` (`nom`→`name`, `titre`→`title`, `contact`, `photo`, `sections`) / `Section` (`titre`→`title`, `blocs`→`blocks`) / `Block` (`paragraphe`→`paragraph` + `texte`→`text`, `liste`→`list` + `elements` (inchangé), `entree`→`entry` + `intitule`→`heading`, `sousTitre`→`subtitle`, `periode`→`dateRange`, `points`→`bullets`) |
 | `ModeleCv` | `CvTemplate` : `nom`→`name`, `couleur`→`color`, `disposition`→`layout` (`simple`→`single`, `lateral`→`sidebar`), `docx` (`police`→`font`, `texte`→`text`, `entete`→`header` : `gauche`→`left`, `centre`→`center`, `bandeau`→`banner`, `titreSectionCouleur`→`coloredSectionTitles`) |
 
 ## 3. Stockage

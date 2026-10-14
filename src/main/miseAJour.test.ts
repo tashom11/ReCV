@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events'
-import type { EtatMiseAJour } from '@core/api'
+import type { UpdateState } from '@core/api'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GestionnaireMiseAJour, type MoteurMiseAJour } from './miseAJour'
 
@@ -24,7 +24,7 @@ function fauxMoteur(scenario: (moteur: EventEmitter) => void | Promise<void>) {
 }
 
 function creer(moteur: ReturnType<typeof fauxMoteur>, installee = true, intervalleMs?: number) {
-  const etats: EtatMiseAJour[] = []
+  const etats: UpdateState[] = []
   const gestionnaire = new GestionnaireMiseAJour({
     version: '0.2.0',
     installee,
@@ -42,7 +42,7 @@ describe('GestionnaireMiseAJour', () => {
     const moteur = fauxMoteur(() => undefined)
     const { gestionnaire } = creer(moteur, false)
     gestionnaire.demarrer()
-    expect(gestionnaire.etat()).toEqual({ version: '0.2.0', etat: 'indisponible' })
+    expect(gestionnaire.etat()).toEqual({ version: '0.2.0', status: 'indisponible' })
     await gestionnaire.verifier()
     expect(moteur.verifications).toBe(0)
   })
@@ -51,11 +51,11 @@ describe('GestionnaireMiseAJour', () => {
     const moteur = fauxMoteur((m) => void m.emit('update-not-available'))
     const { gestionnaire, etats } = creer(moteur)
     gestionnaire.demarrer()
-    await vi.waitFor(() => expect(gestionnaire.etat().etat).toBe('a-jour'))
+    await vi.waitFor(() => expect(gestionnaire.etat().status).toBe('a-jour'))
     expect(moteur.autoDownload).toBe(true)
     expect(moteur.autoInstallOnAppQuit).toBe(true)
-    expect(etats.map((e) => e.etat)).toEqual(['verification', 'a-jour'])
-    expect(gestionnaire.etat().verifieLe).toBeGreaterThan(0)
+    expect(etats.map((e) => e.status)).toEqual(['verification', 'a-jour'])
+    expect(gestionnaire.etat().checkedAt).toBeGreaterThan(0)
     gestionnaire.arreter()
   })
 
@@ -68,20 +68,20 @@ describe('GestionnaireMiseAJour', () => {
     const { gestionnaire, etats } = creer(moteur)
     expect(() => gestionnaire.installer()).toThrow(/Aucune mise à jour/)
     gestionnaire.demarrer()
-    await vi.waitFor(() => expect(gestionnaire.etat().etat).toBe('prete'))
-    expect(etats.map((e) => `${e.etat}:${e.pourcentage ?? ''}`)).toEqual([
+    await vi.waitFor(() => expect(gestionnaire.etat().status).toBe('prete'))
+    expect(etats.map((e) => `${e.status}:${e.percent ?? ''}`)).toEqual([
       'verification:',
       'telechargement:0',
       'telechargement:42',
       'prete:100',
     ])
-    expect(gestionnaire.etat().nouvelleVersion).toBe('0.3.0')
+    expect(gestionnaire.etat().newVersion).toBe('0.3.0')
 
     // Une version prête le reste : ni nouvelle vérification, ni erreur ne l'effacent.
     await gestionnaire.verifier()
     expect(moteur.verifications).toBe(1)
     moteur.emit('error', new Error('réseau'))
-    expect(gestionnaire.etat().etat).toBe('prete')
+    expect(gestionnaire.etat().status).toBe('prete')
 
     gestionnaire.installer()
     expect(moteur.installations).toBe(1)
@@ -96,11 +96,11 @@ describe('GestionnaireMiseAJour', () => {
     })
     const { gestionnaire } = creer(moteur)
     gestionnaire.demarrer()
-    await vi.waitFor(() => expect(gestionnaire.etat().etat).toBe('erreur'))
+    await vi.waitFor(() => expect(gestionnaire.etat().status).toBe('erreur'))
     expect(gestionnaire.etat().message).toContain('ERR_INTERNET_DISCONNECTED')
 
     enLigne = true
-    expect((await gestionnaire.verifier()).etat).toBe('a-jour')
+    expect((await gestionnaire.verifier()).status).toBe('a-jour')
     expect(gestionnaire.etat().message).toBeUndefined()
     gestionnaire.arreter()
   })

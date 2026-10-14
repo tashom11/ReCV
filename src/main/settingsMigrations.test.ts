@@ -26,7 +26,7 @@ describe('settings file versioning', () => {
       JSON.stringify({ fournisseur: 'ollama', modeleOllama: 'mistral', reformulerPuces: true }),
     )
     const lus = await new StockageParametres(dossier, chiffreur).lire()
-    expect(lus).toMatchObject({ fournisseur: 'ollama', modeleOllama: 'mistral', reformulerPuces: true })
+    expect(lus).toMatchObject({ provider: 'ollama', ollamaModel: 'mistral', rewriteBullets: true })
   })
 
   it('writes the version number with the settings', async () => {

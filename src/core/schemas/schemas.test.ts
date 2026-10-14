@@ -40,11 +40,11 @@ describe('langueSchema', () => {
 
 describe('profilSchema', () => {
   it('accepte un profil vide et applique les valeurs par défaut', () => {
-    const profil = profileSchema.parse({})
-    expect(profil.experiences).toEqual([])
-    expect(profil.skills).toEqual([])
-    expect(profil.education).toEqual([])
-    expect(profil.languages).toEqual([])
+    const profile = profileSchema.parse({})
+    expect(profile.experiences).toEqual([])
+    expect(profile.skills).toEqual([])
+    expect(profile.education).toEqual([])
+    expect(profile.languages).toEqual([])
   })
 
   it('rejette un profil avec une expérience invalide', () => {

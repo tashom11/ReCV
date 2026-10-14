@@ -7,7 +7,7 @@
 // Le CvAdapte JSON est écrit sur stdout, la progression sur stderr.
 import { readFile } from 'node:fs/promises'
 import { parseArgs } from 'node:util'
-import { creerFournisseurApi, creerFournisseurOllama, type FournisseurLLM } from '../src/core/llm'
+import { createApiProvider, createOllamaProvider, type LlmProvider } from '../src/core/llm'
 
 const MODELE_OLLAMA_DEFAUT = 'qwen3:8b'
 
@@ -17,20 +17,20 @@ function variableRequise(nom: string): string {
   return valeur
 }
 
-async function creerFournisseur(fournisseur: string, modele: string | undefined): Promise<FournisseurLLM> {
+async function creerFournisseur(fournisseur: string, modele: string | undefined): Promise<LlmProvider> {
   switch (fournisseur) {
     case 'ollama':
-      return creerFournisseurOllama({ modele: modele ?? MODELE_OLLAMA_DEFAUT, urlBase: process.env.RECV_OLLAMA_URL })
+      return createOllamaProvider({ model: modele ?? MODELE_OLLAMA_DEFAUT, baseUrl: process.env.RECV_OLLAMA_URL })
     case 'api':
       if (!modele) throw new Error('--modele est obligatoire avec --fournisseur api')
-      return creerFournisseurApi({
-        urlBase: variableRequise('RECV_API_URL'),
-        cleApi: variableRequise('RECV_API_CLE'),
-        modele,
+      return createApiProvider({
+        baseUrl: variableRequise('RECV_API_URL'),
+        apiKey: variableRequise('RECV_API_CLE'),
+        model: modele,
       })
     case 'local': {
-      const { creerFournisseurLocal } = await import('../src/core/llm/moteurLocal')
-      return creerFournisseurLocal({ cheminModele: variableRequise('RECV_MODELE_GGUF') })
+      const { createLocalProvider: creerFournisseurLocal } = await import('../src/core/llm/localEngine')
+      return creerFournisseurLocal({ modelPath: variableRequise('RECV_MODELE_GGUF') })
     }
     default:
       throw new Error(`fournisseur inconnu « ${fournisseur} » (ollama, api ou local)`)
@@ -60,9 +60,9 @@ async function main(): Promise<void> {
   const [texteCv, texteOffre] = await Promise.all([readFile(cheminCv, 'utf8'), readFile(cheminOffre, 'utf8')])
   const fournisseur = await creerFournisseur(values.fournisseur, values.modele)
 
-  const profil = await chronometrer('Extraction du profil', () => fournisseur.extraireProfil(texteCv))
-  const offre = await chronometrer("Extraction de l'offre", () => fournisseur.extraireOffre(texteOffre))
-  const cv = await chronometrer('Adaptation du CV', () => fournisseur.adapterCv(profil, offre))
+  const profil = await chronometrer('Extraction du profil', () => fournisseur.extractProfile(texteCv))
+  const offre = await chronometrer("Extraction de l'offre", () => fournisseur.extractJobPosting(texteOffre))
+  const cv = await chronometrer('Adaptation du CV', () => fournisseur.tailorCv(profil, offre))
   process.stdout.write(`${JSON.stringify(cv, null, 2)}\n`)
 }
 

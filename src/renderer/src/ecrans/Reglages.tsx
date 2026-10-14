@@ -1,5 +1,5 @@
-import type { EtatModeles, EtatParametres, ModeleEmbarqueEtat, Parametres, ProgressionModele } from '@core/api'
-import { estServiceLocal } from '@core/serviceUrl'
+import type { LocalModelState, ModelDownloadProgress, ModelsState, Settings, SettingsState } from '@core/api'
+import { isLocalService } from '@core/serviceUrl'
 import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { downloadAnnouncement } from '../accessibility'
 import { type DescriptionErreur, decrireErreur, messageErreur } from '../erreurs'
@@ -84,19 +84,19 @@ function NiveauxModele({
   cheminActif: string | undefined
   /** Un modèle installé est choisi, ou vient d'être installé. */
   onActif: (chemin: string | undefined) => void
-  onEtat: (etat: EtatModeles) => void
+  onEtat: (etat: ModelsState) => void
 }) {
-  const [etat, setEtat] = useState<EtatModeles | null>(null)
-  const [progression, setProgression] = useState<ProgressionModele | null>(null)
+  const [etat, setEtat] = useState<ModelsState | null>(null)
+  const [progression, setProgression] = useState<ModelDownloadProgress | null>(null)
   const [erreur, setErreur] = useState<DescriptionErreur | null>(null)
   const [occupe, setOccupe] = useState<string | null>(null)
 
   const rafraichir = useCallback(
     () =>
-      window.api.lireEtatModeles().then(
+      window.api.getModelsState().then(
         (e) => {
           setEtat(e)
-          setProgression(e.telechargement)
+          setProgression(e.download)
           onEtat(e)
           return e
         },
@@ -107,23 +107,23 @@ function NiveauxModele({
 
   useEffect(() => {
     void rafraichir()
-    return window.api.surProgressionModele((p) => {
+    return window.api.onModelProgress((p) => {
       setProgression(p)
-      if (p.etat === 'termine') {
+      if (p.status === 'termine') {
         // Le process principal a sélectionné le modèle installé : on reprend ce choix.
-        void rafraichir().then((e) => onActif(e?.modeles.find((m) => m.id === p.id)?.chemin))
+        void rafraichir().then((e) => onActif(e?.models.find((m) => m.id === p.id)?.path))
       }
-      if (p.etat === 'annule' || p.etat === 'erreur') void rafraichir()
+      if (p.status === 'annule' || p.status === 'erreur') void rafraichir()
     })
   }, [rafraichir, onActif])
 
-  const enCours = progression?.etat === 'en-cours' || progression?.etat === 'verification'
+  const enCours = progression?.status === 'en-cours' || progression?.status === 'verification'
 
   const installer = async (id: string) => {
     setErreur(null)
     setOccupe(id)
     try {
-      await window.api.telechargerModele(id)
+      await window.api.downloadModel(id)
     } catch (e) {
       setErreur(decrireErreur('preparation', e))
     } finally {
@@ -131,13 +131,13 @@ function NiveauxModele({
     }
   }
 
-  const supprimer = async (m: ModeleEmbarqueEtat) => {
+  const supprimer = async (m: LocalModelState) => {
     setErreur(null)
     setOccupe(m.id)
     try {
-      await window.api.supprimerModele(m.id)
+      await window.api.deleteModel(m.id)
       const apres = await rafraichir()
-      if (cheminActif === m.chemin) onActif(apres?.modeles.find((x) => x.installe)?.chemin)
+      if (cheminActif === m.path) onActif(apres?.models.find((x) => x.installed)?.path)
     } catch (e) {
       setErreur(decrireErreur('reglages', e))
     } finally {
@@ -158,13 +158,13 @@ function NiveauxModele({
           headingLevel={3}
         />
       )}
-      {etat.modeles.map((m) => {
-        const niveau = NIVEAUX[m.id] ?? { nom: m.nom, detail: m.description }
-        const actif = m.installe && cheminActif === m.chemin
+      {etat.models.map((m) => {
+        const niveau = NIVEAUX[m.id] ?? { nom: m.name, detail: m.description }
+        const actif = m.installed && cheminActif === m.path
         const telechargement = progression?.id === m.id && enCours ? progression : null
         const pourcentage =
-          telechargement && telechargement.totalOctets > 0
-            ? Math.round((telechargement.recuOctets / telechargement.totalOctets) * 100)
+          telechargement && telechargement.totalBytes > 0
+            ? Math.round((telechargement.receivedBytes / telechargement.totalBytes) * 100)
             : 0
         const lent = m.compatible ? '' : ', mais lent sur votre ordinateur'
         return (
@@ -179,22 +179,22 @@ function NiveauxModele({
                   name="niveau-modele"
                   className="mt-1 size-5 shrink-0"
                   checked={actif}
-                  disabled={!m.installe}
-                  onChange={() => onActif(m.chemin)}
+                  disabled={!m.installed}
+                  onChange={() => onActif(m.path)}
                 />
                 <span className="min-w-0">
                   <span className="block text-corps text-encre">
                     <strong>{niveau.nom}</strong>
-                    {m.recommande && <span className="text-marque"> · conseillé pour votre ordinateur</span>}
+                    {m.recommended && <span className="text-marque"> · conseillé pour votre ordinateur</span>}
                   </span>
                   <span className="block text-petit text-aide">
-                    {m.installe
-                      ? `Installé · ${formaterTaille(m.tailleOctets)}`
-                      : `${niveau.detail}${lent} · ${formaterTaille(m.tailleOctets)} à télécharger`}
+                    {m.installed
+                      ? `Installé · ${formaterTaille(m.sizeBytes)}`
+                      : `${niveau.detail}${lent} · ${formaterTaille(m.sizeBytes)} à télécharger`}
                   </span>
                 </span>
               </label>
-              {m.installe ? (
+              {m.installed ? (
                 <Bouton
                   variante="danger"
                   taille="petit"
@@ -205,7 +205,7 @@ function NiveauxModele({
                   Supprimer
                 </Bouton>
               ) : telechargement ? (
-                <Bouton variante="secondaire" taille="petit" onClick={() => void window.api.annulerTelechargement()}>
+                <Bouton variante="secondaire" taille="petit" onClick={() => void window.api.cancelDownload()}>
                   Mettre en pause
                 </Bouton>
               ) : (
@@ -230,7 +230,7 @@ function NiveauxModele({
                   aria-valuenow={pourcentage}
                   className="h-2.5 overflow-hidden rounded-full bg-creux"
                 >
-                  {telechargement.etat === 'verification' ? (
+                  {telechargement.status === 'verification' ? (
                     <div className="barre-indeterminee h-full w-1/4 rounded-full bg-marque" />
                   ) : (
                     <div
@@ -240,16 +240,16 @@ function NiveauxModele({
                   )}
                 </div>
                 <p className="text-petit text-aide">
-                  {telechargement.etat === 'verification'
+                  {telechargement.status === 'verification'
                     ? 'Vérification du fichier… quelques secondes'
-                    : `${formaterTaille(telechargement.recuOctets)} sur ${formaterTaille(telechargement.totalOctets)} (${pourcentage} %)`}
+                    : `${formaterTaille(telechargement.receivedBytes)} sur ${formaterTaille(telechargement.totalBytes)} (${pourcentage} %)`}
                 </p>
                 <p className="sr-only" role="status">
-                  {downloadAnnouncement(pourcentage, telechargement.etat === 'verification')}
+                  {downloadAnnouncement(pourcentage, telechargement.status === 'verification')}
                 </p>
               </div>
             )}
-            {progression?.id === m.id && progression.etat === 'annule' && (
+            {progression?.id === m.id && progression.status === 'annule' && (
               <p className="text-petit text-aide">En pause : le téléchargement reprendra là où il s’était arrêté.</p>
             )}
           </div>
@@ -269,10 +269,10 @@ export function EcranReglages({
   /** Toutes les données ont été effacées. */
   onEfface: () => void
 }) {
-  const [etat, setEtat] = useState<EtatParametres | null>(null)
+  const [etat, setEtat] = useState<SettingsState | null>(null)
   // What is actually saved: immediate choices are applied on top of it, never on top of half-typed fields.
-  const [enregistre, setEnregistre] = useState<EtatParametres | null>(null)
-  const [modeles, setModeles] = useState<EtatModeles | null>(null)
+  const [enregistre, setEnregistre] = useState<SettingsState | null>(null)
+  const [modeles, setModeles] = useState<ModelsState | null>(null)
   const [cle, setCle] = useState('')
   const [autreService, setAutreService] = useState(false)
   const [erreur, setErreur] = useState<DescriptionErreur | null>(null)
@@ -281,11 +281,11 @@ export function EcranReglages({
   const [effacement, setEffacement] = useState(false)
 
   useEffect(() => {
-    window.api.lireParametres().then(
+    window.api.getSettings().then(
       (p) => {
         setEtat(p)
         setEnregistre(p)
-        setAutreService(!SERVICES.some((s) => s.valeur === p.urlApi))
+        setAutreService(!SERVICES.some((s) => s.valeur === p.apiUrl))
       },
       (e) => setErreur(decrireErreur('reglages', e)),
     )
@@ -299,20 +299,20 @@ export function EcranReglages({
   }, [confirmation])
 
   const surEtatModeles = useCallback(
-    (e: EtatModeles) => {
+    (e: ModelsState) => {
       setModeles(e)
       onChange()
     },
     [onChange],
   )
   // A choice (engine, model level, rewriting) is saved at once: leaving the screen never loses it.
-  const choisir = async (partiel: Partial<Parametres>) => {
+  const choisir = async (partiel: Partial<Settings>) => {
     setEtat((e) => (e ? { ...e, ...partiel } : e))
     if (!enregistre) return
     setErreur(null)
     try {
-      const { cleApiDefinie: _ignore, ...base } = enregistre
-      setEnregistre(await window.api.enregistrerParametres({ ...base, ...partiel }))
+      const { hasApiKey: _ignore, ...base } = enregistre
+      setEnregistre(await window.api.saveSettings({ ...base, ...partiel }))
       onChange()
     } catch (e) {
       setErreur(decrireErreur('reglages', e))
@@ -321,7 +321,7 @@ export function EcranReglages({
   const choisirRef = useRef(choisir)
   choisirRef.current = choisir
   const surModeleActif = useCallback((chemin: string | undefined) => {
-    void choisirRef.current({ cheminModeleLocal: chemin })
+    void choisirRef.current({ localModelPath: chemin })
   }, [])
 
   if (!etat) {
@@ -332,24 +332,24 @@ export function EcranReglages({
     )
   }
 
-  const maj = (partiel: Partial<Parametres>) => setEtat({ ...etat, ...partiel })
-  const local = etat.fournisseur === 'local'
-  const pret = local && (Boolean(etat.cheminModeleLocal) || Boolean(modeles?.modeles.some((m) => m.installe)))
+  const maj = (partiel: Partial<Settings>) => setEtat({ ...etat, ...partiel })
+  const local = etat.provider === 'local'
+  const pret = local && (Boolean(etat.localModelPath) || Boolean(modeles?.models.some((m) => m.installed)))
 
   const enregistrer = async () => {
     setErreur(null)
     setConfirmation(null)
     setOccupe('enregistrer')
     try {
-      const { cleApiDefinie: _ignore, ...parametres } = etat
+      const { hasApiKey: _ignore, ...parametres } = etat
       // Les réglages d'abord : changer de service efface l'ancienne clé, la nouvelle est enregistrée ensuite.
-      let apres = await window.api.enregistrerParametres(parametres)
-      if (cle.trim()) apres = await window.api.definirCleApi(cle.trim())
+      let apres = await window.api.saveSettings(parametres)
+      if (cle.trim()) apres = await window.api.setApiKey(cle.trim())
       setCle('')
       setEtat(apres)
       setEnregistre(apres)
       setConfirmation(
-        etat.cleApiDefinie && !apres.cleApiDefinie
+        etat.hasApiKey && !apres.hasApiKey
           ? 'Réglages enregistrés. Le service a changé : saisissez à nouveau votre clé personnelle.'
           : 'Vos réglages sont enregistrés.',
       )
@@ -365,7 +365,7 @@ export function EcranReglages({
     setErreur(null)
     setOccupe('cle')
     try {
-      setEtat({ ...etat, cleApiDefinie: (await window.api.definirCleApi('')).cleApiDefinie })
+      setEtat({ ...etat, hasApiKey: (await window.api.setApiKey('')).hasApiKey })
       setConfirmation('Votre clé personnelle est supprimée.')
     } catch (e) {
       setErreur(decrireErreur('reglages', e))
@@ -378,7 +378,7 @@ export function EcranReglages({
     setErreur(null)
     setOccupe('effacer')
     try {
-      await window.api.effacerDonnees()
+      await window.api.eraseData()
       onEfface()
     } catch (e) {
       setErreur({
@@ -398,7 +398,7 @@ export function EcranReglages({
       <Carte titre="Moteur d’intelligence artificielle" sousTitre="C’est lui qui lit votre CV et l’annonce.">
         <ChoixMoteur
           choisi={local}
-          onChoisir={() => void choisir({ fournisseur: 'local' })}
+          onChoisir={() => void choisir({ provider: 'local' })}
           titre="Sur mon ordinateur"
           etiquette={<Pastille variante="recommande">Recommandé</Pastille>}
           description="Gratuit et privé : rien ne quitte votre ordinateur. Fonctionne sans internet."
@@ -412,7 +412,7 @@ export function EcranReglages({
           )}
         </ChoixMoteur>
 
-        <NiveauxModele cheminActif={etat.cheminModeleLocal} onActif={surModeleActif} onEtat={surEtatModeles} />
+        <NiveauxModele cheminActif={etat.localModelPath} onActif={surModeleActif} onEtat={surEtatModeles} />
 
         <details open={!local} className="group rounded-carte border border-trait bg-papier">
           <summary className="flex min-h-16 items-center gap-4 rounded-carte px-5 py-3">
@@ -424,26 +424,26 @@ export function EcranReglages({
           </summary>
           <div className="space-y-3 px-5 pb-5">
             <ChoixMoteur
-              choisi={etat.fournisseur === 'ollama'}
-              onChoisir={() => void choisir({ fournisseur: 'ollama' })}
+              choisi={etat.provider === 'ollama'}
+              onChoisir={() => void choisir({ provider: 'ollama' })}
               titre="Ollama (installé séparément)"
               description="Utilise un modèle servi par Ollama sur cet ordinateur. Les données restent chez vous."
             >
-              {etat.fournisseur === 'ollama' && (
+              {etat.provider === 'ollama' && (
                 <>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Champ
                       etiquette="Adresse d’Ollama"
-                      valeur={etat.urlOllama}
-                      onChange={(v) => maj({ urlOllama: v })}
+                      valeur={etat.ollamaUrl}
+                      onChange={(v) => maj({ ollamaUrl: v })}
                     />
-                    <Champ etiquette="Modèle" valeur={etat.modeleOllama} onChange={(v) => maj({ modeleOllama: v })} />
+                    <Champ etiquette="Modèle" valeur={etat.ollamaModel} onChange={(v) => maj({ ollamaModel: v })} />
                   </div>
-                  {!estServiceLocal(etat.urlOllama) && (
+                  {!isLocalService(etat.ollamaUrl) && (
                     <Alerte type="avertissement">
                       <strong>Cette adresse n’est pas celle de votre ordinateur.</strong> Votre CV et l’annonce seront
                       envoyés à cet appareil
-                      {etat.urlOllama.startsWith('http:') ? ', sans chiffrement sur le réseau' : ''}.
+                      {etat.ollamaUrl.startsWith('http:') ? ', sans chiffrement sur le réseau' : ''}.
                     </Alerte>
                   )}
                 </>
@@ -451,12 +451,12 @@ export function EcranReglages({
             </ChoixMoteur>
 
             <ChoixMoteur
-              choisi={etat.fournisseur === 'api'}
-              onChoisir={() => void choisir({ fournisseur: 'api' })}
+              choisi={etat.provider === 'api'}
+              onChoisir={() => void choisir({ provider: 'api' })}
               titre="Service en ligne avec ma clé personnelle"
               description="OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service."
             >
-              {etat.fournisseur === 'api' && (
+              {etat.provider === 'api' && (
                 <>
                   <Alerte type="avertissement">
                     <strong>Votre CV et l’annonce seront envoyés à ce service.</strong> Ils quittent votre ordinateur à
@@ -465,11 +465,11 @@ export function EcranReglages({
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Selection
                       etiquette="Service"
-                      valeur={autreService ? AUTRE_SERVICE : etat.urlApi}
+                      valeur={autreService ? AUTRE_SERVICE : etat.apiUrl}
                       options={[...SERVICES, { valeur: AUTRE_SERVICE, libelle: 'Autre adresse' }]}
                       onChange={(v) => {
                         setAutreService(v === AUTRE_SERVICE)
-                        if (v !== AUTRE_SERVICE) maj({ urlApi: v })
+                        if (v !== AUTRE_SERVICE) maj({ apiUrl: v })
                       }}
                     />
                     <Champ
@@ -477,29 +477,29 @@ export function EcranReglages({
                       type="password"
                       valeur={cle}
                       onChange={setCle}
-                      placeholder={etat.cleApiDefinie ? '•••••••••••• (enregistrée)' : ''}
+                      placeholder={etat.hasApiKey ? '•••••••••••• (enregistrée)' : ''}
                     />
                     {autreService && (
                       <Champ
                         etiquette="Adresse du service"
-                        valeur={etat.urlApi}
-                        onChange={(v) => maj({ urlApi: v })}
+                        valeur={etat.apiUrl}
+                        onChange={(v) => maj({ apiUrl: v })}
                         aide="Elle commence par https:// et finit souvent par /v1."
                       />
                     )}
                     <Champ
                       etiquette="Modèle"
-                      valeur={etat.modeleApi}
-                      onChange={(v) => maj({ modeleApi: v })}
+                      valeur={etat.apiModel}
+                      onChange={(v) => maj({ apiModel: v })}
                       aide="Le nom donné par le service, par exemple « mistral-small-latest »."
                     />
                   </div>
                   <p className="text-petit text-aide">
-                    {etat.cleApiDefinie
+                    {etat.hasApiKey
                       ? 'Une clé est enregistrée, chiffrée sur votre ordinateur. Elle n’est jamais réaffichée.'
                       : 'Aucune clé enregistrée pour l’instant.'}
                   </p>
-                  {etat.cleApiDefinie && (
+                  {etat.hasApiKey && (
                     <Bouton
                       variante="danger"
                       taille="petit"
@@ -518,15 +518,15 @@ export function EcranReglages({
               <CaseACocher
                 etiquette={<strong className="text-intro">Réécrire les phrases de mes expériences</strong>}
                 aide="Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes."
-                coche={etat.reformulerPuces}
-                onChange={(v) => void choisir({ reformulerPuces: v })}
+                coche={etat.rewriteBullets}
+                onChange={(v) => void choisir({ rewriteBullets: v })}
               />
             </div>
 
             <Champ
               etiquette="Fichier du modèle (.gguf)"
-              valeur={etat.cheminModeleLocal ?? ''}
-              onChange={(v) => maj({ cheminModeleLocal: v })}
+              valeur={etat.localModelPath ?? ''}
+              onChange={(v) => maj({ localModelPath: v })}
             />
           </div>
         </details>
@@ -550,7 +550,7 @@ export function EcranReglages({
             <p className="text-corps text-encre">
               Votre CV importé, vos annonces et vos CV créés seront supprimés de Re:CV. Les fichiers déjà téléchargés
               sur votre ordinateur ne sont pas touchés. Les réglages sont gardés
-              {etat.cleApiDefinie ? ', sauf votre clé personnelle, effacée elle aussi' : ''}.
+              {etat.hasApiKey ? ', sauf votre clé personnelle, effacée elle aussi' : ''}.
             </p>
             <div className="flex flex-wrap gap-3 pt-1">
               <Bouton variante="danger-plein" onClick={() => void toutEffacer()} enCours={occupe === 'effacer'}>

@@ -1,55 +1,55 @@
-import type { ApiReCV, EtatMiseAJour, ProgressionModele, ProgressionTache } from '@core/api'
-import { CANAUX, encoderErreur, type ResultatIpc } from '@core/canaux'
+import type { ModelDownloadProgress, RecvApi, TaskProgress, UpdateState } from '@core/api'
+import { CHANNELS, encodeError, type IpcResult } from '@core/channels'
 import { contextBridge, type IpcRendererEvent, ipcRenderer, webUtils } from 'electron'
 
 // API typée exposée au renderer : uniquement ces méthodes, jamais ipcRenderer lui-même.
 async function appeler<T>(canal: string, ...args: unknown[]): Promise<T> {
-  const resultat = (await ipcRenderer.invoke(canal, ...args)) as ResultatIpc<T>
-  if (!resultat.ok) throw new Error(encoderErreur(resultat.message, resultat.code))
-  return resultat.valeur
+  const resultat = (await ipcRenderer.invoke(canal, ...args)) as IpcResult<T>
+  if (!resultat.ok) throw new Error(encodeError(resultat.message, resultat.code))
+  return resultat.value
 }
 
-const api: ApiReCV = {
-  importerCv: () => appeler(CANAUX.importerCv),
+const api: RecvApi = {
+  importCv: () => appeler(CHANNELS.importCv),
   // Le chemin d'un fichier déposé n'est lisible qu'ici : le renderer ne transmet que l'objet File.
-  importerCvDepose: (fichier) => appeler(CANAUX.importerCvDepose, webUtils.getPathForFile(fichier as File)),
-  obtenirProfil: () => appeler(CANAUX.obtenirProfil),
-  enregistrerProfil: (profil) => appeler(CANAUX.enregistrerProfil, profil),
-  recupererOffre: (url) => appeler(CANAUX.recupererOffre, url),
-  analyserTexteOffre: (texte) => appeler(CANAUX.analyserTexteOffre, texte),
-  analyserAnnonce: (offre) => appeler(CANAUX.analyserAnnonce, offre),
-  adapterCv: (offre) => appeler(CANAUX.adapterCv, offre),
-  annulerAdaptation: () => appeler(CANAUX.annulerAdaptation),
-  ouvrirFichier: (chemin) => appeler(CANAUX.ouvrirFichier, chemin),
-  montrerDansDossier: (chemin) => appeler(CANAUX.montrerDansDossier, chemin),
-  lireParametres: () => appeler(CANAUX.lireParametres),
-  enregistrerParametres: (parametres) => appeler(CANAUX.enregistrerParametres, parametres),
-  definirCleApi: (cle) => appeler(CANAUX.definirCleApi, cle),
-  exporterCv: (cv, format, modeleId) => appeler(CANAUX.exporterCv, cv, format, modeleId),
-  htmlModeleCv: (cv, modeleId) => appeler(CANAUX.htmlModeleCv, cv, modeleId),
-  genererAccroche: (profil) => appeler(CANAUX.genererAccroche, profil),
-  lireEtatModeles: () => appeler(CANAUX.lireEtatModeles),
-  telechargerModele: (id) => appeler(CANAUX.telechargerModele, id),
-  annulerTelechargement: () => appeler(CANAUX.annulerTelechargement),
-  supprimerModele: (id) => appeler(CANAUX.supprimerModele, id),
-  effacerDonnees: () => appeler(CANAUX.effacerDonnees),
-  lireEtatMiseAJour: () => appeler(CANAUX.lireEtatMiseAJour),
-  verifierMiseAJour: () => appeler(CANAUX.verifierMiseAJour),
-  installerMiseAJour: () => appeler(CANAUX.installerMiseAJour),
-  surMiseAJour: (rappel) => {
-    const ecouteur = (_e: IpcRendererEvent, etat: EtatMiseAJour) => rappel(etat)
-    ipcRenderer.on(CANAUX.etatMiseAJour, ecouteur)
-    return () => ipcRenderer.removeListener(CANAUX.etatMiseAJour, ecouteur)
+  importDroppedCv: (fichier) => appeler(CHANNELS.importDroppedCv, webUtils.getPathForFile(fichier as File)),
+  getProfile: () => appeler(CHANNELS.getProfile),
+  saveProfile: (profil) => appeler(CHANNELS.saveProfile, profil),
+  fetchJobPosting: (url) => appeler(CHANNELS.fetchJobPosting, url),
+  parseJobPostingText: (texte) => appeler(CHANNELS.parseJobPostingText, texte),
+  previewJobPosting: (offre) => appeler(CHANNELS.previewJobPosting, offre),
+  tailorCv: (offre) => appeler(CHANNELS.tailorCv, offre),
+  cancelTailoring: () => appeler(CHANNELS.cancelTailoring),
+  openFile: (chemin) => appeler(CHANNELS.openFile, chemin),
+  revealInFolder: (chemin) => appeler(CHANNELS.revealInFolder, chemin),
+  getSettings: () => appeler(CHANNELS.getSettings),
+  saveSettings: (parametres) => appeler(CHANNELS.saveSettings, parametres),
+  setApiKey: (cle) => appeler(CHANNELS.setApiKey, cle),
+  exportCv: (cv, format, modeleId) => appeler(CHANNELS.exportCv, cv, format, modeleId),
+  templateHtml: (cv, modeleId) => appeler(CHANNELS.templateHtml, cv, modeleId),
+  generateSummary: (profil) => appeler(CHANNELS.generateSummary, profil),
+  getModelsState: () => appeler(CHANNELS.getModelsState),
+  downloadModel: (id) => appeler(CHANNELS.downloadModel, id),
+  cancelDownload: () => appeler(CHANNELS.cancelDownload),
+  deleteModel: (id) => appeler(CHANNELS.deleteModel, id),
+  eraseData: () => appeler(CHANNELS.eraseData),
+  getUpdateState: () => appeler(CHANNELS.getUpdateState),
+  checkForUpdate: () => appeler(CHANNELS.checkForUpdate),
+  installUpdate: () => appeler(CHANNELS.installUpdate),
+  onUpdate: (rappel) => {
+    const ecouteur = (_e: IpcRendererEvent, etat: UpdateState) => rappel(etat)
+    ipcRenderer.on(CHANNELS.updateStatus, ecouteur)
+    return () => ipcRenderer.removeListener(CHANNELS.updateStatus, ecouteur)
   },
-  surProgressionTache: (rappel) => {
-    const ecouteur = (_e: IpcRendererEvent, progression: ProgressionTache) => rappel(progression)
-    ipcRenderer.on(CANAUX.progressionTache, ecouteur)
-    return () => ipcRenderer.removeListener(CANAUX.progressionTache, ecouteur)
+  onTaskProgress: (rappel) => {
+    const ecouteur = (_e: IpcRendererEvent, progression: TaskProgress) => rappel(progression)
+    ipcRenderer.on(CHANNELS.taskProgress, ecouteur)
+    return () => ipcRenderer.removeListener(CHANNELS.taskProgress, ecouteur)
   },
-  surProgressionModele: (rappel) => {
-    const ecouteur = (_e: IpcRendererEvent, progression: ProgressionModele) => rappel(progression)
-    ipcRenderer.on(CANAUX.progressionModele, ecouteur)
-    return () => ipcRenderer.removeListener(CANAUX.progressionModele, ecouteur)
+  onModelProgress: (rappel) => {
+    const ecouteur = (_e: IpcRendererEvent, progression: ModelDownloadProgress) => rappel(progression)
+    ipcRenderer.on(CHANNELS.modelProgress, ecouteur)
+    return () => ipcRenderer.removeListener(CHANNELS.modelProgress, ecouteur)
   },
 }
 
