@@ -1,0 +1,60 @@
+name: Signaler un problème (Report a bug)
+description: Quelque chose ne marche pas comme prévu. Something does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce problème. Vous pouvez écrire en français ou en anglais.
+
+        ⚠️ **Ne joignez jamais votre CV, une clé API ou d'autres données personnelles.** Si le problème dépend du
+        contenu d'un CV, décrivez-le ou remplacez les informations personnelles par des exemples.
+        Pour une faille de sécurité, suivez plutôt [SECURITY.md](https://github.com/tashom11/ReCV/blob/main/SECURITY.md).
+  - type: textarea
+    id: what
+    attributes:
+      label: Que s'est-il passé ? (What happened?)
+      description: Le message affiché, s'il y en a un (le volet « Détails » aide beaucoup).
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Comment le reproduire ? (Steps to reproduce)
+      placeholder: |
+        1. Étape ② : coller le lien d'une annonce de …
+        2. Cliquer sur « Lire l'annonce »
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ce que vous attendiez (Expected behaviour)
+  - type: input
+    id: version
+    attributes:
+      label: Version de Re:CV (Re:CV version)
+      description: Réglages → carte « Mises à jour » → « Version installée ».
+      placeholder: 0.2.1
+    validations:
+      required: true
+  - type: dropdown
+    id: engine
+    attributes:
+      label: Moteur choisi dans les Réglages (Engine)
+      options:
+        - Sur mon ordinateur (Rapide)
+        - Sur mon ordinateur (Équilibré)
+        - Sur mon ordinateur (Soigné)
+        - Sur mon ordinateur (fichier .gguf personnel)
+        - Ollama
+        - Service en ligne (OpenAI, Mistral, OpenRouter…)
+        - Je ne sais pas
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Version de Windows (Windows version)
+      placeholder: Windows 11 24H2
