@@ -95,6 +95,9 @@ Le code, les noms et les commentaires sont en anglais ; l’interface et les pro
 
 ## Publier une version
 
+Ajoutez d’abord la section de la version dans [CHANGELOG.md](CHANGELOG.md) (en anglais) : elle devient le texte de la
+release, et la publication échoue sans elle.
+
 ```bash
 npm version 0.3.0 --no-git-tag-version
 git commit -am "Version 0.3.0"
@@ -102,7 +105,7 @@ git tag v0.3.0
 git push origin main v0.3.0
 ```
 
-Le workflow GitHub Actions construit l’installeur, le dépose sur une release en brouillon, puis la publie. Le tag doit correspondre à la version de `package.json`.
+Le workflow GitHub Actions construit l’installeur, le dépose sur une release en brouillon avec la section du changelog pour texte, puis la publie. Le tag doit correspondre à la version de `package.json`.
 
 ## Licence
 

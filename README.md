@@ -97,6 +97,9 @@ Code, names and comments are in English; the interface texts and the prompts are
 
 ## Release
 
+Add the version's section to [CHANGELOG.md](CHANGELOG.md) first: it becomes the release notes, and the release fails
+without it.
+
 ```bash
 npm version 0.3.0 --no-git-tag-version
 git commit -am "Version 0.3.0"
@@ -104,7 +107,7 @@ git tag v0.3.0
 git push origin main v0.3.0
 ```
 
-The GitHub Actions workflow builds the installer, uploads it to a draft release, then publishes it. The tag must match the version in `package.json`.
+The GitHub Actions workflow builds the installer, uploads it to a draft release with the changelog section as notes, then publishes it. The tag must match the version in `package.json`.
 
 ## License
 
