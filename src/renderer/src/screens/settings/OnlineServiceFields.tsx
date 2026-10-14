@@ -1,5 +1,6 @@
 import type { SettingsState } from '@core/api'
 import { useState } from 'react'
+import { texts } from '../../i18n'
 import { Alert, Button, Select, TextField } from '../../ui'
 
 export const SERVICES = [
@@ -35,49 +36,46 @@ export function OnlineServiceFields({
   return (
     <>
       <Alert type="warning">
-        <strong>Votre CV et l’annonce seront envoyés à ce service.</strong> Ils quittent votre ordinateur à chaque
-        création de CV.
+        <strong>{texts.settings.online.warning}</strong> {texts.settings.online.warningText}
       </Alert>
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
-          label="Service"
+          label={texts.settings.online.service}
           value={otherService ? OTHER_SERVICE : settings.apiUrl}
-          options={[...SERVICES, { value: OTHER_SERVICE, label: 'Autre adresse' }]}
+          options={[...SERVICES, { value: OTHER_SERVICE, label: texts.settings.online.otherService }]}
           onChange={(v) => {
             setOtherService(v === OTHER_SERVICE)
             if (v !== OTHER_SERVICE) update({ apiUrl: v })
           }}
         />
         <TextField
-          label="Clé personnelle (API)"
+          label={texts.settings.online.key}
           type="password"
           value={apiKey}
           onChange={onApiKey}
-          placeholder={settings.hasApiKey ? '•••••••••••• (enregistrée)' : ''}
+          placeholder={settings.hasApiKey ? texts.settings.online.keySaved : ''}
         />
         {otherService && (
           <TextField
-            label="Adresse du service"
+            label={texts.settings.online.url}
             value={settings.apiUrl}
             onChange={(v) => update({ apiUrl: v })}
-            hint="Elle commence par https:// et finit souvent par /v1."
+            hint={texts.settings.online.urlHint}
           />
         )}
         <TextField
-          label="Modèle"
+          label={texts.settings.online.model}
           value={settings.apiModel}
           onChange={(v) => update({ apiModel: v })}
-          hint="Le nom donné par le service, par exemple « mistral-small-latest »."
+          hint={texts.settings.online.modelHint}
         />
       </div>
       <p className="text-petit text-aide">
-        {settings.hasApiKey
-          ? 'Une clé est enregistrée, chiffrée sur votre ordinateur. Elle n’est jamais réaffichée.'
-          : 'Aucune clé enregistrée pour l’instant.'}
+        {settings.hasApiKey ? texts.settings.online.hasKey : texts.settings.online.noKey}
       </p>
       {settings.hasApiKey && (
         <Button variant="danger" size="small" onClick={onRemoveKey} busy={removingKey} disabled={disabled}>
-          Supprimer la clé
+          {texts.settings.online.removeKey}
         </Button>
       )}
     </>

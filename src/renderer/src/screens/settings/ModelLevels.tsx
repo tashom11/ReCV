@@ -4,16 +4,13 @@ import { useCallback, useEffect, useState } from 'react'
 import { downloadAnnouncement } from '../../accessibility'
 import { describeError, type ErrorDescription } from '../../errors'
 import { formatSize } from '../../estimate'
+import { texts } from '../../i18n'
 import { Button, ErrorAlert } from '../../ui'
 
-// The three local models, named by what they change for the user.
-const LEVEL_LABELS: Record<ModelLevel, { name: string; detail: string }> = {
-  fast: { name: 'Rapide', detail: 'Pour les ordinateurs modestes' },
-  balanced: { name: 'Équilibré', detail: 'Bon résultat sur la plupart des ordinateurs' },
-  quality: { name: 'Soigné', detail: 'Meilleur résultat' },
-}
+const words = texts.settings.levels
+const LEVEL_LABELS: Record<ModelLevel, { name: string; detail: string }> = words.names
 
-/** Choice and installation of the model running on the computer: Rapide, Équilibré or Soigné. */
+/** Choice and installation of the model running on the computer: fast, balanced or quality. */
 export function ModelLevels({
   activePath,
   onActive,
@@ -87,12 +84,12 @@ export function ModelLevels({
 
   return (
     <fieldset className="space-y-2.5">
-      <legend className="pb-2 text-corps font-bold text-encre">Rapidité ou soin du résultat</legend>
+      <legend className="pb-2 text-corps font-bold text-encre">{words.legend}</legend>
       {error && (
         <ErrorAlert
           description={error}
           onAction={() => setError(null)}
-          labels={{ dismiss: 'Compris' }}
+          labels={{ dismiss: words.understood }}
           headingLevel={3}
         />
       )}
@@ -102,7 +99,7 @@ export function ModelLevels({
         const download = progress?.id === m.id && busy ? progress : null
         const percent =
           download && download.totalBytes > 0 ? Math.round((download.receivedBytes / download.totalBytes) * 100) : 0
-        const slowNote = m.compatible ? '' : ', mais lent sur votre ordinateur'
+        const slowNote = m.compatible ? '' : words.slow
         return (
           <div
             key={m.id}
@@ -112,7 +109,7 @@ export function ModelLevels({
               <label className="flex min-h-11 min-w-0 flex-1 items-start gap-3.5">
                 <input
                   type="radio"
-                  name="niveau-modele"
+                  name="model-level"
                   className="mt-1 size-5 shrink-0"
                   checked={active}
                   disabled={!m.installed}
@@ -121,12 +118,12 @@ export function ModelLevels({
                 <span className="min-w-0">
                   <span className="block text-corps text-encre">
                     <strong>{level.name}</strong>
-                    {m.recommended && <span className="text-marque"> · conseillé pour votre ordinateur</span>}
+                    {m.recommended && <span className="text-marque">{words.recommended}</span>}
                   </span>
                   <span className="block text-petit text-aide">
                     {m.installed
-                      ? `Installé · ${formatSize(m.sizeBytes)}`
-                      : `${level.detail}${slowNote} · ${formatSize(m.sizeBytes)} à télécharger`}
+                      ? words.installed(formatSize(m.sizeBytes))
+                      : words.toDownload(`${level.detail}${slowNote}`, formatSize(m.sizeBytes))}
                   </span>
                 </span>
               </label>
@@ -138,11 +135,11 @@ export function ModelLevels({
                   busy={busyWith === m.id}
                   onClick={() => void remove(m)}
                 >
-                  Supprimer
+                  {words.remove}
                 </Button>
               ) : download ? (
                 <Button variant="secondary" size="small" onClick={() => void window.api.cancelDownload()}>
-                  Mettre en pause
+                  {words.pause}
                 </Button>
               ) : (
                 <Button
@@ -152,7 +149,7 @@ export function ModelLevels({
                   busy={busyWith === m.id}
                   onClick={() => void install(m.id)}
                 >
-                  Installer
+                  {words.install}
                 </Button>
               )}
             </div>
@@ -160,7 +157,7 @@ export function ModelLevels({
               <div className="space-y-1.5">
                 <div
                   role="progressbar"
-                  aria-label={`Téléchargement du niveau ${level.name}`}
+                  aria-label={words.progressLabel(level.name)}
                   aria-valuemin={0}
                   aria-valuemax={100}
                   aria-valuenow={download.status === 'verifying' ? undefined : percent}
@@ -174,8 +171,8 @@ export function ModelLevels({
                 </div>
                 <p className="text-petit text-aide">
                   {download.status === 'verifying'
-                    ? 'Vérification du fichier… quelques secondes'
-                    : `${formatSize(download.receivedBytes)} sur ${formatSize(download.totalBytes)} (${percent} %)`}
+                    ? words.verifying
+                    : words.progress(formatSize(download.receivedBytes), formatSize(download.totalBytes), percent)}
                 </p>
                 <p className="sr-only" role="status">
                   {downloadAnnouncement(percent, download.status === 'verifying')}
@@ -183,7 +180,7 @@ export function ModelLevels({
               </div>
             )}
             {progress?.id === m.id && progress.status === 'cancelled' && (
-              <p className="text-petit text-aide">En pause : le téléchargement reprendra là où il s’était arrêté.</p>
+              <p className="text-petit text-aide">{words.paused}</p>
             )}
           </div>
         )

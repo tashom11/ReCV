@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { describeError, type ErrorDescription, errorMessage } from '../../errors'
+import { texts } from '../../i18n'
 import { Button, Card, ConfirmDialog } from '../../ui'
 
 /** « Mes données »: erases the profile, job postings, created CVs (and the API key), after an explicit confirmation. */
@@ -25,7 +26,7 @@ export function EraseDataCard({
       setConfirming(false)
       onError({
         ...describeError('settings', e),
-        title: 'Vos données n’ont pas pu être effacées',
+        title: texts.settings.data.failed,
         text: errorMessage(e),
       })
     } finally {
@@ -34,26 +35,23 @@ export function EraseDataCard({
   }
 
   return (
-    <Card
-      title="Mes données"
-      subtitle="Votre CV, vos annonces et les CV créés sont enregistrés uniquement sur cet ordinateur."
-    >
+    <Card title={texts.settings.data.title} subtitle={texts.settings.data.subtitle}>
       <Button variant="danger" onClick={() => setConfirming(true)}>
-        Tout effacer…
+        {texts.settings.data.erase}
       </Button>
       <ConfirmDialog
         open={confirming}
-        title="Tout effacer définitivement ?"
-        confirmLabel="Oui, tout effacer"
-        cancelLabel="Non, garder mes données"
+        title={texts.settings.data.confirmTitle}
+        confirmLabel={texts.settings.data.confirm}
+        cancelLabel={texts.settings.data.cancel}
         onConfirm={() => void eraseAll()}
         onCancel={() => setConfirming(false)}
         busy={erasing}
       >
         <p>
-          Votre CV importé, vos annonces et vos CV créés seront supprimés de Re:CV. Les fichiers déjà téléchargés sur
-          votre ordinateur ne sont pas touchés. Les réglages sont gardés
-          {hasApiKey ? ', sauf votre clé personnelle, effacée elle aussi' : ''}.
+          {texts.settings.data.confirmText}
+          {hasApiKey ? texts.settings.data.confirmKey : ''}
+          {texts.settings.data.end}
         </p>
       </ConfirmDialog>
     </Card>
