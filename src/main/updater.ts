@@ -7,7 +7,7 @@ export interface UpdateEngine {
   /** Checks the releases; downloads the new version if there is one and notifies. */
   checkForUpdatesAndNotify(): Promise<unknown>
   quitAndInstall(): void
-  on(event: string, rappel: (...args: never[]) => void): unknown
+  on(event: string, callback: (...args: never[]) => void): unknown
 }
 
 export interface UpdaterDeps {
