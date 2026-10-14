@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { downloadAnnouncement } from '../accessibility'
 import { describeError, type ErrorDescription } from '../errors'
 import { formatSize, rate, remainingDownload } from '../estimate'
+import { texts } from '../i18n'
 import { Button, ErrorAlert, Icon, LinkButton } from '../ui'
 
 /**
@@ -81,25 +82,26 @@ export function SetupScreen({
           >
             <Icon name="download" size={28} />
           </span>
-          <h1 className="font-titre text-titre-ecran font-bold">On prépare Re:CV</h1>
+          <h1 className="font-titre text-titre-ecran font-bold">{texts.setup.title}</h1>
         </header>
         <p className="text-intro text-encre-douce">
-          Pour travailler sans rien envoyer sur internet, Re:CV a besoin d’un fichier
+          {texts.setup.intro.start}
           {model ? (
             <>
               {' '}
-              d’environ <strong className="text-encre">{formatSize(model.sizeBytes)}</strong>
+              {texts.setup.intro.sizePrefix} <strong className="text-encre">{formatSize(model.sizeBytes)}</strong>
             </>
           ) : (
-            ' volumineux'
+            texts.setup.intro.unknownSize
           )}
-          . Il se télécharge <strong className="text-encre">une seule fois</strong> ; ensuite, l’application fonctionne
-          même sans connexion.
+          {texts.setup.intro.onceBefore}
+          <strong className="text-encre">{texts.setup.intro.once}</strong>
+          {texts.setup.intro.onceAfter}
         </p>
 
         {error || interrupted ? (
           <ErrorAlert
-            description={error ?? describeError('setup', progress?.message ?? 'Téléchargement interrompu')}
+            description={error ?? describeError('setup', progress?.message ?? texts.setup.interrupted)}
             onAction={() => model && void download(model.id)}
           />
         ) : (
@@ -111,10 +113,10 @@ export function SetupScreen({
               {/* Visible text changes several times per second: only the sr-only line below is announced. */}
               <span className="text-corps text-encre-douce">
                 {verifying
-                  ? 'Vérification du fichier… quelques secondes'
+                  ? texts.setup.verifying
                   : total > 0
-                    ? `${formatSize(received)} sur ${formatSize(total)}${remaining ? ` · ${remaining}` : ''}`
-                    : 'Démarrage…'}
+                    ? `${texts.setup.progress(formatSize(received), formatSize(total))}${remaining ? ` · ${remaining}` : ''}`
+                    : texts.setup.starting}
               </span>
             </div>
             <p className="sr-only" role="status">
@@ -122,7 +124,7 @@ export function SetupScreen({
             </p>
             <div
               role="progressbar"
-              aria-label="Téléchargement"
+              aria-label={texts.setup.progressLabel}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={verifying ? undefined : percent}
@@ -141,10 +143,7 @@ export function SetupScreen({
         )}
 
         <ul className="space-y-3 rounded-carte bg-papier p-6 text-corps text-encre">
-          {[
-            'Gardez l’ordinateur allumé et connecté à internet. Vous pouvez réduire cette fenêtre.',
-            'Si la connexion coupe, le téléchargement reprendra là où il s’était arrêté.',
-          ].map((line) => (
+          {texts.setup.tips.map((line) => (
             <li key={line} className="flex items-start gap-3.5">
               <Icon name="check" size={18} strokeWidth={2.5} className="mt-1 text-marque" />
               {line}
@@ -160,9 +159,9 @@ export function SetupScreen({
               onLater()
             }}
           >
-            Plus tard
+            {texts.setup.later}
           </Button>
-          <LinkButton onClick={onSettings}>Choisir une autre option dans les Réglages</LinkButton>
+          <LinkButton onClick={onSettings}>{texts.setup.otherOption}</LinkButton>
         </div>
       </section>
     </div>

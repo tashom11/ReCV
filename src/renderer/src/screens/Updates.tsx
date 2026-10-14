@@ -1,5 +1,6 @@
 import type { UpdateState } from '@core/api'
 import { useEffect, useState } from 'react'
+import { texts } from '../i18n'
 import { Button, Card, Icon, type IconName, Spinner } from '../ui'
 
 /** Update state, followed live (initial read, then changes sent by the application). */
@@ -12,7 +13,7 @@ export function useUpdateState(): UpdateState | null {
   return state
 }
 
-const time = (atMs: number) => new Date(atMs).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+const time = (atMs: number) => new Date(atMs).toLocaleTimeString(texts.locale, { hour: '2-digit', minute: '2-digit' })
 
 function describe(state: UpdateState): { icon: IconName | null; tone: string; text: string } {
   switch (state.status) {
@@ -20,36 +21,36 @@ function describe(state: UpdateState): { icon: IconName | null; tone: string; te
       return {
         icon: 'check-circle',
         tone: 'text-marque',
-        text: `Re:CV est à jour${state.checkedAt ? ` (vérifié à ${time(state.checkedAt)})` : ''}.`,
+        text: state.checkedAt ? texts.updates.upToDateAt(time(state.checkedAt)) : texts.updates.upToDate,
       }
     case 'checking':
-      return { icon: null, tone: 'text-encre', text: 'Recherche d’une mise à jour…' }
+      return { icon: null, tone: 'text-encre', text: texts.updates.checking }
     case 'downloading':
       return {
         icon: null,
         tone: 'text-encre',
-        text: `Téléchargement de la version ${state.newVersion ?? 'suivante'}… ${state.percent ?? 0} %`,
+        text: texts.updates.downloading(state.newVersion ?? texts.updates.nextVersion, state.percent ?? 0),
       }
     case 'ready':
       return {
         icon: 'download',
         tone: 'text-marque',
-        text: `La version ${state.newVersion ?? 'suivante'} est prête. Elle s’installera à la fermeture de Re:CV.`,
+        text: texts.updates.ready(state.newVersion ?? texts.updates.nextVersion),
       }
     case 'error':
       return {
         icon: 'warning',
         tone: 'text-alerte',
-        text: 'Impossible de vérifier les mises à jour pour l’instant. Vérifiez votre connexion, puis réessayez.',
+        text: texts.updates.error,
       }
     case 'unavailable':
       return {
         icon: 'info',
         tone: 'text-encre-douce',
-        text: 'Les mises à jour automatiques ne concernent que l’application installée.',
+        text: texts.updates.unavailable,
       }
     default:
-      return { icon: 'info', tone: 'text-encre-douce', text: 'Aucune vérification pour l’instant.' }
+      return { icon: 'info', tone: 'text-encre-douce', text: texts.updates.none }
   }
 }
 
@@ -71,7 +72,7 @@ export function UpdatesCard() {
   }
 
   return (
-    <Card title="Mises à jour" subtitle={`Version installée : ${state.version}`}>
+    <Card title={texts.updates.title} subtitle={texts.updates.installedVersion(state.version)}>
       <p role="status" aria-live="polite" className={`flex items-start gap-2.5 text-corps font-bold ${tone}`}>
         {icon ? <Icon name={icon} className="mt-0.5" /> : <Spinner size={20} />}
         {text}
@@ -79,7 +80,7 @@ export function UpdatesCard() {
       {state.status === 'downloading' && (
         <div
           role="progressbar"
-          aria-label="Téléchargement de la mise à jour"
+          aria-label={texts.updates.progressLabel}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={state.percent ?? 0}
@@ -91,7 +92,7 @@ export function UpdatesCard() {
       {state.status === 'error' && state.message && (
         <details>
           <summary className="inline-flex min-h-11 items-center font-bold text-marque underline underline-offset-4">
-            Détails
+            {texts.common.details}
           </summary>
           <p className="rounded-champ bg-papier p-3 font-mono text-petit break-words text-encre-douce">
             {state.message}
@@ -100,12 +101,12 @@ export function UpdatesCard() {
       )}
       {state.status === 'ready' ? (
         <Button icon="restart" onClick={() => void window.api.installUpdate().catch(() => undefined)}>
-          Redémarrer maintenant
+          {texts.updates.restart}
         </Button>
       ) : (
         state.status !== 'unavailable' && (
           <Button variant="secondary" icon="restart" onClick={check} busy={busyWith}>
-            Rechercher une mise à jour
+            {texts.updates.check}
           </Button>
         )
       )}

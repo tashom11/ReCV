@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { errorMessage } from '../errors'
 import { savedLocation } from '../flow'
+import { texts } from '../i18n'
 import { Alert, Button, Icon } from '../ui'
 
 /** End of the flow: the CV is downloaded, it can be opened or the user can start again for another job posting. */
@@ -32,10 +33,8 @@ export function SuccessScreen({
         <Icon name="check" size={56} strokeWidth={3} />
       </span>
       <header className="space-y-3">
-        <h1 className="font-titre text-[2.75rem] leading-tight font-bold">Votre CV est prêt à envoyer</h1>
-        <p className="mx-auto max-w-xl text-intro text-encre-douce">
-          Il est adapté à l’annonce « {jobTitle} ». Bonne chance pour votre candidature !
-        </p>
+        <h1 className="font-titre text-[2.75rem] leading-tight font-bold">{texts.success.title}</h1>
+        <p className="mx-auto max-w-xl text-intro text-encre-douce">{texts.success.tailoredFor(jobTitle)}</p>
       </header>
 
       <section className="space-y-5 rounded-carte border border-trait bg-surface p-6 text-left shadow-carte">
@@ -50,27 +49,23 @@ export function SuccessScreen({
         </div>
         <div className="flex flex-wrap gap-3">
           <Button icon="folder" onClick={() => open(window.api.revealInFolder)}>
-            Ouvrir le dossier
+            {texts.success.openFolder}
           </Button>
           <Button variant="secondary" onClick={() => open(window.api.openFile)}>
-            Ouvrir le CV
+            {texts.success.openCv}
           </Button>
         </div>
-        {error && (
-          <Alert type="warning">Le fichier ne s’ouvre pas tout seul. Vous le trouverez à cet endroit : {path}</Alert>
-        )}
+        {error && <Alert type="warning">{texts.success.openFailed(path)}</Alert>}
       </section>
 
       <hr className="border-trait" />
 
       <section className="space-y-4">
-        <h2 className="font-titre text-titre-section font-bold">Une autre annonce vous intéresse ?</h2>
+        <h2 className="font-titre text-titre-section font-bold">{texts.success.anotherTitle}</h2>
         <Button variant="outline" size="large" icon="restart" onClick={onAnotherPosting}>
-          Adapter pour une autre offre
+          {texts.success.another}
         </Button>
-        <p className="text-corps text-encre-douce">
-          Votre CV de départ est gardé : vous n’aurez qu’à indiquer la nouvelle annonce.
-        </p>
+        <p className="text-corps text-encre-douce">{texts.success.anotherText}</p>
       </section>
     </div>
   )
