@@ -43,7 +43,7 @@ export function WhatChanged({
   profile,
   tailored,
   finalCv,
-  title,
+  headline,
   onHeadline,
   summary,
   onSummary,
@@ -56,8 +56,8 @@ export function WhatChanged({
   tailored: TailoredCv
   /** CV as it will be downloaded (composed skills). */
   finalCv: TailoredCv
-  title: string
-  onHeadline: (title: string) => void
+  headline: string
+  onHeadline: (headline: string) => void
   summary: string
   onSummary: (summary: string) => void
   bullets: string[][]
@@ -78,12 +78,12 @@ export function WhatChanged({
       <Comparison
         title="Titre du CV"
         before={<p>{profile.headline || '—'}</p>}
-        after={<TextField label="Titre adapté à l’annonce" value={title} onChange={onHeadline} />}
+        after={<TextField label="Titre adapté à l’annonce" value={headline} onChange={onHeadline} />}
         keep={
           <Checkbox
             label="Utiliser le titre adapté"
-            check={choices.title}
-            onChange={(v) => onChoices({ ...choices, title: v })}
+            check={choices.headline}
+            onChange={(v) => onChoices({ ...choices, headline: v })}
           />
         }
       />

@@ -3,7 +3,7 @@ import { formatSkill, isShortSkill, isSoftSkill, splitSkills, withoutDuplicates 
 
 /** User decisions on the review screen. */
 export interface CompositionChoices {
-  title: boolean
+  headline: boolean
   summary: boolean
   /** True: tailored selection; false: all the profile skills, in their original order. */
   skills: boolean
@@ -27,30 +27,30 @@ const clean = (values: string[]) => values.map((v) => v.trim()).filter(Boolean)
 export function composeCv(
   profile: Profile,
   tailored: TailoredCv,
-  choice: CompositionChoices,
+  choices: CompositionChoices,
   bullets: string[][],
 ): TailoredCv {
   const kept = tailored.experiences.map((experience, i) => ({
     ...experience,
-    bullets: choice.experiences[i]
+    bullets: choices.experiences[i]
       ? clean(bullets[i] ?? experience.bullets)
       : (profile.experiences[experience.sourceIndex ?? i]?.achievements ?? experience.bullets),
   }))
-  const reinstated = tailored.excluded.experiences.filter((_, i) => choice.reinstate.experiences[i])
+  const reinstated = tailored.excluded.experiences.filter((_, i) => choices.reinstate.experiences[i])
   // Order of the original profile; without a known index, the item stays at the end.
   const experiences = [...kept, ...reinstated].sort(
     (a, b) => (a.sourceIndex ?? Number.MAX_SAFE_INTEGER) - (b.sourceIndex ?? Number.MAX_SAFE_INTEGER),
   )
 
   // Without tailored selection: all the profile skills, but never its activity sentences.
-  const base = choice.skills ? tailored.skills : splitSkills(profile.skills).filter(isShortSkill)
+  const base = choices.skills ? tailored.skills : splitSkills(profile.skills).filter(isShortSkill)
   const skills = [
     ...base,
-    ...tailored.excluded.skills.filter((c, i) => choice.reinstate.skills[i] && !base.includes(c)),
+    ...tailored.excluded.skills.filter((c, i) => choices.reinstate.skills[i] && !base.includes(c)),
   ]
   // Requested by the job posting and declared by the user: the user vouches for them, not the model. They join the
   // key skills, worded as in the job posting.
-  const declared = tailored.requested.missing.filter((_, i) => choice.addRequested[i]).map(formatSkill)
+  const declared = tailored.requested.missing.filter((_, i) => choices.addRequested[i]).map(formatSkill)
   const dedupeCaseInsensitive = (list: string[]) =>
     list.filter((c, i, all) => all.findIndex((u) => u.toLowerCase() === c.toLowerCase()) === i)
   const keySkills = dedupeCaseInsensitive([...tailored.keySkills, ...declared.filter((c) => !isSoftSkill(c))])
@@ -63,13 +63,13 @@ export function composeCv(
   }
   const education = [
     ...tailored.education,
-    ...tailored.excluded.education.filter((_, i) => choice.reinstate.education[i]),
+    ...tailored.excluded.education.filter((_, i) => choices.reinstate.education[i]),
   ].sort((a, b) => rank(a.degree, a.school) - rank(b.degree, b.school))
 
   return {
     ...tailored,
-    headline: choice.title ? tailored.headline : (profile.headline ?? tailored.headline),
-    summary: choice.summary ? tailored.summary : (profile.summary ?? tailored.summary),
+    headline: choices.headline ? tailored.headline : (profile.headline ?? tailored.headline),
+    summary: choices.summary ? tailored.summary : (profile.summary ?? tailored.summary),
     keySkills: keySkills,
     skills: withoutDuplicates([...declaredSoftSkills, ...skills]),
     experiences,
@@ -79,10 +79,10 @@ export function composeCv(
   }
 }
 
-/** Initial choice: everything tailored is accepted, everything excluded stays excluded. */
+/** Initial choices: everything tailored is accepted, everything excluded stays excluded. */
 export function initialChoices(tailored: TailoredCv): CompositionChoices {
   return {
-    title: true,
+    headline: true,
     summary: true,
     skills: true,
     experiences: tailored.experiences.map(() => true),
