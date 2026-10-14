@@ -25,270 +25,270 @@ import { createApiProvider, createOllamaProvider, type LlmProvider } from '@core
 import type { JobPosting, Profile } from '@core/schemas'
 import { analyzeCoverage, type JobAnalysis, prepareProfile } from '@core/tailoring'
 import { formatSkill } from '@core/tailoring/skills'
-import type { Bdd } from './bdd/connexion'
+import type { AppDatabase } from './db/connection'
 import {
-  creerProfil,
-  effacerDonnees,
-  enregistrerCv,
-  enregistrerOffre,
-  enregistrerProfil,
-  obtenirProfilActif,
+  createProfile,
+  eraseData,
+  getActiveProfile,
   purgeOldData,
-} from './bdd/depots'
-import type { GestionnaireMiseAJour } from './miseAJour'
-import type { GestionnaireModeles } from './modeles/gestionnaire'
-import type { StockageParametres } from './parametres'
+  saveJobPosting,
+  saveProfile,
+  saveTailoredCv,
+} from './db/repositories'
+import type { ModelManager } from './models/manager'
+import type { SettingsStore } from './settingsStore'
+import type { Updater } from './updater'
 
-export interface DependancesService {
-  bdd: Bdd
-  parametres: StockageParametres
-  /** Ouvre le sélecteur de fichier et retourne le texte extrait du CV et le nom du fichier, ou `null` si annulé. */
-  choisirEtLireCv: () => Promise<{ texte: string; nom: string } | null>
-  /** Texte extrait d'un CV désigné par son chemin (fichier déposé dans la fenêtre). */
-  lireCv: (chemin: string) => Promise<string>
-  /** Repli de rendu navigateur pour les offres en JS. */
-  rendreHtml: (url: string) => Promise<string>
-  /** User-Agent de navigateur utilisé pour récupérer les offres. */
+export interface ServiceDeps {
+  db: AppDatabase
+  settings: SettingsStore
+  /** Opens the file picker and returns the text extracted from the CV and the file name, or `null` if cancelled. */
+  pickAndReadCv: () => Promise<{ text: string; name: string } | null>
+  /** Text extracted from a CV given by its path (file dropped on the window). */
+  readCv: (path: string) => Promise<string>
+  /** Browser rendering fallback for job postings built in JS. */
+  renderHtml: (url: string) => Promise<string>
+  /** Browser User-Agent used to fetch job postings. */
   userAgent?: string
-  modeles: GestionnaireModeles
-  misesAJour: Pick<GestionnaireMiseAJour, 'etat' | 'verifier' | 'installer'>
-  /** Signale l'étape en cours d'une tâche longue au renderer. */
-  emettreTache?: (progression: TaskProgress) => void
-  /** Sélecteur d'enregistrement : chemin choisi, ou `null` si annulé. */
-  choisirDestination: (nomParDefaut: string, extension: 'pdf' | 'docx') => Promise<string | null>
-  /** Rend le HTML en PDF (fenêtre cachée côté Electron). */
-  genererPdf: (html: string) => Promise<Buffer>
-  /** Ouvre un fichier avec l'application par défaut du système. */
-  ouvrirChemin: (chemin: string) => Promise<void>
-  /** Montre un fichier dans l'explorateur. */
-  montrerChemin: (chemin: string) => void
-  /** Surchargeable pour les tests (jamais d'appel LLM réel). */
-  creerFournisseur?: (parametres: Settings, cleApi: string | null) => Promise<LlmProvider>
+  models: ModelManager
+  updater: Pick<Updater, 'state' | 'check' | 'install'>
+  /** Reports the current step of a long task to the renderer. */
+  emitTask?: (progress: TaskProgress) => void
+  /** Save picker: chosen path, or `null` if cancelled. */
+  chooseDestination: (defaultName: string, extension: 'pdf' | 'docx') => Promise<string | null>
+  /** Renders the HTML to PDF (hidden window on the Electron side). */
+  generatePdf: (html: string) => Promise<Buffer>
+  /** Opens a file with the system default application. */
+  openPath: (path: string) => Promise<void>
+  /** Shows a file in the file explorer. */
+  revealPath: (path: string) => void
+  /** Overridable for tests (never a real LLM call). */
+  createProvider?: (settings: Settings, apiKey: string | null) => Promise<LlmProvider>
 }
 
-const MAX_RECHERCHEES = 8
+const MAX_SOUGHT_SKILLS = 8
 // Data minimisation: older tailored CVs (and their job postings) are deleted.
-const CREATIONS_CONSERVEES = 20
+const KEPT_CREATIONS = 20
 
-async function fournisseurParDefaut(parametres: Settings, cleApi: string | null): Promise<LlmProvider> {
-  switch (parametres.provider) {
+async function defaultProvider(settings: Settings, apiKey: string | null): Promise<LlmProvider> {
+  switch (settings.provider) {
     case 'ollama':
-      return createOllamaProvider({ model: parametres.ollamaModel, baseUrl: parametres.ollamaUrl })
+      return createOllamaProvider({ model: settings.ollamaModel, baseUrl: settings.ollamaUrl })
     case 'api':
-      if (!cleApi) throw new Error('Aucune clé personnelle enregistrée : renseignez-la dans les réglages.')
-      if (!parametres.apiModel) throw new Error('Aucun modèle indiqué pour le service en ligne.')
-      return createApiProvider({ baseUrl: parametres.apiUrl, apiKey: cleApi, model: parametres.apiModel })
+      if (!apiKey) throw new Error('Aucune clé personnelle enregistrée : renseignez-la dans les réglages.')
+      if (!settings.apiModel) throw new Error('Aucun modèle indiqué pour le service en ligne.')
+      return createApiProvider({ baseUrl: settings.apiUrl, apiKey: apiKey, model: settings.apiModel })
     case 'local': {
-      if (!parametres.localModelPath) throw new CodedError('moteur-absent', 'Aucun modèle local sélectionné.')
-      const { createLocalProvider: creerFournisseurLocal } = await import('@core/llm/localEngine')
-      return creerFournisseurLocal({ modelPath: parametres.localModelPath })
+      if (!settings.localModelPath) throw new CodedError('moteur-absent', 'Aucun modèle local sélectionné.')
+      const { createLocalProvider } = await import('@core/llm/localEngine')
+      return createLocalProvider({ modelPath: settings.localModelPath })
     }
   }
 }
 
-/** Logique des handlers IPC, sans dépendance directe à Electron (testable). */
-export function creerService(deps: DependancesService): ApiService & { liberer(): Promise<void> } {
-  const { bdd, parametres, modeles, choisirEtLireCv, rendreHtml, choisirDestination, genererPdf } = deps
-  const creer = deps.creerFournisseur ?? fournisseurParDefaut
-  const signaler = (progression: TaskProgress) => deps.emettreTache?.(progression)
+/** Logic of the IPC handlers, without direct dependency on Electron (testable). */
+export function createService(deps: ServiceDeps): ApiService & { release(): Promise<void> } {
+  const { db, settings, models, pickAndReadCv, renderHtml, chooseDestination, generatePdf } = deps
+  const create = deps.createProvider ?? defaultProvider
+  const report = (progress: TaskProgress) => deps.emitTask?.(progress)
   const analyses = new Map<string, JobAnalysis>()
-  // Seuls les fichiers écrits par l'export de cette session peuvent être ouverts : le renderer ne choisit pas le chemin.
-  const exportes = new Set<string>()
-  let adaptationEnCours: AbortController | null = null
+  // Only files written by this session's export can be opened: the renderer does not choose the path.
+  const exported = new Set<string>()
+  let runningTailoring: AbortController | null = null
 
-  // Un seul fournisseur vivant, réutilisé tant que les paramètres (et la clé) ne changent pas :
-  // le modèle local pèse plusieurs Go et ne doit être chargé qu'une fois, puis libéré.
-  let courant: { empreinte: string; promesse: Promise<LlmProvider> } | null = null
+  // A single live provider, reused as long as the settings (and the key) do not change: the local model weighs several
+  // GB and must be loaded only once, then released.
+  let current: { fingerprint: string; promise: Promise<LlmProvider> } | null = null
 
-  const liberer = async (entree: typeof courant) => {
-    const ancien = await entree?.promesse.catch(() => null)
-    await ancien?.release?.()
+  const release = async (entry: typeof current) => {
+    const previous = await entry?.promise.catch(() => null)
+    await previous?.release?.()
   }
 
-  const fournisseur = async (): Promise<LlmProvider> => {
-    const [params, cleApi] = await Promise.all([parametres.lire(), parametres.lireCle()])
-    const empreinte = createHash('sha256')
-      .update(JSON.stringify([params, cleApi]))
+  const provider = async (): Promise<LlmProvider> => {
+    const [params, apiKey] = await Promise.all([settings.read(), settings.readKey()])
+    const fingerprint = createHash('sha256')
+      .update(JSON.stringify([params, apiKey]))
       .digest('hex')
-    if (courant?.empreinte !== empreinte) {
-      const ancien = courant
-      courant = null
-      await liberer(ancien)
-      const promesse = creer(params, cleApi)
-      const entree = { empreinte, promesse }
-      courant = entree
-      // Une création en échec ne reste pas en cache : le prochain appel réessaie.
-      promesse.catch(() => {
-        if (courant === entree) courant = null
+    if (current?.fingerprint !== fingerprint) {
+      const previous = current
+      current = null
+      await release(previous)
+      const promise = create(params, apiKey)
+      const entry = { fingerprint, promise }
+      current = entry
+      // A failed creation does not stay cached: the next call retries.
+      promise.catch(() => {
+        if (current === entry) current = null
       })
     }
-    if (!courant) throw new Error('Fournisseur indisponible')
-    return courant.promesse
+    if (!current) throw new Error('Fournisseur indisponible')
+    return current.promise
   }
 
-  const profilActif = () => {
-    const actif = obtenirProfilActif(bdd)
-    if (!actif) throw new CodedError('profil-absent', 'Aucun CV enregistré : importez d’abord votre CV.')
-    return actif
+  const activeProfile = () => {
+    const active = getActiveProfile(db)
+    if (!active) throw new CodedError('profil-absent', 'Aucun CV enregistré : importez d’abord votre CV.')
+    return active
   }
 
-  const importer = async (texte: string, nomFichier: string): Promise<SavedProfile> => {
-    signaler({ task: 'import', label: 'Analyse du CV par le modèle' })
-    const extrait = await (await fournisseur()).extractProfile(texte)
-    // La photo est choisie par l'utilisateur, pas extraite du CV : elle suit le profil actif.
-    const photo = obtenirProfilActif(bdd)?.profile.photo
-    const cree = creerProfil(bdd, photo ? { ...extrait, photo } : extrait)
-    purgeOldData(bdd, { keepCreations: CREATIONS_CONSERVEES })
-    return { ...cree, fileName: nomFichier }
+  const importCvText = async (text: string, fileName: string): Promise<SavedProfile> => {
+    report({ task: 'import', label: 'Analyse du CV par le modèle' })
+    const extracted = await (await provider()).extractProfile(text)
+    // The photo is chosen by the user, not extracted from the CV: it follows the active profile.
+    const photo = getActiveProfile(db)?.profile.photo
+    const created = createProfile(db, photo ? { ...extracted, photo } : extracted)
+    purgeOldData(db, { keepCreations: KEPT_CREATIONS })
+    return { ...created, fileName: fileName }
   }
 
-  // L'analyse d'une offre ne dépend pas du profil : mémorisée, elle sert à la carte de confirmation de l'annonce
-  // puis à l'adaptation, sans second appel au modèle.
-  const cleOffre = (offre: JobPosting) =>
-    createHash('sha256').update(`${offre.jobTitle}\n${offre.rawText}`).digest('hex')
-  const memoriser = (cle: string, analyse: JobAnalysis) => {
-    analyses.set(cle, analyse)
+  // The analysis of a job posting does not depend on the profile: kept, it serves the job posting confirmation card and
+  // then the tailoring, without a second model call.
+  const jobPostingKey = (jobPosting: JobPosting) =>
+    createHash('sha256').update(`${jobPosting.jobTitle}\n${jobPosting.rawText}`).digest('hex')
+  const remember = (key: string, analysis: JobAnalysis) => {
+    analyses.set(key, analysis)
     if (analyses.size > 20) analyses.delete(analyses.keys().next().value as string)
   }
 
-  const verifierExporte = (chemin: string): string => {
-    const absolu = resolve(chemin)
-    if (!exportes.has(absolu)) throw new Error('Ce fichier n’a pas été créé par Re:CV pendant cette session.')
-    return absolu
+  const checkExported = (path: string): string => {
+    const absolute = resolve(path)
+    if (!exported.has(absolute)) throw new Error('Ce fichier n’a pas été créé par Re:CV pendant cette session.')
+    return absolute
   }
 
   return {
     async importCv(): Promise<SavedProfile | null> {
-      const choisi = await choisirEtLireCv()
-      return choisi === null ? null : importer(choisi.texte, choisi.nom)
+      const chosen = await pickAndReadCv()
+      return chosen === null ? null : importCvText(chosen.text, chosen.name)
     },
 
-    async importDroppedCv(chemin: string): Promise<SavedProfile> {
-      return importer(await deps.lireCv(chemin), basename(chemin))
+    async importDroppedCv(path: string): Promise<SavedProfile> {
+      return importCvText(await deps.readCv(path), basename(path))
     },
 
     async getProfile() {
-      return obtenirProfilActif(bdd)
+      return getActiveProfile(db)
     },
 
-    async saveProfile(profil: Profile) {
-      return enregistrerProfil(bdd, profil)
+    async saveProfile(profile: Profile) {
+      return saveProfile(db, profile)
     },
 
-    fetchJobPosting: (url: string) => fetchJobPosting(url, { renderHtml: rendreHtml, userAgent: deps.userAgent }),
+    fetchJobPosting: (url: string) => fetchJobPosting(url, { renderHtml: renderHtml, userAgent: deps.userAgent }),
 
-    async parseJobPostingText(texte: string): Promise<JobPosting> {
-      signaler({ task: 'offre', label: 'Analyse de l’offre par le modèle' })
-      return (await fournisseur()).extractJobPosting(texte)
+    async parseJobPostingText(text: string): Promise<JobPosting> {
+      report({ task: 'offre', label: 'Analyse de l’offre par le modèle' })
+      return (await provider()).extractJobPosting(text)
     },
 
-    async previewJobPosting(offre: JobPosting): Promise<JobPostingPreview> {
-      const actif = profilActif()
-      const cle = cleOffre(offre)
-      let analyse = analyses.get(cle)
-      if (!analyse) {
-        signaler({ task: 'offre', label: 'Repérage de ce que l’employeur recherche' })
-        analyse = await (await fournisseur()).analyzeJobPosting(offre)
-        memoriser(cle, analyse)
+    async previewJobPosting(jobPosting: JobPosting): Promise<JobPostingPreview> {
+      const active = activeProfile()
+      const key = jobPostingKey(jobPosting)
+      let analysis = analyses.get(key)
+      if (!analysis) {
+        report({ task: 'offre', label: 'Repérage de ce que l’employeur recherche' })
+        analysis = await (await provider()).analyzeJobPosting(jobPosting)
+        remember(key, analysis)
       }
-      const couverture = analyzeCoverage(prepareProfile(actif.profile), analyse)
-      // Ordre de l'annonce (savoir-faire, qualités, autres termes), limité à ce que la couverture a retenu.
-      const retenues = new Set([...couverture.evidenced, ...couverture.missing])
-      const recherchees = [...analyse.requiredSkills, ...analyse.softSkills, ...analyse.keywords]
-        .map((terme) => terme.trim())
-        .filter((terme, i, tous) => retenues.has(terme) && tous.indexOf(terme) === i)
-        .slice(0, MAX_RECHERCHEES)
+      const coverage = analyzeCoverage(prepareProfile(active.profile), analysis)
+      // Job posting order (know-how, qualities, other terms), limited to what the coverage kept.
+      const kept = new Set([...coverage.evidenced, ...coverage.missing])
+      const recherchees = [...analysis.requiredSkills, ...analysis.softSkills, ...analysis.keywords]
+        .map((term) => term.trim())
+        .filter((term, i, all) => kept.has(term) && all.indexOf(term) === i)
+        .slice(0, MAX_SOUGHT_SKILLS)
         .map(formatSkill)
       return {
         soughtSkills: recherchees,
-        contractType: detectContractType(offre.rawText),
-        requirements: couverture.requirements,
+        contractType: detectContractType(jobPosting.rawText),
+        requirements: coverage.requirements,
       }
     },
 
-    async tailorCv(offre: JobPosting): Promise<GeneratedCv> {
-      const actif = profilActif()
-      adaptationEnCours?.abort()
-      const annulation = new AbortController()
-      adaptationEnCours = annulation
+    async tailorCv(jobPosting: JobPosting): Promise<GeneratedCv> {
+      const active = activeProfile()
+      runningTailoring?.abort()
+      const cancellation = new AbortController()
+      runningTailoring = cancellation
       try {
-        signaler({ task: 'adaptation', key: 'preparation', label: 'Préparation du modèle' })
-        const [params, llm] = await Promise.all([parametres.lire(), fournisseur()])
-        const cle = cleOffre(offre)
-        const cv = await llm.tailorCv(actif.profile, offre, {
+        report({ task: 'adaptation', key: 'preparation', label: 'Préparation du modèle' })
+        const [params, llm] = await Promise.all([settings.read(), provider()])
+        const key = jobPostingKey(jobPosting)
+        const cv = await llm.tailorCv(active.profile, jobPosting, {
           rewrite: params.rewriteBullets,
-          analysis: analyses.get(cle),
-          onAnalysis: (analyse) => memoriser(cle, analyse),
-          onStep: (e) => signaler({ task: 'adaptation', ...e, compute: llm.computeMode?.() ?? undefined }),
-          signal: annulation.signal,
+          analysis: analyses.get(key),
+          onAnalysis: (analysis) => remember(key, analysis),
+          onStep: (e) => report({ task: 'adaptation', ...e, compute: llm.computeMode?.() ?? undefined }),
+          signal: cancellation.signal,
         })
-        annulation.signal.throwIfAborted()
-        const offreId = enregistrerOffre(bdd, offre)
-        const id = enregistrerCv(bdd, actif.id, offreId, cv)
-        purgeOldData(bdd, { keepCreations: CREATIONS_CONSERVEES })
-        return { id, jobPostingId: offreId, cv }
-      } catch (erreur) {
-        if (annulation.signal.aborted) throw new CodedError('annule', 'Création annulée.', { cause: erreur })
-        throw erreur
+        cancellation.signal.throwIfAborted()
+        const jobPostingId = saveJobPosting(db, jobPosting)
+        const id = saveTailoredCv(db, active.id, jobPostingId, cv)
+        purgeOldData(db, { keepCreations: KEPT_CREATIONS })
+        return { id, jobPostingId: jobPostingId, cv }
+      } catch (error) {
+        if (cancellation.signal.aborted) throw new CodedError('annule', 'Création annulée.', { cause: error })
+        throw error
       } finally {
-        if (adaptationEnCours === annulation) adaptationEnCours = null
+        if (runningTailoring === cancellation) runningTailoring = null
       }
     },
 
     async cancelTailoring() {
-      adaptationEnCours?.abort()
+      runningTailoring?.abort()
     },
 
-    async generateSummary(profil: Profile) {
-      signaler({ task: 'accroche', label: 'Repérage des compétences transversales' })
-      return (await fournisseur()).generateSummary(profil)
+    async generateSummary(profile: Profile) {
+      report({ task: 'accroche', label: 'Repérage des compétences transversales' })
+      return (await provider()).generateSummary(profile)
     },
 
-    async templateHtml(cv, modeleId) {
-      return generateHtmlCv(buildCvDocument(profilActif().profile, cv), findTemplate(modeleId).id)
+    async templateHtml(cv, templateId) {
+      return generateHtmlCv(buildCvDocument(activeProfile().profile, cv), findTemplate(templateId).id)
     },
 
-    async exportCv(cv, format, modeleId) {
-      const actif = profilActif()
-      const params = await parametres.lire()
-      const style: TemplateId = findTemplate(modeleId ?? params.cvTemplate).id
-      const modele = buildCvDocument(actif.profile, cv)
-      const chemin = await choisirDestination(cvFileName(modele, format), format)
-      if (chemin === null) return null
-      const contenu =
-        format === 'pdf' ? await genererPdf(generateHtmlCv(modele, style)) : await generateDocxCv(modele, style)
+    async exportCv(cv, format, templateId) {
+      const active = activeProfile()
+      const params = await settings.read()
+      const style: TemplateId = findTemplate(templateId ?? params.cvTemplate).id
+      const model = buildCvDocument(active.profile, cv)
+      const path = await chooseDestination(cvFileName(model, format), format)
+      if (path === null) return null
+      const content =
+        format === 'pdf' ? await generatePdf(generateHtmlCv(model, style)) : await generateDocxCv(model, style)
       try {
-        await writeFile(chemin, contenu)
-      } catch (erreur) {
-        const detail = erreur instanceof Error ? erreur.message : String(erreur)
-        throw new CodedError('ecriture-impossible', `Écriture impossible : ${detail}`, { cause: erreur })
+        await writeFile(path, content)
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error)
+        throw new CodedError('ecriture-impossible', `Écriture impossible : ${detail}`, { cause: error })
       }
-      exportes.add(resolve(chemin))
-      return chemin
+      exported.add(resolve(path))
+      return path
     },
 
-    openFile: async (chemin: string) => deps.ouvrirChemin(verifierExporte(chemin)),
-    revealInFolder: async (chemin: string) => deps.montrerChemin(verifierExporte(chemin)),
+    openFile: async (path: string) => deps.openPath(checkExported(path)),
+    revealInFolder: async (path: string) => deps.revealPath(checkExported(path)),
 
-    getSettings: (): Promise<SettingsState> => parametres.etat(),
-    saveSettings: (p: Settings) => parametres.enregistrer(p),
-    setApiKey: (cle: string) => parametres.definirCle(cle),
+    getSettings: (): Promise<SettingsState> => settings.state(),
+    saveSettings: (p: Settings) => settings.save(p),
+    setApiKey: (key: string) => settings.setKey(key),
 
     async eraseData() {
-      effacerDonnees(bdd)
+      eraseData(db)
       analyses.clear()
-      await parametres.definirCle('')
+      await settings.setKey('')
     },
 
-    getUpdateState: async () => deps.misesAJour.etat(),
-    checkForUpdate: () => deps.misesAJour.verifier(),
-    installUpdate: async () => deps.misesAJour.installer(),
+    getUpdateState: async () => deps.updater.state(),
+    checkForUpdate: () => deps.updater.check(),
+    installUpdate: async () => deps.updater.install(),
 
-    liberer: () => liberer(courant),
+    release: () => release(current),
 
-    getModelsState: (): Promise<ModelsState> => modeles.etat(),
-    downloadModel: (id: string) => modeles.telecharger(id),
-    cancelDownload: async () => modeles.annuler(),
-    deleteModel: (id: string) => modeles.supprimer(id),
+    getModelsState: (): Promise<ModelsState> => models.state(),
+    downloadModel: (id: string) => models.download(id),
+    cancelDownload: async () => models.cancel(),
+    deleteModel: (id: string) => models.remove(id),
   }
 }

@@ -58,10 +58,28 @@ export const MIGRATIONS: readonly Migration[] = [
       ] as const
       for (const [table, convert] of tables) {
         const update = sqlite.prepare(`UPDATE ${table} SET donnees = ? WHERE id = ?`)
-        const rows = sqlite.prepare(`SELECT id, donnees FROM ${table}`).all() as { id: number; donnees: string }[]
-        for (const { id, donnees } of rows) update.run(JSON.stringify(convert(JSON.parse(donnees))), id)
+        const rows = sqlite.prepare(`SELECT id, donnees AS data FROM ${table}`).all() as { id: number; data: string }[]
+        for (const { id, data } of rows) update.run(JSON.stringify(convert(JSON.parse(data))), id)
       }
     },
+  },
+  {
+    // English table and column names. SQLite updates the foreign keys that point to a renamed table or column.
+    version: 3,
+    up: (sqlite) =>
+      sqlite.exec(`
+        ALTER TABLE profils RENAME TO profiles;
+        ALTER TABLE profiles RENAME COLUMN donnees TO data;
+        ALTER TABLE profiles RENAME COLUMN mis_a_jour TO updated_at;
+        ALTER TABLE offres RENAME TO job_postings;
+        ALTER TABLE job_postings RENAME COLUMN donnees TO data;
+        ALTER TABLE job_postings RENAME COLUMN cree_le TO created_at;
+        ALTER TABLE cv_generes RENAME TO tailored_cvs;
+        ALTER TABLE tailored_cvs RENAME COLUMN profil_id TO profile_id;
+        ALTER TABLE tailored_cvs RENAME COLUMN offre_id TO job_posting_id;
+        ALTER TABLE tailored_cvs RENAME COLUMN donnees TO data;
+        ALTER TABLE tailored_cvs RENAME COLUMN cree_le TO created_at;
+      `),
   },
 ]
 

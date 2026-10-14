@@ -1,8 +1,8 @@
 import { BrowserWindow, dialog } from 'electron'
 
-/** Rend le HTML en PDF A4 dans une fenêtre cachée sans JavaScript (le texte reste du vrai texte). */
-export async function genererPdf(html: string): Promise<Buffer> {
-  const fenetre = new BrowserWindow({
+/** Renders the HTML to an A4 PDF in a hidden window without JavaScript (the text stays real text). */
+export async function generatePdf(html: string): Promise<Buffer> {
+  const appWindow = new BrowserWindow({
     show: false,
     webPreferences: {
       contextIsolation: true,
@@ -12,10 +12,10 @@ export async function genererPdf(html: string): Promise<Buffer> {
     },
   })
   try {
-    await fenetre.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
-    // Marges et fond (modèle « Bandeau ») sont définis par la CSS du modèle (@page).
+    await appWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+    // Margins and background (« Bandeau » template) are set by the template CSS (@page).
     // Tagged PDF with an outline: structure (headings, lists) readable by screen readers and recruiting software.
-    return await fenetre.webContents.printToPDF({
+    return await appWindow.webContents.printToPDF({
       pageSize: 'A4',
       printBackground: true,
       preferCSSPageSize: true,
@@ -23,17 +23,17 @@ export async function genererPdf(html: string): Promise<Buffer> {
       generateDocumentOutline: true,
     })
   } finally {
-    if (!fenetre.isDestroyed()) fenetre.destroy()
+    if (!appWindow.isDestroyed()) appWindow.destroy()
   }
 }
 
-export async function choisirDestination(nomParDefaut: string, extension: 'pdf' | 'docx'): Promise<string | null> {
+export async function chooseDestination(defaultName: string, extension: 'pdf' | 'docx'): Promise<string | null> {
   const options = {
     title: 'Enregistrer le CV',
-    defaultPath: nomParDefaut,
+    defaultPath: defaultName,
     filters: [{ name: extension === 'pdf' ? 'PDF' : 'Document Word', extensions: [extension] }],
   }
   const parent = BrowserWindow.getFocusedWindow()
-  const choix = parent ? await dialog.showSaveDialog(parent, options) : await dialog.showSaveDialog(options)
-  return choix.canceled || !choix.filePath ? null : choix.filePath
+  const choice = parent ? await dialog.showSaveDialog(parent, options) : await dialog.showSaveDialog(options)
+  return choice.canceled || !choice.filePath ? null : choice.filePath
 }

@@ -4,70 +4,71 @@ import { JobPostingFetchError } from '@core/job-posting'
 import type { IpcMain } from 'electron'
 import type { ZodType } from 'zod'
 
-function analyser<T>(schema: ZodType<T>, valeur: unknown): T {
-  const resultat = schema.safeParse(valeur)
-  if (!resultat.success) throw new Error('Données invalides reçues par le process principal.')
-  return resultat.data
+function parseInput<T>(schema: ZodType<T>, value: unknown): T {
+  const result = schema.safeParse(value)
+  if (!result.success) throw new Error('Données invalides reçues par le process principal.')
+  return result.data
 }
 
-function enveloppe(erreur: unknown): IpcResult<never> {
-  if (erreur instanceof JobPostingFetchError || erreur instanceof CodedError)
-    return { ok: false, message: erreur.message, code: erreur.code }
-  return { ok: false, message: erreur instanceof Error ? erreur.message : String(erreur) }
+function envelope(error: unknown): IpcResult<never> {
+  if (error instanceof JobPostingFetchError || error instanceof CodedError)
+    return { ok: false, message: error.message, code: error.code }
+  return { ok: false, message: error instanceof Error ? error.message : String(error) }
 }
 
 /**
- * Branche l'API sur ipcMain. Chaque entrée du renderer est revalidée par Zod :
- * le renderer n'est jamais considéré comme fiable.
+ * Wires the API to ipcMain. Every renderer input is validated again by Zod: the renderer is never trusted.
  */
-export function enregistrerHandlers(
+export function registerHandlers(
   ipcMain: IpcMain,
   api: ApiService,
-  /** Reçoit l'URL de la frame appelante ; refuse tout ce qui n'est pas l'interface de l'application. */
-  expediteurAutorise: (url: string) => boolean = () => true,
+  /** Receives the URL of the calling frame; refuses anything that is not the application interface. */
+  isAllowedSender: (url: string) => boolean = () => true,
 ): void {
-  const gerer = (canal: string, traitement: (...args: unknown[]) => Promise<unknown>) => {
-    ipcMain.handle(canal, async (evenement, ...args): Promise<IpcResult<unknown>> => {
+  const handle = (channel: string, handler: (...args: unknown[]) => Promise<unknown>) => {
+    ipcMain.handle(channel, async (event, ...args): Promise<IpcResult<unknown>> => {
       try {
-        if (!expediteurAutorise(evenement.senderFrame?.url ?? '')) throw new Error('Appel IPC refusé.')
-        return { ok: true, value: await traitement(...args) }
-      } catch (erreur) {
-        return enveloppe(erreur)
+        if (!isAllowedSender(event.senderFrame?.url ?? '')) throw new Error('Appel IPC refusé.')
+        return { ok: true, value: await handler(...args) }
+      } catch (error) {
+        return envelope(error)
       }
     })
   }
 
-  gerer(CHANNELS.importCv, () => api.importCv())
-  gerer(CHANNELS.importDroppedCv, (chemin) => api.importDroppedCv(analyser(ipcInputs.path, chemin)))
-  gerer(CHANNELS.getProfile, () => api.getProfile())
-  gerer(CHANNELS.saveProfile, (profil) => api.saveProfile(analyser(ipcInputs.profile, profil)))
-  gerer(CHANNELS.fetchJobPosting, (url) => api.fetchJobPosting(analyser(ipcInputs.url, url)))
-  gerer(CHANNELS.parseJobPostingText, (texte) => api.parseJobPostingText(analyser(ipcInputs.text, texte)))
-  gerer(CHANNELS.previewJobPosting, (offre) => api.previewJobPosting(analyser(ipcInputs.jobPosting, offre)))
-  gerer(CHANNELS.tailorCv, (offre) => api.tailorCv(analyser(ipcInputs.jobPosting, offre)))
-  gerer(CHANNELS.cancelTailoring, () => api.cancelTailoring())
-  gerer(CHANNELS.openFile, (chemin) => api.openFile(analyser(ipcInputs.path, chemin)))
-  gerer(CHANNELS.revealInFolder, (chemin) => api.revealInFolder(analyser(ipcInputs.path, chemin)))
-  gerer(CHANNELS.getSettings, () => api.getSettings())
-  gerer(CHANNELS.saveSettings, (p) => api.saveSettings(analyser(ipcInputs.settings, p)))
-  gerer(CHANNELS.generateSummary, (profil) => api.generateSummary(analyser(ipcInputs.profile, profil)))
-  gerer(CHANNELS.exportCv, (cv, format, modele) =>
+  handle(CHANNELS.importCv, () => api.importCv())
+  handle(CHANNELS.importDroppedCv, (path) => api.importDroppedCv(parseInput(ipcInputs.path, path)))
+  handle(CHANNELS.getProfile, () => api.getProfile())
+  handle(CHANNELS.saveProfile, (profile) => api.saveProfile(parseInput(ipcInputs.profile, profile)))
+  handle(CHANNELS.fetchJobPosting, (url) => api.fetchJobPosting(parseInput(ipcInputs.url, url)))
+  handle(CHANNELS.parseJobPostingText, (text) => api.parseJobPostingText(parseInput(ipcInputs.text, text)))
+  handle(CHANNELS.previewJobPosting, (jobPosting) =>
+    api.previewJobPosting(parseInput(ipcInputs.jobPosting, jobPosting)),
+  )
+  handle(CHANNELS.tailorCv, (jobPosting) => api.tailorCv(parseInput(ipcInputs.jobPosting, jobPosting)))
+  handle(CHANNELS.cancelTailoring, () => api.cancelTailoring())
+  handle(CHANNELS.openFile, (path) => api.openFile(parseInput(ipcInputs.path, path)))
+  handle(CHANNELS.revealInFolder, (path) => api.revealInFolder(parseInput(ipcInputs.path, path)))
+  handle(CHANNELS.getSettings, () => api.getSettings())
+  handle(CHANNELS.saveSettings, (p) => api.saveSettings(parseInput(ipcInputs.settings, p)))
+  handle(CHANNELS.generateSummary, (profile) => api.generateSummary(parseInput(ipcInputs.profile, profile)))
+  handle(CHANNELS.exportCv, (cv, format, model) =>
     api.exportCv(
-      analyser(ipcInputs.cv, cv),
-      analyser(ipcInputs.format, format),
-      modele === undefined ? undefined : analyser(ipcInputs.cvTemplateId, modele),
+      parseInput(ipcInputs.cv, cv),
+      parseInput(ipcInputs.format, format),
+      model === undefined ? undefined : parseInput(ipcInputs.cvTemplateId, model),
     ),
   )
-  gerer(CHANNELS.templateHtml, (cv, modele) =>
-    api.templateHtml(analyser(ipcInputs.cv, cv), analyser(ipcInputs.cvTemplateId, modele)),
+  handle(CHANNELS.templateHtml, (cv, model) =>
+    api.templateHtml(parseInput(ipcInputs.cv, cv), parseInput(ipcInputs.cvTemplateId, model)),
   )
-  gerer(CHANNELS.getModelsState, () => api.getModelsState())
-  gerer(CHANNELS.downloadModel, (id) => api.downloadModel(analyser(ipcInputs.templateId, id)))
-  gerer(CHANNELS.cancelDownload, () => api.cancelDownload())
-  gerer(CHANNELS.deleteModel, (id) => api.deleteModel(analyser(ipcInputs.templateId, id)))
-  gerer(CHANNELS.eraseData, () => api.eraseData())
-  gerer(CHANNELS.getUpdateState, () => api.getUpdateState())
-  gerer(CHANNELS.checkForUpdate, () => api.checkForUpdate())
-  gerer(CHANNELS.installUpdate, () => api.installUpdate())
-  gerer(CHANNELS.setApiKey, (cle) => api.setApiKey(analyser(ipcInputs.key, cle)))
+  handle(CHANNELS.getModelsState, () => api.getModelsState())
+  handle(CHANNELS.downloadModel, (id) => api.downloadModel(parseInput(ipcInputs.templateId, id)))
+  handle(CHANNELS.cancelDownload, () => api.cancelDownload())
+  handle(CHANNELS.deleteModel, (id) => api.deleteModel(parseInput(ipcInputs.templateId, id)))
+  handle(CHANNELS.eraseData, () => api.eraseData())
+  handle(CHANNELS.getUpdateState, () => api.getUpdateState())
+  handle(CHANNELS.checkForUpdate, () => api.checkForUpdate())
+  handle(CHANNELS.installUpdate, () => api.installUpdate())
+  handle(CHANNELS.setApiKey, (key) => api.setApiKey(parseInput(ipcInputs.key, key)))
 }
