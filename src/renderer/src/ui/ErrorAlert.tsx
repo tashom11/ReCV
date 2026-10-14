@@ -1,4 +1,5 @@
 import { ACTION_LABELS, type ErrorAction, type ErrorDescription } from '../errors'
+import { texts } from '../i18n'
 import { Alert } from './Alert'
 import { Button } from './Button'
 
@@ -42,7 +43,7 @@ export function ErrorAlert({
       {description.details && (
         <details className="pt-1">
           <summary className="inline-flex min-h-11 items-center font-bold text-marque underline underline-offset-4">
-            Détails
+            {texts.errorAlert.details}
           </summary>
           <p className="rounded-champ bg-surface/70 p-3 font-mono text-petit break-words text-encre-douce">
             {description.details}

@@ -1,7 +1,7 @@
 import type { StepNumber } from '../flow'
+import { texts } from '../i18n'
 import { Icon } from './icons'
 
-const STEP_NAMES: Record<StepNumber, string> = { 1: 'Mon CV', 2: 'L’annonce', 3: 'Mon nouveau CV' }
 const STEP_NUMBERS: StepNumber[] = [1, 2, 3]
 
 /**
@@ -12,7 +12,7 @@ export function Stepper({
   currentStep,
   done,
   onGoTo,
-  currentStepState = 'en cours',
+  currentStepState = texts.stepper.states.current,
   locked = false,
   reachable = [],
   stepStates = {},
@@ -30,13 +30,15 @@ export function Stepper({
   stepStates?: Partial<Record<StepNumber, string>>
 }) {
   return (
-    <nav aria-label="Étapes" className="min-w-0 flex-1 max-sm:order-last max-sm:basis-full">
+    <nav aria-label={texts.stepper.label} className="min-w-0 flex-1 max-sm:order-last max-sm:basis-full">
       <ol className="flex flex-wrap items-center gap-x-3 gap-y-2">
         {STEP_NUMBERS.map((number) => {
           const isCurrent = number === currentStep
           const isDone = done.includes(number) && !isCurrent
           const accessible = !isCurrent && reachable.includes(number)
-          const state = isCurrent ? currentStepState : (stepStates[number] ?? (isDone ? 'faite' : 'à venir'))
+          const state = isCurrent
+            ? currentStepState
+            : (stepStates[number] ?? (isDone ? texts.stepper.states.done : texts.stepper.states.upcoming))
           const clickable = (isDone || accessible) && !locked
           const content = (
             <>
@@ -55,14 +57,14 @@ export function Stepper({
                 <span
                   className={`block text-petit max-sm:sr-only ${isDone ? 'font-bold text-marque' : 'text-encre-douce'}`}
                 >
-                  Étape {number} · {state}
+                  {texts.stepper.step(number, state)}
                 </span>
                 <span
                   className={`block font-bold ${isCurrent || isDone || accessible ? 'text-encre' : 'text-encre-douce'} ${
                     clickable ? 'underline underline-offset-4' : ''
                   }`}
                 >
-                  {STEP_NAMES[number]}
+                  {texts.stepper.names[number]}
                 </span>
               </span>
             </>
