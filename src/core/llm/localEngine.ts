@@ -4,6 +4,9 @@ import type { LlmEngine, ObjectRequest } from './engine'
 import { StructuredProvider } from './structuredProvider'
 
 type GrammarSchema = Parameters<Llama['createGrammarForJsonSchema']>[0]
+type Grammar = Awaited<ReturnType<Llama['createGrammarForJsonSchema']>>
+type Context = Awaited<ReturnType<LlamaModel['createContext']>>
+type Sequence = ReturnType<Context['getSequence']>
 
 type Json = Record<string, unknown>
 
@@ -63,6 +66,8 @@ export function removeNulls(value: unknown): unknown {
 const TARGET_CONTEXT_SIZE = 8192
 const MIN_CONTEXT_SIZE = 4096
 const GPU_RETRY_DELAY_MS = 60_000
+// The context (and its cache in VRAM) is kept between the calls of a tailoring, then freed after this idle time.
+const CONTEXT_IDLE_MS = 30_000
 
 const OUT_OF_MEMORY_MESSAGE =
   'Mémoire insuffisante pour le modèle embarqué. Fermez les applications qui utilisent la carte graphique ' +
@@ -74,6 +79,13 @@ export class LocalEngine implements LlmEngine {
   private loading?: Promise<{ llama: Llama; model: LlamaModel }>
   private onCpu = false
   private lastCpuFallback = 0
+  // A disposed sequence is not given back to its context at once: the single sequence is kept and emptied instead.
+  private context?: { context: Context; sequence: Sequence }
+  private idleTimer?: ReturnType<typeof setTimeout>
+  // Grammars compiled for the current instance, by schema: compiling one takes time and the schemas are reused.
+  private grammars = new WeakMap<z.ZodType, Promise<Grammar>>()
+  // Calls run one after the other: the shared context has a single sequence.
+  private queue: Promise<unknown> = Promise.resolve()
 
   constructor(private readonly modelPath: string) {}
 
@@ -132,14 +144,54 @@ export class LocalEngine implements LlmEngine {
     }
   }
 
-  async generateObject<T>({ schema, system, user, temperature, signal }: ObjectRequest<T>): Promise<T> {
-    signal?.throwIfAborted()
+  // Context of the previous call, unless the processor fallback is old enough to try the GPU again.
+  private async sharedSequence(): Promise<Sequence> {
+    clearTimeout(this.idleTimer)
+    const retryGpu = this.onCpu && Date.now() - this.lastCpuFallback > GPU_RETRY_DELAY_MS
+    if (this.context && !retryGpu) return this.context.sequence
+    await this.disposeContext()
     const context = await this.createContext()
+    this.context = { context, sequence: context.getSequence() }
+    return this.context.sequence
+  }
+
+  private async disposeContext(): Promise<void> {
+    clearTimeout(this.idleTimer)
+    const shared = this.context
+    this.context = undefined
+    await shared?.context.dispose()
+  }
+
+  private grammarFor(llama: Llama, schema: z.ZodType): Promise<Grammar> {
+    let grammar = this.grammars.get(schema)
+    if (!grammar) {
+      grammar = llama.createGrammarForJsonSchema(toGrammarSchema(schema))
+      this.grammars.set(schema, grammar)
+      grammar.catch(() => this.grammars.delete(schema))
+    }
+    return grammar
+  }
+
+  generateObject<T>(request: ObjectRequest<T>): Promise<T> {
+    const run = this.queue.then(() => this.generate(request))
+    this.queue = run.catch(() => undefined)
+    return run
+  }
+
+  private async generate<T>({ schema, system, user, temperature, signal }: ObjectRequest<T>): Promise<T> {
+    signal?.throwIfAborted()
+    const sequence = await this.sharedSequence()
     const { llama } = await this.load()
-    const grammar = await llama.createGrammarForJsonSchema(toGrammarSchema(schema))
+    const grammar = await this.grammarFor(llama, schema)
     const { LlamaChatSession } = await import('node-llama-cpp')
+    // Nothing of the previous call is left in the conversation.
+    await sequence.clearHistory()
+    const session = new LlamaChatSession({
+      contextSequence: sequence,
+      systemPrompt: system,
+      autoDisposeSequence: false,
+    })
     try {
-      const session = new LlamaChatSession({ contextSequence: context.getSequence(), systemPrompt: system })
       const meta = await session.promptWithMeta(user, {
         grammar: grammar,
         temperature: temperature ?? 0.2,
@@ -160,11 +212,17 @@ export class LocalEngine implements LlmEngine {
       }
       return schema.parse(removeNulls(parsed))
     } finally {
-      await context.dispose()
+      session.dispose({ disposeSequence: false })
+      this.idleTimer = setTimeout(() => void this.disposeContext(), CONTEXT_IDLE_MS)
+      // The timer alone must not keep the process alive (command-line trial).
+      this.idleTimer.unref?.()
     }
   }
 
   async release(): Promise<void> {
+    await this.disposeContext()
+    // The grammars belong to the released instance.
+    this.grammars = new WeakMap()
     const loading = this.loading
     this.loading = undefined
     if (!loading) return
