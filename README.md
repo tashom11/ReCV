@@ -102,10 +102,10 @@ without it. After a dependency change, also run `node scripts/third-party-notice
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ```bash
-npm version 0.5.0 --no-git-tag-version
-git commit -am "Version 0.5.0"
-git tag v0.5.0
-git push origin main v0.5.0
+npm version 0.6.0 --no-git-tag-version
+git commit -am "Version 0.6.0"
+git tag v0.6.0
+git push origin main v0.6.0
 ```
 
 The GitHub Actions workflow builds the installer, uploads it to a draft release with the changelog section as notes, then publishes it. The tag must match the version in `package.json`.

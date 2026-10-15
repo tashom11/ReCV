@@ -5,6 +5,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-10-15
+
 ### Added
 - Three new CV layouts, inspired by popular resume designs and still ATS-friendly (real text, standard titles, no table):
   "Capsule" (rounded side column with the photo), "Éditorial" (black and white, rules between sections) and
@@ -110,6 +112,7 @@ First public release.
 - Before/after comparison of every change.
 - Automatic updates, checked at startup and every six hours.
 
+[0.6.0]: https://github.com/tashom11/ReCV/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tashom11/ReCV/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tashom11/ReCV/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tashom11/ReCV/compare/v0.2.1...v0.3.0
