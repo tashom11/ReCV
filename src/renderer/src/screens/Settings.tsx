@@ -78,7 +78,7 @@ export function SettingsScreen({
 
   if (!state) {
     return (
-      <div className="mx-auto w-full max-w-3xl px-6 py-10">
+      <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16 py-10 sm:py-14">
         {error ? (
           <ErrorAlert description={error} onAction={() => undefined} />
         ) : (
@@ -127,7 +127,7 @@ export function SettingsScreen({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-6 py-10">
+    <div className="mx-auto w-full max-w-3xl space-y-6 px-6 sm:px-10 lg:px-16 py-10 sm:py-14">
       <PageTitle subtitle={texts.settings.subtitle}>{texts.settings.title}</PageTitle>
       {error && <ErrorAlert description={error} onAction={() => setError(null)} />}
 

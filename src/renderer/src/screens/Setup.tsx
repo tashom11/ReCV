@@ -73,7 +73,7 @@ export function SetupScreen({
   const interrupted = progress?.status === 'error' && !error
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-14">
+    <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16 py-14 sm:py-20">
       <section className="space-y-7 rounded-panneau border border-trait bg-surface p-10 shadow-panneau">
         <header className="flex items-center gap-5">
           <span

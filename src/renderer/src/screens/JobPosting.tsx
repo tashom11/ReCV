@@ -83,7 +83,7 @@ export function JobPostingScreen({
 
   if (posting) {
     return (
-      <div className="mx-auto w-full max-w-4xl space-y-7 px-6 py-12">
+      <div className="mx-auto w-full max-w-4xl space-y-7 px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
         <PageTitle kicker={texts.jobPosting.confirm.kicker}>{texts.jobPosting.confirm.title}</PageTitle>
         {generationError && (
           <ErrorAlert
@@ -119,7 +119,7 @@ export function JobPostingScreen({
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 px-6 py-12">
+    <div className="mx-auto w-full max-w-4xl space-y-8 px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
       <PageTitle subtitle={texts.jobPosting.subtitle}>{texts.jobPosting.title}</PageTitle>
       {error && <ErrorAlert description={error} onAction={onErrorAction} />}
 

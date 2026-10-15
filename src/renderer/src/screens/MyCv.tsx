@@ -120,7 +120,7 @@ export function MyCvScreen({
 
   return (
     <>
-      <div className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-6 py-10">
+      <div className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-6 sm:px-10 lg:px-16 py-10 sm:py-14">
         <ProfileSummaryCard
           draft={draft}
           fileName={fileName}

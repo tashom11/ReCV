@@ -23,7 +23,7 @@ export function CvImportStep({
   onChoose: () => void
 }) {
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 px-6 py-12">
+    <div className="mx-auto w-full max-w-4xl space-y-8 px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
       <PageTitle subtitle={texts.myCv.import.subtitle}>{texts.myCv.import.title}</PageTitle>
       {error && <ErrorAlert description={error} onAction={onErrorAction} />}
       {importing ? (
