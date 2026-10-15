@@ -42,6 +42,8 @@ export const settingsSchema = z.object({
   apiModel: z.string().max(200).default(''),
   /** Rewrite the bullets with the model (slower). Default: bullets are selected, without the model. */
   rewriteBullets: z.boolean().default(false),
+  /** Built-in model: a smaller context leaves room for more of the model on the graphics card (short VRAM). */
+  reduceGpuMemory: z.boolean().default(false),
   /** Layout template of the exported CV (see `core/export/templates.ts`). */
   cvTemplate: z.enum(TEMPLATE_IDS).default('classic'),
   localModelPath: z

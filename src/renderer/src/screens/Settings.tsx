@@ -199,6 +199,17 @@ export function SettingsScreen({
                 />
               </div>
 
+              {local && (
+                <div className="rounded-carte border border-trait bg-surface px-4 py-2">
+                  <Checkbox
+                    label={<strong className="text-intro">{texts.settings.engine.reduceGpuMemory}</strong>}
+                    hint={texts.settings.engine.reduceGpuMemoryHint}
+                    check={state.reduceGpuMemory}
+                    onChange={(v) => void choose({ reduceGpuMemory: v })}
+                  />
+                </div>
+              )}
+
               {/* Chosen with the native picker only (SEC-08): native code loads this file. */}
               <div className="space-y-2 rounded-carte border border-trait bg-surface px-4 py-3">
                 <p id="model-file-label" className="text-corps font-bold text-encre">
