@@ -96,7 +96,8 @@ export class LocalEngine implements LlmEngine {
       const { getLlama } = await import('node-llama-cpp')
       // Processor fallback: an instance WITHOUT GPU backend, so
       // that neither the weights nor the context cache claim VRAM.
-      const llama = await getLlama(onCpu ? { gpu: false } : undefined)
+      // Prebuilt binaries only: without them, node-llama-cpp would try to compile llama.cpp for minutes.
+      const llama = await getLlama(onCpu ? { gpu: false, build: 'never' } : { build: 'never' })
       // GPU: as many layers as possible WHILE leaving room for a context of TARGET_CONTEXT_SIZE tokens.
       const model = await llama.loadModel({
         modelPath: this.modelPath,

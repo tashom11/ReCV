@@ -537,6 +537,10 @@ export const fr = {
       rewriteHint:
         'Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes.',
       modelFile: 'Fichier du modèle (.gguf)',
+      noModelFile: 'Aucun fichier choisi : Re:CV utilise le niveau installé ci-dessus.',
+      chooseModelFile: 'Choisir un fichier…',
+      modelFileWarning:
+        'Ce fichier est exécuté par Re:CV : choisissez uniquement un modèle téléchargé depuis une source de confiance.',
     },
     levels: {
       legend: 'Rapidité ou soin du résultat',

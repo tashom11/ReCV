@@ -195,6 +195,8 @@ export interface ApiService {
   checkForUpdate(): Promise<UpdateState>
   /** Quits the application and installs the version already downloaded. */
   installUpdate(): Promise<void>
+  /** Native file picker for a local model (.gguf); the chosen path becomes an accepted model path. `null` if cancelled. */
+  chooseModelFile(): Promise<string | null>
   /** Copies a diagnostic report (environment, recent error codes, no CV data) to the clipboard and returns it. */
   copyDiagnosticReport(): Promise<string>
 }

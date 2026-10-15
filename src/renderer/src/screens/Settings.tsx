@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { describeError, type ErrorDescription } from '../errors'
 import { texts } from '../i18n'
 import { hasUnsavedTextChanges } from '../settingsDraft'
-import { Button, Card, Checkbox, Confirmation, ErrorAlert, Icon, PageTitle, Pill, TextField } from '../ui'
+import { Button, Card, Checkbox, Confirmation, ErrorAlert, Icon, PageTitle, Pill } from '../ui'
 import { DiagnosticsCard } from './settings/DiagnosticsCard'
 import { EngineChoiceCard } from './settings/EngineChoiceCard'
 import { EraseDataCard } from './settings/EraseDataCard'
@@ -199,11 +199,32 @@ export function SettingsScreen({
                 />
               </div>
 
-              <TextField
-                label={texts.settings.engine.modelFile}
-                value={state.localModelPath ?? ''}
-                onChange={(v) => update({ localModelPath: v })}
-              />
+              {/* Chosen with the native picker only (SEC-08): native code loads this file. */}
+              <div className="space-y-2 rounded-carte border border-trait bg-surface px-4 py-3">
+                <p id="model-file-label" className="text-corps font-bold text-encre">
+                  {texts.settings.engine.modelFile}
+                </p>
+                <p className="break-all text-petit text-encre-douce">
+                  {state.localModelPath || texts.settings.engine.noModelFile}
+                </p>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  icon="folder"
+                  ariaLabel={`${texts.settings.engine.chooseModelFile} ${texts.settings.engine.modelFile}`}
+                  onClick={() =>
+                    void window.api.chooseModelFile().then(
+                      (path) => {
+                        if (path) void choose({ localModelPath: path })
+                      },
+                      (e) => setError(describeError('settings', e)),
+                    )
+                  }
+                >
+                  {texts.settings.engine.chooseModelFile}
+                </Button>
+                <p className="text-petit text-aide">{texts.settings.engine.modelFileWarning}</p>
+              </div>
             </div>
           </details>
         </fieldset>

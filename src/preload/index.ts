@@ -37,6 +37,7 @@ const api: RecvApi = {
   checkForUpdate: () => invoke(CHANNELS.checkForUpdate),
   installUpdate: () => invoke(CHANNELS.installUpdate),
   copyDiagnosticReport: () => invoke(CHANNELS.copyDiagnosticReport),
+  chooseModelFile: () => invoke(CHANNELS.chooseModelFile),
   onUpdate: (callback) => {
     const listener = (_e: IpcRendererEvent, state: UpdateState) => callback(state)
     ipcRenderer.on(CHANNELS.updateStatus, listener)

@@ -20,7 +20,7 @@ async function detect(): Promise<Resources> {
   let vramGb = 0
   try {
     const { getLlama } = await import('node-llama-cpp')
-    const llama = await getLlama()
+    const llama = await getLlama({ build: 'never' })
     vramGb = round((await llama.getVramState()).total)
   } catch {
     // ignored: falls back to the CPU

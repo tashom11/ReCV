@@ -31,6 +31,7 @@ export const CHANNELS = {
   installUpdate: 'update:install',
   updateStatus: 'update:changed',
   copyDiagnosticReport: 'diagnostics:copy-report',
+  chooseModelFile: 'models:choose-file',
 } as const
 
 /** Serialisable envelope: errors cross the IPC with a readable message. */
