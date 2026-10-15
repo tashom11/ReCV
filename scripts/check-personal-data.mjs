@@ -20,26 +20,36 @@ const PHONE = /(?<![\d.])0[1-9](?:[ .-]?\d{2}){4}(?![\d])/g
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g
 const fold = (text) => text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-/** Personal data found in the given files: phone numbers, e-mail addresses, private patterns. */
+/**
+ * Personal data found in the given files: phone numbers, e-mail addresses, private patterns. A private pattern is
+ * reported by its position in the list (from 1), so that a report never has to quote it.
+ */
 export function findPersonalData(files, privatePatterns) {
-  const patterns = privatePatterns.map((p) => fold(p.trim())).filter(Boolean)
+  const patterns = privatePatterns
+    .map((text, index) => ({ text: fold(text.trim()), number: index + 1 }))
+    .filter((pattern) => pattern.text)
   const found = []
   for (const { path, text } of files) {
     if (SKIPPED_FILES.has(path)) continue
-    text.split('\n').forEach((content, index) => {
-      const at = (kind, match) => found.push({ path, line: index + 1, kind, match })
+    const published = CONTACT_FILES.has(path)
+    text.split('\n').forEach((line, index) => {
+      // Where a contact address is published on purpose, the address itself is not scanned, the rest of the file is.
+      const content = published ? line.replace(EMAIL, '') : line
+      const at = (finding) => found.push({ path, line: index + 1, ...finding })
       for (const [match] of content.matchAll(PHONE)) {
-        if (!ALLOWED_PHONES.has(match.replace(/\D/g, ''))) at('phone', match)
+        if (!ALLOWED_PHONES.has(match.replace(/\D/g, ''))) at({ kind: 'phone', match })
       }
-      if (!CONTACT_FILES.has(path)) {
+      if (!published) {
         for (const [match] of content.matchAll(EMAIL)) {
-          if (!ALLOWED_EMAIL_DOMAIN.test(match)) at('email', match)
+          if (!ALLOWED_EMAIL_DOMAIN.test(match)) at({ kind: 'email', match })
         }
       }
       const folded = fold(content)
       for (const pattern of patterns) {
-        const start = folded.indexOf(pattern)
-        if (start !== -1) at('private', content.slice(start, start + pattern.length))
+        const start = folded.indexOf(pattern.text)
+        if (start !== -1) {
+          at({ kind: 'private', match: content.slice(start, start + pattern.text.length), pattern: pattern.number })
+        }
       }
     })
   }
@@ -66,8 +76,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   })
   const found = findPersonalData(files, privatePatterns())
   if (found.length > 0) {
+    // The matched text is never printed: the CI logs and annotations of a public repository are public.
     console.error('Personal data must not enter the repository. Use fictitious data (exemple.fr, 06 12 34 56 78):')
-    for (const f of found) console.error(`  ${f.path}:${f.line}  ${f.kind}  ${f.match}`)
+    for (const f of found) {
+      const what = f.pattern === undefined ? f.kind : `${f.kind} (private pattern #${f.pattern})`
+      console.error(`  ${f.path}:${f.line}  ${what}`)
+      // GitHub annotation: readable without opening the log. Never the matched text itself.
+      if (process.env.GITHUB_ACTIONS)
+        console.error(`::error file=${f.path},line=${f.line},title=Personal data::${what}`)
+    }
     process.exit(1)
   }
   console.log(`No personal data found in ${files.length} files.`)
