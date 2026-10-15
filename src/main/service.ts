@@ -65,6 +65,8 @@ export interface ServiceDeps {
   revealPath: (path: string) => void
   /** Overridable for tests (never a real LLM call). */
   createProvider?: (settings: Settings, apiKey: string | null) => Promise<LlmProvider>
+  /** Native picker for a local model file (.gguf): chosen path, or `null` if cancelled. */
+  pickModelFile?: () => Promise<string | null>
   /** Diagnostic report: environment, recent lines of the local log, and the clipboard. */
   diagnostics?: {
     version: string
@@ -105,6 +107,19 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
   // Only files written by this session's export can be opened: the renderer does not choose the path.
   const exported = new Set<string>()
   let runningTailoring: AbortController | null = null
+  // Local model files chosen through the native picker in this session (SEC-08): native code loads them, so the
+  // renderer cannot name an arbitrary file.
+  const pickedModels = new Set<string>()
+
+  const checkModelPath = async (path: string | undefined) => {
+    if (!path) return
+    const candidate = resolve(path)
+    const current = (await settings.read()).localModelPath
+    const catalogue = (await models.state()).models.map((m) => resolve(m.path))
+    if (candidate === (current && resolve(current)) || catalogue.includes(candidate) || pickedModels.has(candidate))
+      return
+    throw new Error('A local model file must be chosen with the file picker.')
+  }
 
   // A single live provider, reused as long as the settings (and the key) do not change: the local model weighs several
   // GB and must be loaded only once, then released.
@@ -281,7 +296,16 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     revealInFolder: async (path: string) => deps.revealPath(checkExported(path)),
 
     getSettings: (): Promise<SettingsState> => settings.state(),
-    saveSettings: (p: Settings) => settings.save(p),
+    async saveSettings(p: Settings) {
+      await checkModelPath(p.localModelPath)
+      return settings.save(p)
+    },
+
+    async chooseModelFile() {
+      const path = (await deps.pickModelFile?.()) ?? null
+      if (path) pickedModels.add(resolve(path))
+      return path
+    },
     setApiKey: (key: string) => settings.setKey(key),
 
     async eraseData() {

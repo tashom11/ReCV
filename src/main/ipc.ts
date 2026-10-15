@@ -74,6 +74,7 @@ export function registerHandlers(
   handle(CHANNELS.getUpdateState, () => api.getUpdateState())
   handle(CHANNELS.checkForUpdate, () => api.checkForUpdate())
   handle(CHANNELS.installUpdate, () => api.installUpdate())
+  handle(CHANNELS.chooseModelFile, () => api.chooseModelFile())
   handle(CHANNELS.copyDiagnosticReport, () => api.copyDiagnosticReport())
   handle(CHANNELS.setApiKey, (key) => api.setApiKey(parseInput(ipcInputs.key, key)))
 }

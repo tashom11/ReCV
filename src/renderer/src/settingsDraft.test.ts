@@ -21,7 +21,10 @@ describe('hasUnsavedTextChanges', () => {
   it('is true when a text field was edited', () => {
     expect(hasUnsavedTextChanges(saved, { ...saved, apiModel: 'mistral-small-latest' }, '')).toBe(true)
     expect(hasUnsavedTextChanges(saved, { ...saved, ollamaUrl: 'http://localhost:11435/v1' }, '')).toBe(true)
-    expect(hasUnsavedTextChanges(saved, { ...saved, localModelPath: 'C:\\autre.gguf' }, '')).toBe(true)
+  })
+
+  it('ignores the model file, chosen with the picker and saved at once', () => {
+    expect(hasUnsavedTextChanges(saved, { ...saved, localModelPath: 'C:\\autre.gguf' }, '')).toBe(false)
   })
 
   it('is true when an API key was typed', () => {

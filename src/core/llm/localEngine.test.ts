@@ -41,7 +41,12 @@ const native = vi.hoisted(() => {
     }
     dispose() {}
   }
-  return { counts, getLlama: async () => llama, LlamaChatSession }
+  const options: unknown[] = []
+  const getLlama = async (o: unknown) => {
+    options.push(o)
+    return llama
+  }
+  return { counts, options, getLlama, LlamaChatSession }
 })
 vi.mock('node-llama-cpp', () => ({ getLlama: native.getLlama, LlamaChatSession: native.LlamaChatSession }))
 
@@ -61,6 +66,8 @@ describe('LocalEngine', () => {
     expect(await engine.generateObject(request)).toEqual({ name: 'x' })
     await engine.generateObject(request)
     expect(native.counts.grammars).toBe(1)
+    // Prebuilt binaries only: never a compilation of llama.cpp on the user's computer.
+    expect(native.options.at(-1)).toMatchObject({ build: 'never' })
     expect(native.counts.contexts).toBe(1)
     // Each call starts from an empty conversation.
     expect(native.counts.clearedHistories).toBe(2)

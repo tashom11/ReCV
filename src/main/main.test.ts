@@ -91,6 +91,7 @@ describe('service', () => {
         received = { settings: p, key }
         return factory()
       },
+      pickModelFile: async () => join(folder, 'mon-modele.gguf'),
       diagnostics: {
         version: '0.3.0',
         os: 'Windows 10.0.26100',
@@ -100,6 +101,25 @@ describe('service', () => {
     })
     return { api, db, readReceived: () => received, opened, copied }
   }
+
+  it('accepts a local model path only from the catalogue or the file picker (SEC-08)', async () => {
+    const { api } = service()
+    const base = await api.getSettings()
+    const { hasApiKey: _key, ...settings } = base
+    await expect(api.saveSettings({ ...settings, localModelPath: 'C:Tempinconnu.gguf' })).rejects.toThrow()
+
+    const catalogued = (await api.getModelsState()).models[0]?.path
+    expect((await api.saveSettings({ ...settings, localModelPath: catalogued })).localModelPath).toBe(catalogued)
+
+    const picked = await api.chooseModelFile()
+    expect(picked).toBe(join(folder, 'mon-modele.gguf'))
+    expect((await api.saveSettings({ ...settings, localModelPath: picked ?? undefined })).localModelPath).toBe(picked)
+    // The saved path stays accepted on the next saves (another setting changed).
+    expect(
+      (await api.saveSettings({ ...settings, localModelPath: picked ?? undefined, rewriteBullets: true }))
+        .rewriteBullets,
+    ).toBe(true)
+  })
 
   it('copies a diagnostic report: environment and recent log lines, nothing else', async () => {
     const { api, copied } = service()

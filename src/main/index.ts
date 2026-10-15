@@ -16,6 +16,7 @@ import { chooseDestination, generatePdf } from './export'
 import { registerHandlers } from './ipc'
 import { browserUserAgent, renderHtml } from './job-posting/render'
 import { ModelManager } from './models/manager'
+import { pickModelFile } from './models/modelPicker'
 import { detectResources } from './models/resources'
 import { readCv } from './readCv'
 import { createService } from './service'
@@ -164,6 +165,7 @@ app.whenReady().then(async () => {
     userAgent: browserUserAgent(session.defaultSession.getUserAgent()),
     chooseDestination,
     generatePdf,
+    pickModelFile,
     diagnostics: {
       version: app.getVersion(),
       os: `Windows ${release()}`,

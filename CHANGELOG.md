@@ -5,7 +5,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Security
+- A custom model file is chosen with the file picker only; the app refuses any other path.
+
 ### Changed
+- The built-in engine never tries to compile llama.cpp on your computer when its prebuilt binaries cannot load.
 - A red badge on the Settings button signals an update ready to install (replaces the "Mise à jour prête" button).
 
 ## [0.3.0] - 2026-10-14
