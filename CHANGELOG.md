@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- Application icon: a simplified drawing ("CV" large, lime accent, light rim) for the small sizes (16 to 32 px) used by
+  the title bar and the taskbar, which were unreadable; larger sizes keep the full logo.
 - Installer: the welcome and finish pages show the Re:CV illustration instead of the default blue image.
 
 ## [0.5.0] - 2026-10-15

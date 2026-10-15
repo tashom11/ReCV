@@ -51,9 +51,9 @@ protocol.registerSchemesAsPrivileged([
   { scheme: APP_SCHEME, privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ])
 
-// Window icon: in the installed application, it comes from the executable (build/icon.ico); this PNG is for development
+// Window icon: in the installed application, it comes from the executable (build/icon.ico); this file is for development
 // mode, where the executable is Electron's.
-const ICON_PATH = join(__dirname, '../../build/icon.png')
+const ICON_PATH = join(__dirname, '../../build/icon.ico')
 
 // Roomy by default (the preview and the side panels need it), but never larger than 90 % of the usable screen.
 const WINDOW_SIZE = { width: 1440, height: 940 }
