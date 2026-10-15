@@ -22,12 +22,20 @@ import {
   initials,
   initialView,
   savedLocation,
+  settingsNotifications,
   stepForView,
   titleWithoutGender,
   viewForStep,
 } from './flow'
 
 describe('flow', () => {
+  it('counts one settings notification when a downloaded update waits for a restart', () => {
+    expect(settingsNotifications('ready')).toBe(1)
+    for (const status of ['up-to-date', 'checking', 'downloading', 'error', 'unavailable', undefined] as const) {
+      expect(settingsNotifications(status)).toBe(0)
+    }
+  })
+
   it('opens on the welcome screen without a saved CV, otherwise directly on the job posting', () => {
     expect(initialView(false)).toBe('welcome')
     expect(initialView(true)).toBe('posting')

@@ -8,7 +8,7 @@ export function AppHeader({
   view,
   done,
   hasUndownloadedCv,
-  updateReady,
+  notifications,
   onGoToStep,
   onSettings,
   onBack,
@@ -17,8 +17,8 @@ export function AppHeader({
   done: StepNumber[]
   /** A CV was created but not downloaded yet: step ③ stays reachable. */
   hasUndownloadedCv: boolean
-  /** A downloaded update waits for a restart. */
-  updateReady: boolean
+  /** Number in the red badge of the settings button (a downloaded update waits for a restart). */
+  notifications: number
   onGoToStep: (step: StepNumber) => void
   onSettings: () => void
   /** Back from the settings to where the user was. */
@@ -50,25 +50,26 @@ export function AppHeader({
             {texts.header.back}
           </LinkButton>
         )}
-        {/* A downloaded version is shown wherever the settings can be reached. */}
-        {header.settings && updateReady && (
-          <button
-            type="button"
-            onClick={onSettings}
-            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-full border border-accent bg-accent-pale px-4 font-bold text-encre hover:brightness-95"
-          >
-            <Icon name="download" size={18} />
-            {texts.header.updateReady}
-          </button>
-        )}
         {header.settings && (
           <button
             type="button"
             onClick={onSettings}
-            className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-bouton px-2 text-intro text-encre hover:text-marque"
+            className="inline-flex min-h-11 shrink-0 items-center gap-3 rounded-bouton px-2 text-intro text-encre hover:text-marque"
           >
-            <Icon name="settings" size={22} />
+            <span className="relative">
+              <Icon name="settings" size={22} />
+              {/* A downloaded version is shown wherever the settings can be reached. */}
+              {notifications > 0 && (
+                <span
+                  aria-hidden="true"
+                  className="absolute -top-2 -right-2.5 flex h-5 min-w-5 items-center justify-center rounded-full border border-transparent bg-erreur px-1 text-[0.75rem] leading-none font-bold text-white ring-2 ring-surface"
+                >
+                  {notifications}
+                </span>
+              )}
+            </span>
             {texts.header.settings}
+            {notifications > 0 && <span className="sr-only">{texts.header.notifications(notifications)}</span>}
           </button>
         )}
       </div>

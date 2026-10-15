@@ -6,7 +6,7 @@ import { useEngineStatus } from './app/useEngineStatus'
 import { useNavigation } from './app/useNavigation'
 import { describeError, type ErrorDescription, isCancellation } from './errors'
 import { readEstimate, saveDuration } from './estimate'
-import { afterStart, doneSteps, initialView, titleWithoutGender, viewForStep } from './flow'
+import { afterStart, doneSteps, initialView, settingsNotifications, titleWithoutGender, viewForStep } from './flow'
 import { texts } from './i18n'
 import { GeneratingScreen } from './screens/Generating'
 import { JobPostingScreen, type ReadJobPosting } from './screens/JobPosting'
@@ -128,7 +128,7 @@ export default function App() {
         view={view}
         done={done}
         hasUndownloadedCv={result !== null && !exportedPath}
-        updateReady={update?.status === 'ready'}
+        notifications={settingsNotifications(update?.status)}
         onGoToStep={(step) => goTo(viewForStep(step))}
         onSettings={() => goTo('settings')}
         onBack={() => goTo(returnView.current)}

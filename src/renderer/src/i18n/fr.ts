@@ -26,8 +26,9 @@ export const fr = {
 
   header: {
     back: 'Revenir où j’en étais',
-    updateReady: 'Mise à jour prête',
     settings: 'Réglages',
+    /** Read by screen readers after « Réglages »: what the red badge stands for. */
+    notifications: (count: number) => `, ${count} mise${count > 1 ? 's' : ''} à jour prête${count > 1 ? 's' : ''}`,
   },
 
   stepper: {

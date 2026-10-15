@@ -1,4 +1,4 @@
-import type { Settings } from '@core/api'
+import type { Settings, UpdateState } from '@core/api'
 import type { StepKey } from '@core/steps'
 import { texts } from './i18n'
 
@@ -99,6 +99,11 @@ export function initials(name: string | undefined): string {
   const first = words[0]?.charAt(0) ?? ''
   const last = words.length > 1 ? (words[words.length - 1]?.charAt(0) ?? '') : ''
   return (first + last).toLocaleUpperCase('fr-FR')
+}
+
+/** Number shown in the badge of the settings button: a downloaded update waits for a restart. */
+export function settingsNotifications(updateStatus: UpdateState['status'] | undefined): number {
+  return updateStatus === 'ready' ? 1 : 0
 }
 
 /** « 3 expériences », « 1 formation »: the number and the agreed noun, separate so that the number can be bold. */
