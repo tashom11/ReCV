@@ -30,7 +30,7 @@ export const fr = {
     back: 'Revenir où j’en étais',
     settings: 'Réglages',
     /** Read by screen readers after « Réglages »: what the red badge stands for. */
-    notifications: (count: number) => `, ${count} mise${count > 1 ? 's' : ''} à jour prête${count > 1 ? 's' : ''}`,
+    notifications: (count: number) => `(${count} mise${count > 1 ? 's' : ''} à jour prête${count > 1 ? 's' : ''})`,
   },
 
   stepper: {
