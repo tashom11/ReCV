@@ -1,7 +1,7 @@
 {
   "name": "recv",
   "productName": "ReCV",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Adapte ton CV à chaque offre, en local.",
   "private": true,
   "license": "MIT",
