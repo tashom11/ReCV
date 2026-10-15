@@ -131,7 +131,7 @@ export function NewCvScreen({
               <LargePreview
                 html={previews[cvTemplate]?.html}
                 error={previews[cvTemplate]?.error}
-                templateName={template.name}
+                templateName={texts.templates[template.id]}
                 onPages={setPages}
               />
             </>
@@ -139,7 +139,7 @@ export function NewCvScreen({
         </div>
       </div>
 
-      <ActionBar maxWidth="max-w-7xl" left={texts.newCv.layout(template.name, pages)}>
+      <ActionBar maxWidth="max-w-7xl" left={texts.newCv.layout(texts.templates[template.id], pages)}>
         <Button
           variant="on-dark"
           onClick={() => void exportAs('docx')}

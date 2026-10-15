@@ -47,7 +47,6 @@ export class ModelManager {
         id: m.id,
         level: m.level,
         name: m.name,
-        description: m.description,
         sizeBytes: m.sizeBytes,
         path: this.modelPath(m),
         installed: await this.isInstalled(m),

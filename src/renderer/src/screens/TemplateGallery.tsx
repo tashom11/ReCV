@@ -78,12 +78,12 @@ export function TemplateStrip({
             <TemplateThumbnail
               key={m.id}
               id={`template-${m.id}`}
-              name={m.name}
+              name={texts.templates[m.id]}
               chosen={m.id === value}
               onChoose={() => onChange(m.id)}
             >
               {html ? (
-                <ScaledPage html={html} title={texts.newCv.gallery.thumbnail(m.name)} />
+                <ScaledPage html={html} title={texts.newCv.gallery.thumbnail(texts.templates[m.id])} />
               ) : (
                 <span className="flex aspect-[794/1123] items-center justify-center rounded-[4px] border border-trait bg-white text-trait-fort">
                   {previews[m.id]?.error ? <span className="text-petit text-aide">—</span> : <Spinner size={18} />}

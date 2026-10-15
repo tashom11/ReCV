@@ -96,7 +96,6 @@ export interface LocalModelState {
   id: string
   level: ModelLevel
   name: string
-  description: string
   sizeBytes: number
   path: string
   installed: boolean

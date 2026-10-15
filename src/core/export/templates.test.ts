@@ -26,13 +26,9 @@ const cv = tailoredCvSchema.parse({
 })
 
 describe('template catalogue', () => {
-  it('offers at least three templates, with an id and a description', () => {
+  it('offers at least three templates, one per id', () => {
     expect(CV_TEMPLATES.length).toBeGreaterThanOrEqual(3)
     expect(CV_TEMPLATES.map((m) => m.id)).toEqual([...TEMPLATE_IDS])
-    for (const m of CV_TEMPLATES) {
-      expect(m.name).not.toBe('')
-      expect(m.description).not.toBe('')
-    }
   })
 
   it('falls back to the classic template for an unknown id', () => {

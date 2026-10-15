@@ -1,6 +1,8 @@
 // Texts of the interface, in French (vouvoiement). Every visible text lives here: another language is a file of the
 // same shape (`Texts`). Texts that depend on a number or a name are functions.
 
+import type { TemplateId } from '@core/export/templates'
+
 const minutes = (n: number) => `${n} minute${n > 1 ? 's' : ''}`
 
 const notReady = {
@@ -609,4 +611,14 @@ export const fr = {
       failed: 'Vos données n’ont pas pu être effacées',
     },
   },
+
+  /** Names of the CV layouts (`core/export/templates.ts`). */
+  templates: {
+    classic: 'Classique',
+    modern: 'Moderne',
+    elegant: 'Élégant',
+    banner: 'Bandeau',
+    sidebar: 'Latéral',
+    pastel: 'Pastel',
+  } satisfies Record<TemplateId, string> as Record<TemplateId, string>,
 }
