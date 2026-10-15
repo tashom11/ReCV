@@ -5,6 +5,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-15
+
 ### Security
 - A custom model file is chosen with the file picker only; the app refuses any other path.
 
@@ -73,6 +75,7 @@ First public release.
 - Before/after comparison of every change.
 - Automatic updates, checked at startup and every six hours.
 
+[0.4.0]: https://github.com/tashom11/ReCV/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tashom11/ReCV/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/tashom11/ReCV/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/tashom11/ReCV/tree/v0.2.0
