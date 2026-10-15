@@ -5,6 +5,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Installer: the welcome and finish pages show the Re:CV illustration instead of the default blue image.
+
 ## [0.5.0] - 2026-10-15
 
 ### Added

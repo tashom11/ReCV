@@ -46,6 +46,10 @@ nsis:
   # The uninstaller asks whether to delete the data (build/installer.nsh), "No" by default.
   deleteAppDataOnUninstall: false
   shortcutName: ReCV
+  # Image of the welcome and finish pages (BMP 164 x 314), drawn from the welcome illustration by
+  # scripts/make-installer-sidebar.cjs. The uninstaller shows the same one.
+  installerSidebar: build/installerSidebar.bmp
+  uninstallerSidebar: build/installerSidebar.bmp
 
 # Electron fuses harden the shipped binary (no use as a Node interpreter, no inspector, app loaded only from the
 # verified asar).
