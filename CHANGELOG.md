@@ -5,6 +5,11 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Three new CV layouts, inspired by popular resume designs and still ATS-friendly (real text, standard titles, no table):
+  "Capsule" (rounded side column with the photo), "Éditorial" (black and white, rules between sections) and
+  "Chronologie" (soft greys, timeline for experiences and education).
+
 ### Changed
 - Application icon: a simplified drawing ("CV" large, lime accent, light rim) for the small sizes (16 to 32 px) used by
   the title bar and the taskbar, which were unreadable; larger sizes keep the full logo.

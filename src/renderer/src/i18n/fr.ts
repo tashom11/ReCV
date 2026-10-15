@@ -638,5 +638,8 @@ export const fr = {
     banner: 'Bandeau',
     sidebar: 'Latéral',
     pastel: 'Pastel',
+    capsule: 'Capsule',
+    editorial: 'Éditorial',
+    timeline: 'Chronologie',
   } satisfies Record<TemplateId, string> as Record<TemplateId, string>,
 }
