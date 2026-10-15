@@ -17,13 +17,6 @@ dependencies. Their notices ship with the application in `LICENSE.electron.txt` 
 The built-in AI engine is [llama.cpp](https://github.com/ggml-org/llama.cpp) (MIT License, Copyright (c) 2023-2024 The
 ggml authors), packaged by [node-llama-cpp](https://github.com/withcatai/node-llama-cpp) (MIT License).
 
-## NVIDIA CUDA
-
-The CUDA build of the engine (`@node-llama-cpp/win-x64-cuda` and `@node-llama-cpp/win-x64-cuda-ext`) contains NVIDIA
-CUDA runtime and cuBLAS components, distributed under the
-[NVIDIA CUDA Toolkit End User License Agreement](https://docs.nvidia.com/cuda/eula/index.html). They are only used by
-Re:CV's engine; reverse engineering, decompiling or disassembling them is not permitted, except as allowed by law.
-
 ## AI models
 
 The AI models are not included in the installer: Re:CV downloads them on request. The Qwen models are distributed by
@@ -125,10 +118,7 @@ their authors under the Apache License 2.0.
 - @huggingface/jinja 0.5.10
 - @kwsites/file-exists 1.1.1
 - @kwsites/promise-deferred 1.1.1
-- @node-llama-cpp/win-arm64 3.22.1
 - @node-llama-cpp/win-x64 3.22.1
-- @node-llama-cpp/win-x64-cuda 3.22.1
-- @node-llama-cpp/win-x64-cuda-ext 3.22.1
 - @node-llama-cpp/win-x64-vulkan 3.22.1
 - @reflink/reflink 0.1.19
 - @reflink/reflink-win32-x64-msvc 0.1.19

@@ -13,13 +13,16 @@ follow [Semantic Versioning](https://semver.org/).
 - Uninstalling asks whether to also delete your data (CV, settings, downloaded models); "No" by default.
 
 ### Changed
+- The installer no longer ships NVIDIA CUDA binaries (about 520 MB, over half of its size): the engine uses the graphics
+  card through Vulkan, NVIDIA cards included. It also drops llama.cpp sources, whose very long paths could make the
+  installation fail on Windows without long path support.
 - The built-in engine never tries to compile llama.cpp on your computer when its prebuilt binaries cannot load.
-- A red badge on the Settings button signals an update ready to install (replaces the "Mise à jour prête" button).
+- A red badge on the Settings button signals an update ready to install (replaces the separate "update ready" button).
 
 ## [0.3.0] - 2026-10-14
 
 ### Added
-- "Signaler un problème" in Settings: copies a diagnostic report to paste into a bug report, and shows what was copied.
+- A "report a problem" card in Settings: copies a diagnostic report to paste into a bug report, and shows what was copied.
 - Local diagnostic log (error codes only, never CV data); it never leaves the computer unless you copy the report.
 - Removing an experience, a degree or a language can be undone.
 - Contributor documentation: English README with a French version, contributing guide, security policy, code of
@@ -35,7 +38,7 @@ follow [Semantic Versioning](https://semver.org/).
 - Data from earlier versions is migrated automatically on first launch.
 
 ### Fixed
-- "Tout effacer" now really removes the data from the disk.
+- "Erase everything" in Settings now really removes the data from the disk.
 - A damaged database no longer prevents the app from starting; it is set aside and the app starts empty.
 - Closing the app no longer hangs when the built-in model takes too long to unload.
 
