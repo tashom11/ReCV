@@ -86,3 +86,17 @@ export function sanitizeProfile(profile: Profile, cvText: string): Profile {
     links: filterLinks(profile.links),
   })
 }
+
+// A CV this long that yields no experience, skill nor education was not read: the model returned empty lists (small
+// models do, whatever the question) and an empty profile must not be saved as if it were the CV.
+const MIN_TEXT_FOR_EMPTY_CHECK = 300
+
+/** True if nothing but identity could be extracted from a CV that has real content. */
+export function isEmptyExtraction(profile: Profile, cvText: string): boolean {
+  return (
+    profile.experiences.length === 0 &&
+    profile.skills.length === 0 &&
+    profile.education.length === 0 &&
+    cvText.trim().length >= MIN_TEXT_FOR_EMPTY_CHECK
+  )
+}

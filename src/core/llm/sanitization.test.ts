@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Profile } from '../schemas'
-import { sanitizeProfile } from './sanitization'
+import { isEmptyExtraction, sanitizeProfile } from './sanitization'
 
 const CV = `MOREAU Julien
 Développeur web / Carrossier peintre
@@ -144,5 +144,27 @@ describe('sanitizeProfile', () => {
       languages: [],
     }
     expect(sanitizeProfile(profile, cvPdf).experiences).toHaveLength(1)
+  })
+})
+
+describe('isEmptyExtraction', () => {
+  const identityOnly: Profile = {
+    fullName: 'Jeanne Martin',
+    links: [],
+    experiences: [],
+    skills: [],
+    education: [],
+    languages: [],
+  }
+  const long = 'x'.repeat(400)
+
+  it('flags a long CV that only gave an identity', () => {
+    expect(isEmptyExtraction(identityOnly, long)).toBe(true)
+  })
+
+  it('accepts a short text, or a profile with at least one skill, experience or education', () => {
+    expect(isEmptyExtraction(identityOnly, 'Jeanne Martin')).toBe(false)
+    expect(isEmptyExtraction({ ...identityOnly, skills: ['Rigueur'] }, long)).toBe(false)
+    expect(isEmptyExtraction({ ...identityOnly, education: [{ degree: 'BTS', school: 'Lycée' }] }, long)).toBe(false)
   })
 })

@@ -23,6 +23,7 @@ import {
 } from '@core/export'
 import { detectContractType, fetchJobPosting } from '@core/job-posting'
 import { createApiProvider, createOllamaProvider, type LlmProvider } from '@core/llm'
+import { isEmptyExtraction } from '@core/llm/sanitization'
 import type { JobPosting, Profile } from '@core/schemas'
 import { analyzeCoverage, type JobAnalysis, prepareProfile } from '@core/tailoring'
 import { formatSkill } from '@core/tailoring/skills'
@@ -170,6 +171,9 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     let extracted: Profile
     try {
       extracted = await llm.extractProfile(text)
+      if (isEmptyExtraction(extracted, text)) {
+        throw new CodedError('extraction-empty', 'Le modèle n’a extrait aucune expérience, compétence ni formation.')
+      }
     } finally {
       clearInterval(watch)
     }

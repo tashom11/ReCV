@@ -12,6 +12,10 @@ follow [Semantic Versioning](https://semver.org/).
   card, which speeds up the computation on cards with little memory.
 
 ### Changed
+- Import: a CV the model could not read (no experience, skill nor education extracted) is no longer saved as an empty
+  profile; a clear message points to the "Soigné" model level. Small models returned empty lists.
+- The "Soigné" model (9B) is recommended from 8 GB of graphics memory, the smaller ones reading CVs unreliably.
+- The "suggest a sentence" button now says when your CV lists no quality, instead of a generic failure.
 - Settings: the online service option states that your CV and job postings are sent to that service.
 - When only part of the built-in model fits on the graphics card, the CV import and the tailoring screens say how many
   layers it holds (e.g. 24 out of 36) and that the rest runs on the processor, which explains a slow computation.

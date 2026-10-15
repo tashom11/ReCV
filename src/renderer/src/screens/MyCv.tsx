@@ -97,7 +97,12 @@ export function MyCvScreen({
       const description = describeError('generating', e)
       setSummaryFeedback({
         type: 'error',
-        text: description.code === 'engine-missing' ? description.title : texts.myCv.contact.suggestFailed,
+        text:
+          description.code === 'engine-missing'
+            ? description.title
+            : description.code === 'no-quality'
+              ? description.details
+              : texts.myCv.contact.suggestFailed,
       })
     } finally {
       setBusyWith(null)

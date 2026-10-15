@@ -111,6 +111,10 @@ export const fr = {
         title: 'Nous n’arrivons pas à lire ce fichier',
         text: 'C’est souvent le cas d’un CV scanné ou pris en photo. Essayez la version Word, ou un PDF enregistré depuis Word.',
       },
+      emptyExtraction: {
+        title: 'Le modèle n’a rien repéré dans votre CV',
+        text: 'Votre fichier est lisible, mais le modèle choisi est trop petit pour en tirer vos expériences et compétences. Dans les Réglages, choisissez le niveau « Soigné » (plus lent, mais plus fiable), puis relancez.',
+      },
       interrupted: {
         title: 'La lecture de votre CV s’est arrêtée en route',
         text: 'Votre fichier n’a pas été modifié. Vous pouvez relancer tout de suite.',
