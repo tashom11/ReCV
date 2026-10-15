@@ -18,6 +18,7 @@
     <link rel="preload" href="assets/fonts/bricolage-grotesque.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="stylesheet" href="style.css" />
     <script src="download.js" defer></script>
+    <script src="reveal.js" defer></script>
   </head>
   <body>
     <a class="skip" href="#contenu">Aller au contenu</a>
@@ -91,24 +92,24 @@
             <div class="head">
               <span class="avatar"></span>
               <span class="names">
-                <span class="name-line"></span>
-                <span class="title-line"></span>
+                <span class="name-line" style="--i: 1"></span>
+                <span class="title-line" style="--i: 2"></span>
               </span>
             </div>
             <div class="tags">
-              <span class="tag" style="width: 72px"></span>
-              <span class="tag" style="width: 56px"></span>
-              <span class="tag" style="width: 88px"></span>
+              <span class="tag" style="width: 28%; --i: 5"></span>
+              <span class="tag" style="width: 22%; --i: 6"></span>
+              <span class="tag" style="width: 35%; --i: 7"></span>
             </div>
             <div class="lines">
-              <span class="line tint" style="width: 100%"></span>
-              <span class="line tint" style="width: 92%"></span>
-              <span class="line tint" style="width: 100%"></span>
-              <span class="line tint" style="width: 60%"></span>
+              <span class="line tint" style="width: 100%; --i: 8"></span>
+              <span class="line tint" style="width: 92%; --i: 9"></span>
+              <span class="line tint" style="width: 100%; --i: 10"></span>
+              <span class="line tint" style="width: 60%; --i: 11"></span>
             </div>
             <div class="lines lines-last">
-              <span class="line pale" style="width: 100%"></span>
-              <span class="line pale" style="width: 80%"></span>
+              <span class="line pale" style="width: 100%; --i: 12"></span>
+              <span class="line pale" style="width: 80%; --i: 13"></span>
             </div>
           </div>
           <span class="check">
@@ -129,7 +130,7 @@
       <section id="fonctionnement" class="section wrap" aria-labelledby="titre-fonctionnement">
         <h2 id="titre-fonctionnement">Trois étapes, environ cinq minutes</h2>
         <ol class="steps">
-          <li>
+          <li data-reveal style="--i: 0">
             <figure>
               <img src="assets/accueil.png" alt="Écran d’accueil de Re:CV" width="1380" height="860" loading="lazy" />
             </figure>
@@ -138,14 +139,14 @@
               Déposez votre CV (PDF ou Word). Re:CV vous montre ce qu’il a compris, et vous corrigez si besoin.
             </p>
           </li>
-          <li>
+          <li data-reveal style="--i: 1">
             <figure>
               <img src="assets/annonce.png" alt="Écran de l’annonce dans Re:CV" width="1380" height="860" loading="lazy" />
             </figure>
             <h3><span class="num">2</span> Indiquez l’annonce</h3>
             <p>Collez un lien ou le texte de l’offre. Re:CV repère le poste et ce que l’employeur recherche.</p>
           </li>
-          <li>
+          <li data-reveal style="--i: 2">
             <figure>
               <img src="assets/creation.png" alt="Écran du nouveau CV dans Re:CV" width="1380" height="860" loading="lazy" />
             </figure>
@@ -160,14 +161,14 @@
 
       <section class="section band" aria-labelledby="titre-fidele">
         <div class="wrap two">
-          <div>
+          <div data-reveal>
             <h2 id="titre-fidele">Fidèle à votre parcours, jamais inventé</h2>
             <p>
               Re:CV choisit, réordonne et reformule uniquement ce qui figure déjà dans votre CV. Vos intitulés,
               employeurs, dates, formations et langues sont recopiés tels quels.
             </p>
           </div>
-          <ul class="checks">
+          <ul class="checks" data-reveal style="--i: 1">
             <li>Quand l’annonce demande une compétence que votre CV ne mentionne pas, elle est proposée dans une case <strong>décochée</strong> : elle n’entre dans le CV que si vous la cochez.</li>
             <li>Vous gardez la main sur chaque expérience : vous pouvez en retirer ou en remettre.</li>
             <li>Des mises en page lisibles par les logiciels de recrutement : du vrai texte, des titres standards, pas de tableau.</li>
@@ -176,14 +177,14 @@
       </section>
 
       <section id="confidentialite" class="section wrap two" aria-labelledby="titre-confidentialite">
-        <div>
+        <div data-reveal>
           <h2 id="titre-confidentialite">Vos données restent chez vous</h2>
           <p>
             Re:CV s’installe sur votre ordinateur. Avec le modèle d’IA intégré, tout le travail se fait sur votre
             machine : votre CV et les annonces ne sont envoyés nulle part.
           </p>
         </div>
-        <div class="card">
+        <div class="card" data-reveal style="--i: 1">
           <h3>Vous choisissez le moteur</h3>
           <ul>
             <li><strong>Modèle intégré</strong> : 100&nbsp;% local, aucun compte.</li>
@@ -197,23 +198,23 @@
       </section>
 
       <section class="section wrap" aria-labelledby="titre-modeles">
-        <h2 id="titre-modeles">Neuf mises en page</h2>
+        <h2 id="titre-modeles" data-reveal>Neuf mises en page</h2>
         <p class="section-lead">Au format PDF ou Word, avec ou sans photo.</p>
         <ul class="chips">
-          <li>Classique</li>
-          <li>Moderne</li>
-          <li>Élégant</li>
-          <li>Bandeau</li>
-          <li>Latéral</li>
-          <li>Pastel</li>
-          <li>Capsule</li>
-          <li>Éditorial</li>
-          <li>Chronologie</li>
+          <li data-reveal style="--i: 0">Classique</li>
+          <li data-reveal style="--i: 1">Moderne</li>
+          <li data-reveal style="--i: 2">Élégant</li>
+          <li data-reveal style="--i: 3">Bandeau</li>
+          <li data-reveal style="--i: 4">Latéral</li>
+          <li data-reveal style="--i: 5">Pastel</li>
+          <li data-reveal style="--i: 6">Capsule</li>
+          <li data-reveal style="--i: 7">Éditorial</li>
+          <li data-reveal style="--i: 8">Chronologie</li>
         </ul>
       </section>
 
       <section id="telecharger" class="section download" aria-labelledby="titre-telecharger">
-        <div class="wrap download-inner">
+        <div class="wrap download-inner" data-reveal>
           <h2 id="titre-telecharger">Télécharger Re:CV</h2>
           <p class="lead">Gratuit, sans compte, pour Windows 10 et 11.</p>
           <p class="actions">

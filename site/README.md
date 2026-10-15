@@ -3,6 +3,7 @@
 Static page (HTML, CSS, one small script) that presents Re:CV and links to the installer. No build step, no dependency.
 
 - `index.html`, `style.css`: the page, with the colours and fonts of the application.
+- `reveal.js`: fades sections in as they scroll into view (nothing is hidden without JavaScript or with reduced motion).
 - `download.js`: reads the latest GitHub release to point the buttons at the installer (falls back to the releases
   page). No cookie, no tracking.
 - `vercel.json`: security headers (strict Content-Security-Policy) and font caching.
