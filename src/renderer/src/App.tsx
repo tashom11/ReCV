@@ -169,6 +169,7 @@ export default function App() {
             onProfile={onProfile}
             onNext={() => goTo('posting')}
             onSetup={goToSetup}
+            onSettings={() => goTo('settings')}
           />
         )}
         {view === 'posting' &&

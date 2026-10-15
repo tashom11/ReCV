@@ -6,7 +6,14 @@ import { texts } from './i18n'
 
 export type ErrorContext = 'cv' | 'posting' | 'generating' | 'export' | 'setup' | 'settings'
 
-export type ErrorAction = 'paste-text' | 'retry' | 'choose-file' | 'finish-setup' | 'choose-folder' | 'dismiss'
+export type ErrorAction =
+  | 'paste-text'
+  | 'retry'
+  | 'choose-file'
+  | 'finish-setup'
+  | 'open-settings'
+  | 'choose-folder'
+  | 'dismiss'
 
 export interface ErrorDescription {
   type: 'error' | 'info' | 'warning'
@@ -111,7 +118,7 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
         type: 'warning',
         icon: 'warning',
         ...texts.errors.cv.emptyExtraction,
-        actions: ['retry'],
+        actions: ['open-settings', 'retry'],
       }
     }
     if (code === 'unreadable-file') {

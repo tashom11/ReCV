@@ -78,6 +78,7 @@ export const fr = {
       retry: 'Réessayer',
       'choose-file': 'Choisir un autre fichier',
       'finish-setup': 'Terminer la préparation',
+      'open-settings': 'Changer de modèle',
       'choose-folder': 'Choisir un autre dossier',
       dismiss: 'Reprendre',
     },
@@ -113,7 +114,7 @@ export const fr = {
       },
       emptyExtraction: {
         title: 'Le modèle n’a rien repéré dans votre CV',
-        text: 'Votre fichier est lisible, mais le modèle choisi est trop petit pour en tirer vos expériences et compétences. Dans les Réglages, choisissez le niveau « Soigné » (plus lent, mais plus fiable), puis relancez.',
+        text: 'Votre fichier est lisible, mais le modèle choisi est trop petit pour en tirer vos expériences et compétences. Choisissez le niveau « Soigné » dans les Réglages (plus lent, mais plus fiable), puis relancez.',
       },
       interrupted: {
         title: 'La lecture de votre CV s’est arrêtée en route',
