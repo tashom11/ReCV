@@ -5,6 +5,8 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-15
+
 ### Added
 - Diagnostic report: each CV import records how many experiences, skills, education entries and languages the model
   returned and how many were kept (numbers only), to tell a model that read little from a filter that removed too much.
@@ -21,6 +23,7 @@ follow [Semantic Versioning](https://semver.org/).
   profile; a clear message points to the "Soigné" model level. Small models returned empty lists.
 - The "Soigné" model (9B) is recommended from 8 GB of graphics memory, the smaller ones reading CVs unreliably.
 - The "suggest a sentence" button now says when your CV lists no quality, instead of a generic failure.
+- Waiting texts say that the AI is analysing or preparing, instead of "we read" (CV, job posting, sentence).
 - Settings: the online service option states that your CV and job postings are sent to that service.
 - When only part of the built-in model fits on the graphics card, the CV import and the tailoring screens say how many
   layers it holds (e.g. 24 out of 36) and that the rest runs on the processor, which explains a slow computation.
@@ -95,6 +98,7 @@ First public release.
 - Before/after comparison of every change.
 - Automatic updates, checked at startup and every six hours.
 
+[0.5.0]: https://github.com/tashom11/ReCV/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tashom11/ReCV/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/tashom11/ReCV/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/tashom11/ReCV/compare/v0.2.0...v0.2.1
