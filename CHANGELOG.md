@@ -8,6 +8,9 @@ follow [Semantic Versioning](https://semver.org/).
 ### Security
 - A custom model file is chosen with the file picker only; the app refuses any other path.
 
+### Added
+- Uninstalling asks whether to also delete your data (CV, settings, downloaded models); "No" by default.
+
 ### Changed
 - The built-in engine never tries to compile llama.cpp on your computer when its prebuilt binaries cannot load.
 - A red badge on the Settings button signals an update ready to install (replaces the "Mise à jour prête" button).
