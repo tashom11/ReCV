@@ -22,6 +22,7 @@ export function MyCvScreen({
   onProfile,
   onNext,
   onSetup,
+  onSettings,
 }: {
   profile: Profile | null
   /** Name of the imported file, if known. */
@@ -32,6 +33,7 @@ export function MyCvScreen({
   onNext: () => void
   /** Opens the setup screen (engine not ready yet). */
   onSetup: () => void
+  onSettings: () => void
 }) {
   const { draft, update, saveStatus, beforeExplicitSave, afterExplicitSave } = useProfileDraft(profile, onProfile)
   const [busyWith, setBusyWith] = useState<'import' | 'saving' | 'summary' | null>(null)
@@ -58,6 +60,7 @@ export function MyCvScreen({
   const onErrorAction = (action: ErrorAction) => {
     setError(null)
     if (action === 'finish-setup') onSetup()
+    else if (action === 'open-settings') onSettings()
     else if (action === 'retry') lastImport.current?.()
     else void importCv()
   }
