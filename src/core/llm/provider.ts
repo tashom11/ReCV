@@ -1,3 +1,4 @@
+import type { ExtractionCounts } from '../diagnostics'
 import type { JobPosting, Profile, TailoredCv } from '../schemas'
 import type { StepKey } from '../steps'
 import type { JobAnalysis } from '../tailoring/jobAnalysis'
@@ -22,7 +23,7 @@ export interface TailoringOptions {
 }
 
 export interface LlmProvider {
-  extractProfile(cvText: string): Promise<Profile>
+  extractProfile(cvText: string, onCounts?: (counts: ExtractionCounts) => void): Promise<Profile>
   extractJobPosting(jobPostingText: string): Promise<JobPosting>
   /** Requirements of the job posting (skills, qualities, prerequisites): first tailoring step, reusable. */
   analyzeJobPosting(jobPosting: JobPosting): Promise<JobAnalysis>

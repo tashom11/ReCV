@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Diagnostic report: each CV import records how many experiences, skills, education entries and languages the model
+  returned and how many were kept (numbers only), to tell a model that read little from a filter that removed too much.
 - Review screen: "Experiences in this CV" lets you untick any kept experience to leave it out of this CV only (your
   profile is not modified), whatever its age.
 - Settings: "Save graphics card memory" (built-in model). A smaller context leaves room for more of the model on the

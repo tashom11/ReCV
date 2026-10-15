@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildReport, errorEntry } from './diagnostics'
+import { buildReport, errorEntry, extractionEntry } from './diagnostics'
 import { CodedError } from './errors'
 
 const at = new Date('2026-10-14T10:00:00.000Z')
@@ -49,5 +49,27 @@ describe('buildReport', () => {
   it('says so when the log is empty', () => {
     const report = buildReport({ version: '0.3.0', os: 'Windows', provider: 'api', ramGb: 8, vramGb: 0 }, [])
     expect(report.endsWith('(none)')).toBe(true)
+  })
+})
+
+describe('extractionEntry', () => {
+  it('keeps bounded integers only', () => {
+    const entry = extractionEntry(
+      {
+        textLength: 4576.9,
+        raw: { experiences: 9, skills: 9, education: 3, languages: 2 },
+        kept: { experiences: Number.NaN, skills: -4, education: 3, languages: 1e9 },
+      },
+      new Date('2026-10-15T10:00:00Z'),
+    )
+    expect(entry).toEqual({
+      at: '2026-10-15T10:00:00.000Z',
+      kind: 'extraction',
+      extraction: {
+        textLength: 4576,
+        raw: { experiences: 9, skills: 9, education: 3, languages: 2 },
+        kept: { experiences: 0, skills: 0, education: 3, languages: 100000 },
+      },
+    })
   })
 })

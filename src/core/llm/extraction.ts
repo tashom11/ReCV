@@ -1,3 +1,4 @@
+import type { ExtractionCounts, ProfileCounts } from '../diagnostics'
 import { prepareJobPostingText } from '../job-posting/text'
 import { type JobPosting, jobPostingSchema, type Profile, profileExtractionSchema } from '../schemas'
 import type { LlmEngine } from './engine'
@@ -9,7 +10,18 @@ const JOB_POSTING_HEADER_LENGTH = 1500
 
 const extractedJobPostingSchema = jobPostingSchema.omit({ rawText: true })
 
-export async function extractProfile(engine: LlmEngine, cvText: string): Promise<Profile> {
+const countsOf = (profile: Profile): ProfileCounts => ({
+  experiences: profile.experiences.length,
+  skills: profile.skills.length,
+  education: profile.education.length,
+  languages: profile.languages.length,
+})
+
+export async function extractProfile(
+  engine: LlmEngine,
+  cvText: string,
+  onCounts?: (counts: ExtractionCounts) => void,
+): Promise<Profile> {
   const extracted = await engine.generateObject({
     name: 'extractProfile',
     schema: profileExtractionSchema,
@@ -17,7 +29,10 @@ export async function extractProfile(engine: LlmEngine, cvText: string): Promise
     user: wrapInTag('cv', cvText),
   })
   // The model may make up entries: only what is evidenced in the CV text is kept.
-  return sanitizeProfile(extracted, cvText)
+  const kept = sanitizeProfile(extracted, cvText)
+  // Numbers only: tells a model that read little from a filter that removed too much, without any CV content.
+  onCounts?.({ textLength: cvText.length, raw: countsOf(extracted), kept: countsOf(kept) })
+  return kept
 }
 
 export async function extractJobPosting(engine: LlmEngine, jobPostingText: string): Promise<JobPosting> {
