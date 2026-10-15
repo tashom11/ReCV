@@ -96,7 +96,8 @@ Le code, les noms et les commentaires sont en anglais ; l’interface et les pro
 ## Publier une version
 
 Ajoutez d’abord la section de la version dans [CHANGELOG.md](CHANGELOG.md) (en anglais) : elle devient le texte de la
-release, et la publication échoue sans elle.
+release, et la publication échoue sans elle. Après un changement de dépendances, lancez aussi
+`node scripts/third-party-notices.mjs` et commitez [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ```bash
 npm version 0.3.0 --no-git-tag-version
