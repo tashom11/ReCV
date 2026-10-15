@@ -100,10 +100,10 @@ release, et la publication échoue sans elle. Après un changement de dépendanc
 `node scripts/third-party-notices.mjs` et commitez [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ```bash
-npm version 0.3.0 --no-git-tag-version
-git commit -am "Version 0.3.0"
-git tag v0.3.0
-git push origin main v0.3.0
+npm version 0.4.0 --no-git-tag-version
+git commit -am "Version 0.4.0"
+git tag v0.4.0
+git push origin main v0.4.0
 ```
 
 Le workflow GitHub Actions construit l’installeur, le dépose sur une release en brouillon avec la section du changelog pour texte, puis la publie. Le tag doit correspondre à la version de `package.json`.
