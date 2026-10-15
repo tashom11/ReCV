@@ -4,7 +4,19 @@ import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { CHANNELS } from '@core/channels'
 import { errorEntry, extractionEntry } from '@core/diagnostics'
-import { app, BrowserWindow, clipboard, dialog, ipcMain, net, protocol, safeStorage, session, shell } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  dialog,
+  ipcMain,
+  net,
+  protocol,
+  safeStorage,
+  screen,
+  session,
+  shell,
+} from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { APP_ENTRY_URL, APP_SCHEME, isAppUrl, resolveAppFile } from './appProtocol'
 import { pickAndReadCv } from './cvPicker'
@@ -43,11 +55,18 @@ protocol.registerSchemesAsPrivileged([
 // mode, where the executable is Electron's.
 const ICON_PATH = join(__dirname, '../../build/icon.png')
 
+// Roomy by default (the preview and the side panels need it), but never larger than 90 % of the usable screen.
+const WINDOW_SIZE = { width: 1440, height: 940 }
+const MIN_WINDOW_SIZE = { width: 960, height: 680 }
+
 function createWindow(): void {
+  const { width: usableWidth, height: usableHeight } = screen.getPrimaryDisplay().workAreaSize
   const appWindow = new BrowserWindow({
     ...(existsSync(ICON_PATH) ? { icon: ICON_PATH } : {}),
-    width: 1200,
-    height: 800,
+    width: Math.max(MIN_WINDOW_SIZE.width, Math.min(WINDOW_SIZE.width, Math.round(usableWidth * 0.9))),
+    height: Math.max(MIN_WINDOW_SIZE.height, Math.min(WINDOW_SIZE.height, Math.round(usableHeight * 0.9))),
+    minWidth: MIN_WINDOW_SIZE.width,
+    minHeight: MIN_WINDOW_SIZE.height,
     show: false,
     title: 'Re:CV',
     autoHideMenuBar: true,
