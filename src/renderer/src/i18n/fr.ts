@@ -306,7 +306,7 @@ export const fr = {
   },
 
   generating: {
-    title: (jobTitle: string) => `Nous préparons votre CV pour « ${jobTitle} »`,
+    title: (jobTitle: string) => `L’IA prépare votre CV pour « ${jobTitle} »`,
     duration: (duration: string) => `${duration}. Vous pouvez réduire la fenêtre en attendant.`,
     stepAnnouncement: (step: string) => `${step} : en cours`,
     stepStates: { done: 'Fait', current: 'En cours', upcoming: 'À venir' },
@@ -359,7 +359,7 @@ export const fr = {
       previewLabel: 'Aperçu de votre CV',
       previewFrame: (template: string) => `Votre CV, mise en page ${template}`,
       previewFailed: 'L’aperçu n’a pas pu s’afficher. Vous pouvez quand même télécharger votre CV.',
-      layingOut: 'Nous mettons votre CV en page…',
+      layingOut: 'Mise en page de votre CV…',
     },
   },
 
@@ -395,7 +395,7 @@ export const fr = {
   myCv: {
     import: {
       title: 'Commençons par votre CV',
-      subtitle: 'Nous allons le lire pour comprendre votre parcours. Vous pourrez tout vérifier juste après.',
+      subtitle: 'L’IA va l’analyser pour comprendre votre parcours. Vous pourrez tout vérifier juste après.',
       reading: 'L’IA analyse votre CV…',
       readingNew: 'L’IA analyse votre nouveau CV…',
       readingStep: 'Elle repère vos expériences, vos compétences et vos formations',
@@ -445,7 +445,7 @@ export const fr = {
       summaryLabel: 'Votre phrase de présentation',
       summaryHint: 'Elle parle de vos qualités, pas d’un métier : elle reste valable pour toutes les annonces.',
       suggest: 'Proposer une phrase',
-      suggesting: 'Nous cherchons une phrase qui vous ressemble…',
+      suggesting: 'L’IA cherche une phrase qui vous ressemble…',
       suggestingStep: 'À partir de vos qualités',
       suggested: 'Voici une proposition : relisez-la et ajustez-la si besoin.',
       suggestFailed: 'La proposition n’a pas abouti. Réessayez.',
