@@ -128,7 +128,13 @@ export function GeneratingScreen({
               </>
             }
           >
-            {progress?.compute === 'cpu' ? texts.generating.slowCpu : texts.generating.slow}
+            {progress?.compute === 'cpu'
+              ? texts.generating.slowCpu
+              : progress?.gpuLayers !== undefined &&
+                  progress.totalLayers !== undefined &&
+                  progress.gpuLayers < progress.totalLayers
+                ? texts.generating.partialGpu(progress.gpuLayers, progress.totalLayers)
+                : texts.generating.slow}
             {texts.generating.fasterNextTime}
           </Alert>
         ) : (

@@ -311,6 +311,8 @@ export const fr = {
     cancel: 'Annuler',
     slowCpu: 'Votre ordinateur calcule sans aide de la carte graphique. ',
     slow: 'Votre ordinateur calcule encore. ',
+    partialGpu: (layers: number, total: number) =>
+      `Seule une partie du modèle tient sur votre carte graphique (${layers} couches sur ${total}) : le reste est calculé par le processeur. `,
     fasterNextTime: 'Pour aller plus vite la prochaine fois, choisissez « Rapide » dans les Réglages.',
     privacyOnline:
       'Votre CV et l’annonce sont envoyés au service en ligne choisi dans les Réglages, le temps de la création.',
@@ -388,6 +390,8 @@ export const fr = {
       readingNew: 'Nous lisons votre nouveau CV…',
       readingStep: 'Nous repérons vos expériences, vos compétences et vos formations',
       readingNote: 'Cela prend une à deux minutes. Vous pouvez réduire la fenêtre en attendant.',
+      partialGpu: (layers: number, total: number) =>
+        `Seule une partie du modèle tient sur votre carte graphique (${layers} couches sur ${total}) : le reste est calculé par le processeur, c’est plus lent. Fermer les autres applications qui utilisent la carte graphique aide.`,
       readingNewNote: 'Votre CV actuel reste affiché tant que la lecture n’est pas terminée.',
       privacyOnline: 'Votre CV sera lu par le service en ligne choisi dans les Réglages : il quitte votre ordinateur.',
       privacyLocal: 'Votre CV reste sur cet ordinateur : il n’est envoyé nulle part.',

@@ -159,7 +159,20 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
 
   const importCvText = async (text: string, fileName: string): Promise<SavedProfile> => {
     report({ task: 'import' })
-    const extracted = await (await provider()).extractProfile(text)
+    const llm = await provider()
+    // The model loads inside the extraction: its offload is reported as soon as it is known.
+    const watch = setInterval(() => {
+      const offload = llm.gpuOffload?.()
+      if (!offload) return
+      clearInterval(watch)
+      report({ task: 'import', gpuLayers: offload.layers, totalLayers: offload.total })
+    }, 1000)
+    let extracted: Profile
+    try {
+      extracted = await llm.extractProfile(text)
+    } finally {
+      clearInterval(watch)
+    }
     // The photo is chosen by the user, not extracted from the CV: it follows the active profile.
     const photo = getActiveProfile(db)?.profile.photo
     const created = createProfile(db, photo ? { ...extracted, photo } : extracted)
@@ -244,7 +257,16 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
           rewrite: params.rewriteBullets,
           analysis: analyses.get(key),
           onAnalysis: (analysis) => remember(key, analysis),
-          onStep: (e) => report({ task: 'tailoring', ...e, compute: llm.computeMode?.() ?? undefined }),
+          onStep: (e) => {
+            const offload = llm.gpuOffload?.()
+            report({
+              task: 'tailoring',
+              ...e,
+              compute: llm.computeMode?.() ?? undefined,
+              gpuLayers: offload?.layers,
+              totalLayers: offload?.total,
+            })
+          },
           signal: cancellation.signal,
         })
         cancellation.signal.throwIfAborted()

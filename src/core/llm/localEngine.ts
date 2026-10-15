@@ -1,6 +1,6 @@
 import type { Llama, LlamaModel } from 'node-llama-cpp'
 import { z } from 'zod'
-import type { LlmEngine, ObjectRequest } from './engine'
+import type { GpuOffload, LlmEngine, ObjectRequest } from './engine'
 import { StructuredProvider } from './structuredProvider'
 
 type GrammarSchema = Parameters<Llama['createGrammarForJsonSchema']>[0]
@@ -79,6 +79,8 @@ export class LocalEngine implements LlmEngine {
   private loading?: Promise<{ llama: Llama; model: LlamaModel }>
   private onCpu = false
   private lastCpuFallback = 0
+  // What the last load put on the graphics card; `null` while no model is loaded.
+  private offload: GpuOffload | null = null
   // A disposed sequence is not given back to its context at once: the single sequence is kept and emptied instead.
   private context?: { context: Context; sequence: Sequence }
   private idleTimer?: ReturnType<typeof setTimeout>
@@ -103,6 +105,8 @@ export class LocalEngine implements LlmEngine {
         modelPath: this.modelPath,
         gpuLayers: onCpu ? 0 : { fitContext: { contextSize: TARGET_CONTEXT_SIZE } },
       })
+      // Layers actually held by the card: fewer than the total when the VRAM is short, the rest runs on the processor.
+      this.offload = { layers: onCpu ? 0 : model.gpuLayers, total: model.fileInsights.totalLayers }
       return { llama, model }
     })()
     this.loading = loading
@@ -118,6 +122,10 @@ export class LocalEngine implements LlmEngine {
   computeMode(): 'gpu' | 'cpu' | null {
     if (!this.loading) return null
     return this.onCpu ? 'cpu' : 'gpu'
+  }
+
+  gpuOffload(): GpuOffload | null {
+    return this.loading ? this.offload : null
   }
 
   private async createContext() {
