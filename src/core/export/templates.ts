@@ -161,7 +161,7 @@ const CAPSULE = `
   @media screen { body { padding: 10mm 0; } }
   body { font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #23312a; }
   .colonnes { padding-left: 9mm; }
-  .lateral { width: 66mm; padding: 11mm 7mm 12mm; background: #e6eee6; border-radius: 33mm; box-decoration-break: clone; -webkit-box-decoration-break: clone; font-size: 9.5pt; }
+  .lateral { width: 66mm; padding: 12mm 8mm 30mm; background: #e6eee6; border-radius: 33mm; box-decoration-break: clone; -webkit-box-decoration-break: clone; font-size: 9.5pt; }
   .principal { padding: 4mm 12mm 0 10mm; }
   h1 { font-size: 27pt; font-weight: 800; line-height: 1.05; text-transform: uppercase; color: #1d3a2c; }
   .titre-poste { font-size: 12pt; color: #2f6f57; font-weight: 600; margin-top: 5pt; }

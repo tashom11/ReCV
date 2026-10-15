@@ -5,6 +5,9 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- "Capsule" layout: more room at the bottom of the rounded column, so long lists no longer touch its border.
+
 ## [0.6.0] - 2026-10-15
 
 ### Added
