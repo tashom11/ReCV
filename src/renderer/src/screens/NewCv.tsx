@@ -7,6 +7,7 @@ import { texts } from '../i18n'
 import { ActionBar, Button, Collapsible, ErrorAlert, Icon, TextField } from '../ui'
 import { ExcludedItemsSection } from './new-cv/ExcludedItemsSection'
 import { HighlightedSkillsSection } from './new-cv/HighlightedSkillsSection'
+import { KeptExperiencesSection } from './new-cv/KeptExperiencesSection'
 import { useTailoredCvDraft } from './new-cv/useTailoredCvDraft'
 import { LargePreview, TemplateStrip } from './TemplateGallery'
 import { usePreviews } from './template-gallery/usePreviews'
@@ -96,6 +97,12 @@ export function NewCvScreen({
             missing={tailored.requested.missing}
             isMissingAdded={(i) => draft.choices.addRequested[i] ?? false}
             onToggleMissing={draft.setRequestedAdded}
+          />
+
+          <KeptExperiencesSection
+            experiences={tailored.experiences}
+            kept={draft.choices.keepExperiences}
+            onKept={(keepExperiences) => draft.setChoices((c) => ({ ...c, keepExperiences }))}
           />
 
           <ExcludedItemsSection

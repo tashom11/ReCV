@@ -9,6 +9,8 @@ export interface CompositionChoices {
   skills: boolean
   /** One entry per experience of the tailored CV: tailored bullets (true) or original achievements (false). */
   experiences: boolean[]
+  /** One entry per experience of the tailored CV: kept in this CV (true) or left out by the user (false). */
+  keepExperiences: boolean[]
   /** Excluded items the user reinstates (same order as `tailored.excluded`). */
   reinstate: { experiences: boolean[]; skills: boolean[]; education: boolean[] }
   /**
@@ -38,7 +40,7 @@ export function composeCv(
   }))
   const reinstated = tailored.excluded.experiences.filter((_, i) => choices.reinstate.experiences[i])
   // Order of the original profile; without a known index, the item stays at the end.
-  const experiences = [...kept, ...reinstated].sort(
+  const experiences = [...kept.filter((_, i) => choices.keepExperiences[i] !== false), ...reinstated].sort(
     (a, b) => (a.sourceIndex ?? Number.MAX_SAFE_INTEGER) - (b.sourceIndex ?? Number.MAX_SAFE_INTEGER),
   )
 
@@ -86,6 +88,7 @@ export function initialChoices(tailored: TailoredCv): CompositionChoices {
     summary: true,
     skills: true,
     experiences: tailored.experiences.map(() => true),
+    keepExperiences: tailored.experiences.map(() => true),
     reinstate: {
       experiences: tailored.excluded.experiences.map(() => false),
       skills: tailored.excluded.skills.map(() => false),

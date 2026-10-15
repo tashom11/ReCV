@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Review screen: "Experiences in this CV" lets you untick any kept experience to leave it out of this CV only (your
+  profile is not modified), whatever its age.
 - Settings: "Save graphics card memory" (built-in model). A smaller context leaves room for more of the model on the
   card, which speeds up the computation on cards with little memory.
 
