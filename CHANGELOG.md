@@ -5,6 +5,10 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Settings: "Save graphics card memory" (built-in model). A smaller context leaves room for more of the model on the
+  card, which speeds up the computation on cards with little memory.
+
 ### Changed
 - When only part of the built-in model fits on the graphics card, the CV import and the tailoring screens say how many
   layers it holds (e.g. 24 out of 36) and that the rest runs on the processor, which explains a slow computation.

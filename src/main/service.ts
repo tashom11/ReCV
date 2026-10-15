@@ -93,7 +93,7 @@ async function defaultProvider(settings: Settings, apiKey: string | null): Promi
     case 'local': {
       if (!settings.localModelPath) throw new CodedError('engine-missing', 'Aucun modèle local sélectionné.')
       const { createLocalProvider } = await import('@core/llm/localEngine')
-      return createLocalProvider({ modelPath: settings.localModelPath })
+      return createLocalProvider({ modelPath: settings.localModelPath, reduceGpuMemory: settings.reduceGpuMemory })
     }
   }
 }

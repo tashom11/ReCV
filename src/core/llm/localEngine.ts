@@ -65,6 +65,8 @@ export function removeNulls(value: unknown): unknown {
 // then stops in the middle of the JSON (« Unexpected end of JSON input »).
 const TARGET_CONTEXT_SIZE = 8192
 const MIN_CONTEXT_SIZE = 4096
+// "Reduce graphics card memory" setting: the context is kept at its minimum, which frees VRAM for the model's layers.
+const REDUCED_CONTEXT_SIZE = MIN_CONTEXT_SIZE
 const GPU_RETRY_DELAY_MS = 60_000
 // The context (and its cache in VRAM) is kept between the calls of a tailoring, then freed after this idle time.
 const CONTEXT_IDLE_MS = 30_000
@@ -89,7 +91,10 @@ export class LocalEngine implements LlmEngine {
   // Calls run one after the other: the shared context has a single sequence.
   private queue: Promise<unknown> = Promise.resolve()
 
-  constructor(private readonly modelPath: string) {}
+  constructor(
+    private readonly modelPath: string,
+    private readonly contextSize = TARGET_CONTEXT_SIZE,
+  ) {}
 
   private load(onCpu = this.onCpu) {
     if (this.loading) return this.loading
@@ -103,7 +108,7 @@ export class LocalEngine implements LlmEngine {
       // GPU: as many layers as possible WHILE leaving room for a context of TARGET_CONTEXT_SIZE tokens.
       const model = await llama.loadModel({
         modelPath: this.modelPath,
-        gpuLayers: onCpu ? 0 : { fitContext: { contextSize: TARGET_CONTEXT_SIZE } },
+        gpuLayers: onCpu ? 0 : { fitContext: { contextSize: this.contextSize } },
       })
       // Layers actually held by the card: fewer than the total when the VRAM is short, the rest runs on the processor.
       this.offload = { layers: onCpu ? 0 : model.gpuLayers, total: model.fileInsights.totalLayers }
@@ -135,7 +140,7 @@ export class LocalEngine implements LlmEngine {
       await this.release()
       this.onCpu = false
     }
-    const options = { contextSize: { min: MIN_CONTEXT_SIZE, max: TARGET_CONTEXT_SIZE } }
+    const options = { contextSize: { min: Math.min(MIN_CONTEXT_SIZE, this.contextSize), max: this.contextSize } }
     try {
       const { model } = await this.load()
       return await model.createContext(options)
@@ -244,6 +249,14 @@ export class LocalEngine implements LlmEngine {
   }
 }
 
-export function createLocalProvider({ modelPath }: { modelPath: string }): StructuredProvider {
-  return new StructuredProvider(new LocalEngine(modelPath))
+export function createLocalProvider({
+  modelPath,
+  reduceGpuMemory = false,
+}: {
+  modelPath: string
+  reduceGpuMemory?: boolean
+}): StructuredProvider {
+  return new StructuredProvider(
+    new LocalEngine(modelPath, reduceGpuMemory ? REDUCED_CONTEXT_SIZE : TARGET_CONTEXT_SIZE),
+  )
 }

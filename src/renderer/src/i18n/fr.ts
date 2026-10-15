@@ -542,6 +542,9 @@ export const fr = {
       rewrite: 'Réécrire les phrases de mes expériences',
       rewriteHint:
         'Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes.',
+      reduceGpuMemory: 'Économiser la mémoire de la carte graphique',
+      reduceGpuMemoryHint:
+        'À essayer si la création est très lente : une partie plus grande du modèle tient alors sur la carte graphique. Les CV et annonces très longs peuvent être mieux lus sans cette option.',
       modelFile: 'Fichier du modèle (.gguf)',
       noModelFile: 'Aucun fichier choisi : Re:CV utilise le niveau installé ci-dessus.',
       chooseModelFile: 'Choisir un fichier…',

@@ -24,13 +24,15 @@ const native = vi.hoisted(() => {
       },
     }
   }
+  const loadOptions: unknown[] = []
   const llama = {
     createGrammarForJsonSchema: async () => {
       counts.grammars++
       return { parse: (text: string) => JSON.parse(text) }
     },
     // 30 of 36 layers fit on the card: the rest runs on the processor.
-    loadModel: async () => ({
+    loadModel: async (o: unknown) => ({
+      loadOptions: loadOptions.push(o),
       gpuLayers: 30,
       fileInsights: { totalLayers: 36 },
       createContext: async () => context(),
@@ -52,7 +54,7 @@ const native = vi.hoisted(() => {
     options.push(o)
     return llama
   }
-  return { counts, options, getLlama, LlamaChatSession }
+  return { counts, options, loadOptions, getLlama, LlamaChatSession }
 })
 vi.mock('node-llama-cpp', () => ({ getLlama: native.getLlama, LlamaChatSession: native.LlamaChatSession }))
 
@@ -84,6 +86,16 @@ describe('LocalEngine', () => {
     expect(engine.gpuOffload()).toBeNull()
     await engine.generateObject(request)
     expect(engine.gpuOffload()).toEqual({ layers: 30, total: 36 })
+  })
+
+  it('sizes the room kept for the context on the chosen context size', async () => {
+    native.loadOptions.length = 0
+    await new LocalEngine('m.gguf').generateObject(request)
+    await new LocalEngine('m.gguf', 4096).generateObject(request)
+    expect(native.loadOptions).toMatchObject([
+      { gpuLayers: { fitContext: { contextSize: 8192 } } },
+      { gpuLayers: { fitContext: { contextSize: 4096 } } },
+    ])
   })
 
   it('runs simultaneous calls one after the other on the shared context', async () => {
