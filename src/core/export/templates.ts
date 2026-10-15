@@ -48,6 +48,8 @@ const BASE = `
   p { margin: 0; }
   ul { margin: 3pt 0 0; padding-left: 16pt; }
   li { margin: 1pt 0; }
+  .competences { columns: 3; column-gap: 14pt; }
+  .competences li { break-inside: avoid; }
   h1, h2, h3 { margin: 0; }
   .entete { display: flex; align-items: center; gap: 14pt; }
   .identite { flex: 1; min-width: 0; }
@@ -198,6 +200,7 @@ const TIMELINE = `
   .contact span + span::before { content: none; }
   h2 { display: flex; align-items: center; gap: 10pt; font-size: 13pt; font-weight: 700; margin: 16pt 0 7pt; }
   h2::after { content: ''; flex: 1; border-top: 0.75pt solid #cfd4da; }
+  h3 { font-size: 10.5pt; margin-top: 8pt; }
   section > div { position: relative; margin-left: 3pt; padding-left: 12pt; border-left: 1.25pt solid #cfd4da; }
   section > div > h3 { margin-top: 0; padding-top: 6pt; font-size: 10.5pt; }
   section > div > h3::before { content: ''; position: absolute; left: -4.5pt; top: 10.5pt; width: 6pt; height: 6pt; border-radius: 50%; background: #fff; border: 1.5pt solid #2b3440; }

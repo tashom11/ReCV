@@ -1,24 +1,27 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import {
-  type Block,
-  CV_LABELS,
-  type CvDocument,
-  type CvLanguage,
-  labelledLine,
-  type Section,
-  type SectionId,
-} from './cvDocument'
+import { type Block, CV_LABELS, type CvDocument, type Section, type SectionId } from './cvDocument'
 import { findTemplate, type TemplateId } from './templates'
 
 // ATS layout: a single column, real text, no table nor icon, standard section titles.
 // The style comes from the chosen template (see templates.ts); the structure is the same for all.
 
-function BlockHtml({ block, language }: { block: Block; language: CvLanguage }) {
+function BlockHtml({ block }: { block: Block }) {
   switch (block.type) {
     case 'paragraph':
       return <p>{block.text}</p>
     case 'labelled-list':
-      return <p>{labelledLine(block, language)}</p>
+      // A label then a list, laid out in columns by the template: scannable by a recruiter, plain text for an ATS.
+      return (
+        <>
+          <h3>{block.label}</h3>
+          <ul className="competences">
+            {block.elements.map((element, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
+              <li key={i}>{element}</li>
+            ))}
+          </ul>
+        </>
+      )
     case 'list':
       return (
         <ul>
@@ -51,8 +54,8 @@ function BlockHtml({ block, language }: { block: Block; language: CvLanguage }) 
 const SIDEBAR_SECTIONS: SectionId[] = ['skills', 'languages']
 
 /** In a narrow column, a labelled list becomes a subtitle followed by a list. */
-function SidebarBlock({ block, language }: { block: Block; language: CvLanguage }) {
-  if (block.type !== 'labelled-list') return <BlockHtml block={block} language={language} />
+function SidebarBlock({ block }: { block: Block }) {
+  if (block.type !== 'labelled-list') return <BlockHtml block={block} />
   return (
     <>
       <h3>{block.label}</h3>
@@ -66,17 +69,17 @@ function SidebarBlock({ block, language }: { block: Block; language: CvLanguage 
   )
 }
 
-function SectionHtml({ section, language, sidebar }: { section: Section; language: CvLanguage; sidebar?: boolean }) {
+function SectionHtml({ section, sidebar }: { section: Section; sidebar?: boolean }) {
   return (
     <section>
       <h2>{section.title}</h2>
       {section.blocks.map((block, i) =>
         sidebar ? (
           // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
-          <SidebarBlock key={i} block={block} language={language} />
+          <SidebarBlock key={i} block={block} />
         ) : (
           // biome-ignore lint/suspicious/noArrayIndexKey: static rendering, fixed order
-          <BlockHtml key={i} block={block} language={language} />
+          <BlockHtml key={i} block={block} />
         ),
       )}
     </section>
@@ -117,7 +120,7 @@ export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: 
               {model.sections
                 .filter((s) => !inSidebar(s))
                 .map((section) => (
-                  <SectionHtml key={section.id} section={section} language={language} />
+                  <SectionHtml key={section.id} section={section} />
                 ))}
             </main>
             <aside className="lateral">
@@ -129,7 +132,7 @@ export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: 
                 </section>
               )}
               {model.sections.filter(inSidebar).map((section) => (
-                <SectionHtml key={section.id} section={section} language={language} sidebar />
+                <SectionHtml key={section.id} section={section} sidebar />
               ))}
             </aside>
           </div>
@@ -143,7 +146,7 @@ export function CvHtml({ model, templateId }: { model: CvDocument; templateId?: 
               {model.photo && <img className="photo" src={model.photo} alt="" />}
             </header>
             {model.sections.map((section) => (
-              <SectionHtml key={section.id} section={section} language={language} />
+              <SectionHtml key={section.id} section={section} />
             ))}
           </>
         )}
