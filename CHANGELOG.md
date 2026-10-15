@@ -3,6 +3,11 @@
 All notable changes to Re:CV. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions
 follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- A red badge on the Settings button signals an update ready to install (replaces the "Mise à jour prête" button).
+
 ## [0.3.0] - 2026-10-14
 
 ### Added
