@@ -8,7 +8,6 @@ export interface LocalModel {
   /** What the model means for the user: speed or care of the result (named by the interface). */
   level: ModelLevel
   name: string
-  description: string
   fileName: string
   url: string
   sizeBytes: number
@@ -29,7 +28,6 @@ export const LOCAL_MODELS: readonly LocalModel[] = [
     id: 'qwen3.5-2b',
     level: 'fast',
     name: 'Qwen3.5 2B',
-    description: 'Léger et rapide, pour les ordinateurs modestes. Qualité de rédaction correcte.',
     fileName: 'Qwen3.5-2B-Q4_K_M.gguf',
     url: repoUrl('2B', 'Qwen3.5-2B-Q4_K_M.gguf'),
     sizeBytes: 1_280_835_840,
@@ -41,7 +39,6 @@ export const LOCAL_MODELS: readonly LocalModel[] = [
     id: 'qwen3.5-4b',
     level: 'balanced',
     name: 'Qwen3.5 4B',
-    description: 'Bon compromis vitesse / qualité pour la plupart des ordinateurs récents.',
     fileName: 'Qwen3.5-4B-Q4_K_M.gguf',
     url: repoUrl('4B', 'Qwen3.5-4B-Q4_K_M.gguf'),
     sizeBytes: 2_740_937_888,
@@ -53,7 +50,6 @@ export const LOCAL_MODELS: readonly LocalModel[] = [
     id: 'qwen3.5-9b',
     level: 'quality',
     name: 'Qwen3.5 9B',
-    description: 'Meilleure qualité, plus lent : pour les machines avec beaucoup de mémoire ou une carte graphique.',
     fileName: 'Qwen3.5-9B-Q4_K_M.gguf',
     url: repoUrl('9B', 'Qwen3.5-9B-Q4_K_M.gguf'),
     sizeBytes: 5_680_522_464,

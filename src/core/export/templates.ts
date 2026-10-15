@@ -9,8 +9,6 @@ export type TemplateId = (typeof TEMPLATE_IDS)[number]
 
 export interface CvTemplate {
   id: TemplateId
-  name: string
-  description: string
   /** Colour swatch of the template (preview in the gallery). */
   color: string
   /** `lateral`: skills and languages in a side column (PDF); the DOCX stays single-column. */
@@ -148,8 +146,6 @@ const PASTEL = `
 export const CV_TEMPLATES: readonly CvTemplate[] = [
   {
     id: 'classic',
-    name: 'Classique',
-    description: 'Sobre et neutre, titres soulignés. Le choix le plus universel.',
     color: '#111111',
     layout: 'single',
     docx: { font: 'Calibri', accent: '111111', text: '111111', header: 'left', coloredSectionTitles: false },
@@ -157,8 +153,6 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
   },
   {
     id: 'modern',
-    name: 'Moderne',
-    description: 'Accent bleu, nom en grand, photo ronde. Dynamique sans fioriture.',
     color: '#2563eb',
     layout: 'single',
     docx: { font: 'Calibri', accent: '2563EB', text: '1F2937', header: 'left', coloredSectionTitles: true },
@@ -166,8 +160,6 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
   },
   {
     id: 'elegant',
-    name: 'Élégant',
-    description: 'Typographie à empattements, en-tête centré, filets fins. Pour les métiers de contact ou de création.',
     color: '#7a5c2e',
     layout: 'single',
     docx: { font: 'Georgia', accent: '7A5C2E', text: '2A2A2A', header: 'center', coloredSectionTitles: true },
@@ -175,8 +167,6 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
   },
   {
     id: 'banner',
-    name: 'Bandeau',
-    description: 'En-tête sur fond sombre avec le nom en blanc, rubriques à liseré. Fort impact visuel.',
     color: '#0f172a',
     layout: 'single',
     docx: {
@@ -191,8 +181,6 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
   },
   {
     id: 'sidebar',
-    name: 'Latéral',
-    description: 'Colonne sombre à gauche (photo, contact, compétences, langues), parcours à droite. Style « Canva ».',
     color: '#1e293b',
     layout: 'sidebar',
     docx: { font: 'Calibri', accent: '0E7490', text: '1E293B', header: 'left', coloredSectionTitles: true },
@@ -200,9 +188,6 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
   },
   {
     id: 'pastel',
-    name: 'Pastel',
-    description:
-      'Colonne beige à gauche, typographie douce et accents terracotta. Chaleureux, pour les métiers du contact.',
     color: '#e7d8c4',
     layout: 'sidebar',
     docx: { font: 'Georgia', accent: 'B4532A', text: '3B3330', header: 'left', coloredSectionTitles: true },
