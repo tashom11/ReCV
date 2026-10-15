@@ -4,7 +4,17 @@
 // code, the main content comes first: the reading order is the same.
 // The optional photo is a decorative image, ignored by that software.
 
-export const TEMPLATE_IDS = ['classic', 'modern', 'elegant', 'banner', 'sidebar', 'pastel'] as const
+export const TEMPLATE_IDS = [
+  'classic',
+  'modern',
+  'elegant',
+  'banner',
+  'sidebar',
+  'pastel',
+  'capsule',
+  'editorial',
+  'timeline',
+] as const
 export type TemplateId = (typeof TEMPLATE_IDS)[number]
 
 export interface CvTemplate {
@@ -143,6 +153,57 @@ const PASTEL = `
   .photo { border: 2pt solid #fff; box-shadow: 0 0 0 1pt #d9c7b0; }
 `
 
+// Capsule: the side column is a rounded « pill » floating on the page, with the photo at its top.
+const CAPSULE = `
+  @page { size: A4; margin: 10mm 0; }
+  @media screen { body { padding: 10mm 0; } }
+  body { font-family: 'Trebuchet MS', 'Segoe UI', Arial, sans-serif; color: #23312a; }
+  .colonnes { padding-left: 9mm; }
+  .lateral { width: 66mm; padding: 11mm 7mm 12mm; background: #e6eee6; border-radius: 33mm; box-decoration-break: clone; -webkit-box-decoration-break: clone; font-size: 9.5pt; }
+  .principal { padding: 4mm 12mm 0 10mm; }
+  h1 { font-size: 27pt; font-weight: 800; line-height: 1.05; text-transform: uppercase; color: #1d3a2c; }
+  .titre-poste { font-size: 12pt; color: #2f6f57; font-weight: 600; margin-top: 5pt; }
+  .principal h2 { font-size: 13pt; font-weight: 800; text-transform: uppercase; color: #1d3a2c; margin: 17pt 0 7pt; }
+  .principal h3 { font-size: 10.5pt; margin-top: 9pt; }
+  .meta { color: #55645b; font-size: 9.5pt; }
+  .lateral h2 { font-size: 11.5pt; font-weight: 800; text-transform: uppercase; color: #1d3a2c; margin: 15pt 0 6pt; }
+  .lateral h3 { font-size: 9.5pt; font-weight: 700; color: #2f6f57; }
+  .photo { width: 40mm; height: 40mm; border: 3pt solid #fff; box-shadow: 0 0 0 0.75pt #cddccd; }
+`
+
+// Editorial: black and white, rules between the sections, square photo, contact details in a column on the right.
+const EDITORIAL = `
+  body { font-family: Helvetica, Arial, sans-serif; color: #151515; }
+  .entete { align-items: flex-start; gap: 7mm; padding-bottom: 6pt; }
+  .photo { order: -1; width: 32mm; height: 32mm; border-radius: 0; }
+  .identite { display: grid; grid-template-columns: 1fr auto; column-gap: 8mm; align-items: start; }
+  h1 { grid-column: 1; font-size: 24pt; font-weight: 800; line-height: 1.1; text-transform: uppercase; }
+  .titre-poste { grid-column: 1; font-size: 11pt; text-transform: uppercase; color: #444; margin-top: 6pt; }
+  .contact { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; font-size: 9pt; color: #222; }
+  .contact span { display: block; }
+  .contact span + span::before { content: none; }
+  h2 { font-size: 10.5pt; font-weight: 800; text-transform: uppercase; border-top: 0.75pt solid #151515; padding-top: 6pt; margin: 14pt 0 6pt; }
+  h3 { font-size: 10pt; text-transform: uppercase; margin-top: 8pt; }
+  .meta { color: #555; font-size: 9.5pt; }
+`
+
+// Timeline: soft greys, a line after each section title, experiences on a vertical line with a dot per entry.
+const TIMELINE = `
+  body { font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #2b3440; }
+  .entete { gap: 8mm; padding-bottom: 6pt; }
+  .photo { order: -1; width: 34mm; height: 34mm; border-radius: 50%; border: 4pt solid #cfd4da; }
+  h1 { font-size: 25pt; font-weight: 700; line-height: 1.1; text-transform: uppercase; }
+  .titre-poste { font-size: 13pt; color: #5b6673; margin-top: 3pt; }
+  .contact { display: grid; grid-template-columns: 1fr 1fr; gap: 3pt 10pt; margin-top: 8pt; font-size: 9.5pt; color: #3b4652; }
+  .contact span + span::before { content: none; }
+  h2 { display: flex; align-items: center; gap: 10pt; font-size: 13pt; font-weight: 700; margin: 16pt 0 7pt; }
+  h2::after { content: ''; flex: 1; border-top: 0.75pt solid #cfd4da; }
+  section > div { position: relative; margin-left: 3pt; padding-left: 12pt; border-left: 1.25pt solid #cfd4da; }
+  section > div > h3 { margin-top: 0; padding-top: 6pt; font-size: 10.5pt; }
+  section > div > h3::before { content: ''; position: absolute; left: -4.5pt; top: 10.5pt; width: 6pt; height: 6pt; border-radius: 50%; background: #fff; border: 1.5pt solid #2b3440; }
+  .meta { color: #5b6673; font-size: 9.5pt; }
+`
+
 export const CV_TEMPLATES: readonly CvTemplate[] = [
   {
     id: 'classic',
@@ -192,6 +253,27 @@ export const CV_TEMPLATES: readonly CvTemplate[] = [
     layout: 'sidebar',
     docx: { font: 'Georgia', accent: 'B4532A', text: '3B3330', header: 'left', coloredSectionTitles: true },
     css: BASE + SIDEBAR_BASE + PASTEL,
+  },
+  {
+    id: 'capsule',
+    color: '#2f6f57',
+    layout: 'sidebar',
+    docx: { font: 'Calibri', accent: '2F6F57', text: '23312A', header: 'left', coloredSectionTitles: true },
+    css: BASE + SIDEBAR_BASE + CAPSULE,
+  },
+  {
+    id: 'editorial',
+    color: '#444444',
+    layout: 'single',
+    docx: { font: 'Arial', accent: '151515', text: '151515', header: 'left', coloredSectionTitles: false },
+    css: BASE + EDITORIAL,
+  },
+  {
+    id: 'timeline',
+    color: '#5b6673',
+    layout: 'single',
+    docx: { font: 'Calibri', accent: '3B4A5A', text: '2B3440', header: 'left', coloredSectionTitles: true },
+    css: BASE + TIMELINE,
   },
 ]
 
