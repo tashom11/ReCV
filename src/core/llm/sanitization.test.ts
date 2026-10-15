@@ -50,6 +50,17 @@ describe('sanitizeProfile', () => {
     expect(sanitizeProfile(base, CV)).toEqual(base)
   })
 
+  it('drops values made only of punctuation (leftovers of a broken JSON answer)', () => {
+    const profile: Profile = {
+      ...base,
+      skills: [...base.skills, '{', '],', '-'],
+      languages: [...base.languages, { name: '}' }],
+    }
+    const cleaned = sanitizeProfile(profile, CV)
+    expect(cleaned.skills).toEqual(base.skills)
+    expect(cleaned.languages).toEqual(base.languages)
+  })
+
   it('only keeps real web addresses as links, not company names', () => {
     const profile: Profile = {
       ...base,

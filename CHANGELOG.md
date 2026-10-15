@@ -14,6 +14,8 @@ follow [Semantic Versioning](https://semver.org/).
   card, which speeds up the computation on cards with little memory.
 
 ### Changed
+- A stray "{" or other punctuation-only value left by the model is no longer kept as a skill, language or title (also
+  for profiles imported before).
 - Larger default window (up to 1440 × 940, never more than 90 % of the usable screen), with a minimum size.
 - Import: a CV the model could not read (no experience, skill nor education extracted) is no longer saved as an empty
   profile; a clear message points to the "Soigné" model level. Small models returned empty lists.
