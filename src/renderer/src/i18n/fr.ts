@@ -338,6 +338,11 @@ export const fr = {
       missingWarning:
         'Cochez seulement ce que vous savez vraiment faire : on pourra vous interroger dessus en entretien.',
     },
+    keptExperiences: {
+      title: 'Expériences dans ce CV',
+      summary: 'Décochez celles que vous ne voulez pas montrer',
+      legend: 'Une expérience décochée n’apparaît que sur ce CV : votre profil n’est pas modifié.',
+    },
     excluded: {
       title: 'Retiré de ce CV',
       summary: 'Sans rapport avec l’annonce · vous pouvez le remettre',

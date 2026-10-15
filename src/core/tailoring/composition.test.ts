@@ -52,6 +52,14 @@ describe('composeCv', () => {
     expect(cv.education.map((f) => f.degree)).toEqual(['BAC +2', 'BAC PRO'])
   })
 
+  it('leaves out a kept experience the user unticks, without touching the others', () => {
+    const choice = initialChoices(tailored)
+    choice.reinstate.experiences = [true]
+    choice.keepExperiences = [false]
+    const cv = composeCv(profile, tailored, choice, [['Ponçage soigné']])
+    expect(cv.experiences.map((e) => e.company)).toEqual(['Webagence'])
+  })
+
   it('refusing the tailored bullets restores the achievements of the right experience (via sourceIndex)', () => {
     const choice = initialChoices(tailored)
     choice.experiences = [false]
