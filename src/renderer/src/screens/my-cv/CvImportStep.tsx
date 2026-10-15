@@ -8,6 +8,7 @@ export function CvImportStep({
   onErrorAction,
   importing,
   showProgressStep,
+  offload,
   online,
   onFile,
   onChoose,
@@ -17,6 +18,8 @@ export function CvImportStep({
   importing: boolean
   /** The main process has reported the reading step: it can be named. */
   showProgressStep: boolean
+  /** Layers of the model on the graphics card, once it is loaded: shown when only part of it fits. */
+  offload?: { layers: number; total: number }
   /** An online service is chosen in the settings: do not promise that nothing is sent. */
   online: boolean
   onFile: (file: File) => void
@@ -30,7 +33,11 @@ export function CvImportStep({
         <Loading
           title={texts.myCv.import.reading}
           step={showProgressStep ? texts.myCv.import.readingStep : undefined}
-          note={texts.myCv.import.readingNote}
+          note={
+            offload && offload.layers < offload.total
+              ? `${texts.myCv.import.readingNote} ${texts.myCv.import.partialGpu(offload.layers, offload.total)}`
+              : texts.myCv.import.readingNote
+          }
         />
       ) : (
         <DropZone onFile={onFile} onChoose={onChoose} />

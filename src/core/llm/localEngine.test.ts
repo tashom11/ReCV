@@ -29,7 +29,13 @@ const native = vi.hoisted(() => {
       counts.grammars++
       return { parse: (text: string) => JSON.parse(text) }
     },
-    loadModel: async () => ({ createContext: async () => context(), dispose: async () => undefined }),
+    // 30 of 36 layers fit on the card: the rest runs on the processor.
+    loadModel: async () => ({
+      gpuLayers: 30,
+      fileInsights: { totalLayers: 36 },
+      createContext: async () => context(),
+      dispose: async () => undefined,
+    }),
   }
   class LlamaChatSession {
     async promptWithMeta() {
@@ -71,6 +77,13 @@ describe('LocalEngine', () => {
     expect(native.counts.contexts).toBe(1)
     // Each call starts from an empty conversation.
     expect(native.counts.clearedHistories).toBe(2)
+  })
+
+  it('reports how many layers of the model the graphics card holds, once loaded', async () => {
+    const engine = new LocalEngine('m.gguf')
+    expect(engine.gpuOffload()).toBeNull()
+    await engine.generateObject(request)
+    expect(engine.gpuOffload()).toEqual({ layers: 30, total: 36 })
   })
 
   it('runs simultaneous calls one after the other on the shared context', async () => {

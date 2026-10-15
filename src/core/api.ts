@@ -147,6 +147,9 @@ export interface TaskProgress {
   total?: number
   /** Where the local model runs: on the processor, computing is much slower. */
   compute?: 'gpu' | 'cpu'
+  /** Layers of the local model on the graphics card, out of its total (known once the model is loaded). */
+  gpuLayers?: number
+  totalLayers?: number
 }
 
 /** Request/response methods, implemented by the main process service. */

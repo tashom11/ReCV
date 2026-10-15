@@ -111,6 +111,11 @@ export function MyCvScreen({
         onErrorAction={onErrorAction}
         importing={busyWith === 'import'}
         showProgressStep={importProgress !== null}
+        offload={
+          importProgress?.gpuLayers !== undefined && importProgress.totalLayers !== undefined
+            ? { layers: importProgress.gpuLayers, total: importProgress.totalLayers }
+            : undefined
+        }
         online={online}
         onFile={(file) => void importCv(file)}
         onChoose={() => void importCv()}

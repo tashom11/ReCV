@@ -20,4 +20,11 @@ export interface LlmEngine {
   release?(): Promise<void>
   /** Where computing runs (local model only); `null` as long as the model is not loaded. */
   computeMode?(): 'gpu' | 'cpu' | null
+  /** Layers of the model held by the graphics card out of its total (local model only); `null` until it is loaded. */
+  gpuOffload?(): GpuOffload | null
+}
+
+export interface GpuOffload {
+  layers: number
+  total: number
 }

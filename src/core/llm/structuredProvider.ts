@@ -34,6 +34,10 @@ export class StructuredProvider implements LlmProvider {
     return this.engine.computeMode?.() ?? null
   }
 
+  gpuOffload(): { layers: number; total: number } | null {
+    return this.engine.gpuOffload?.() ?? null
+  }
+
   async release(): Promise<void> {
     await this.engine.release?.()
   }

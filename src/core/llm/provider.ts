@@ -31,6 +31,8 @@ export interface LlmProvider {
   generateSummary(profile: Profile): Promise<string>
   /** Where computing runs (local model only). */
   computeMode?(): 'gpu' | 'cpu' | null
+  /** Layers of the model on the graphics card out of its total (local model only). */
+  gpuOffload?(): { layers: number; total: number } | null
   /** Frees native resources (local model); absent for remote providers. */
   release?(): Promise<void>
 }
