@@ -1,6 +1,6 @@
 # Security policy
 
-Re:CV handles résumés, which hold personal data, and can store an API key. Security reports are taken seriously.
+Re:CV handles resumes, which hold personal data, and can store an API key. Security reports are taken seriously.
 
 ## Supported versions
 
@@ -18,7 +18,7 @@ Include what you can of:
 - the steps to reproduce, or a proof of concept;
 - the impact you expect (data read, code run, key leaked…).
 
-Never include a real résumé or a real API key in a report.
+Never include a real resume or a real API key in a report.
 
 Re:CV is maintained by volunteers. You should get a first answer within a week. Once a fix is released, the advisory
 is published, with credit to you if you wish.
@@ -28,9 +28,9 @@ is published, with credit to you if you wish.
 In scope, for example:
 
 - running code or reading files from the interface (IPC, the `app://` protocol, navigation, the preload bridge);
-- reading the résumé, the job postings or the API key from outside the app;
+- reading the resume, the job postings or the API key from outside the app;
 - reaching the local network through the job posting link reader;
-- a malicious résumé (PDF, DOCX) or job posting page that compromises the app.
+- a malicious resume (PDF, DOCX) or job posting page that compromises the app.
 
 Out of scope: what an online AI service does with the data the user chose to send it, and vulnerabilities in a
 dependency that Re:CV does not reach (report those upstream).

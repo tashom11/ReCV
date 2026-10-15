@@ -5,8 +5,8 @@
   Re:CV
 </h1>
 
-**A résumé tailored to each job posting, in minutes.**<br>
-Free and open source Windows app. Your résumé stays on your computer.
+**A resume tailored to each job posting, in minutes.**<br>
+Free and open source Windows app. Your resume stays on your computer.
 
 [![Latest release](https://img.shields.io/github/v/release/tashom11/ReCV?label=version&color=23624A)](https://github.com/tashom11/ReCV/releases/latest)
 [![MIT License](https://img.shields.io/badge/license-MIT-23624A)](LICENSE)
@@ -20,32 +20,32 @@ Free and open source Windows app. Your résumé stays on your computer.
 
 ---
 
-Re:CV reads your résumé, reads the job posting you are interested in, then brings forward what matters for that job. You review, adjust, and leave with a PDF or a Word file.
+Re:CV reads your resume, reads the job posting you are interested in, then brings forward what matters for that job. You review, adjust, and leave with a PDF or a Word file.
 
-> The interface and the produced résumés are in French for now: Re:CV is made for French-speaking job seekers. A French version of this page is available: [README.fr.md](README.fr.md).
+> The interface and the produced resumes are in French for now: Re:CV is made for French-speaking job seekers. A French version of this page is available: [README.fr.md](README.fr.md).
 
 ## Three steps
 
 | | |
 |---|---|
-| **① My résumé** | Drop your résumé (PDF or Word). Re:CV shows what it understood; you correct it if needed. |
+| **① My resume** | Drop your resume (PDF or Word). Re:CV shows what it understood; you correct it if needed. |
 | **② The posting** | Paste the link to the posting, or its text. Re:CV shows the job and what the employer is looking for. |
-| **③ My new résumé** | The tailored résumé is shown full size. You pick a layout, then download. |
+| **③ My new resume** | The tailored resume is shown full size. You pick a layout, then download. |
 
 <p align="center">
   <img src="docs/captures/annonce.png" alt="Step 2: the posting card, with the job and what the employer is looking for" width="49%">
-  <img src="docs/captures/creation.png" alt="Creation of the tailored résumé, step by step" width="49%">
+  <img src="docs/captures/creation.png" alt="Creation of the tailored resume, step by step" width="49%">
 </p>
 
 ## Nothing is invented
 
-Re:CV only selects, reorders and rephrases what is already in your résumé. Job titles, employers, dates, education and languages are copied verbatim.
+Re:CV only selects, reorders and rephrases what is already in your resume. Job titles, employers, dates, education and languages are copied verbatim.
 
-When the posting asks for a skill your résumé does not mention, it is offered as an **unchecked** box: it only enters the résumé if you check it.
+When the posting asks for a skill your resume does not mention, it is offered as an **unchecked** box: it only enters the resume if you check it.
 
 ## Where does your data go?
 
-| Engine chosen in Settings | Where does your résumé go? |
+| Engine chosen in Settings | Where does your resume go? |
 |---|---|
 | **On my computer** (default) | Nowhere. A model is downloaded once (1.2 to 5.3 GB depending on the level), then everything works offline. |
 | **Ollama** | It stays on your computer, or goes to the address you configure. |
@@ -88,7 +88,7 @@ npm run try -- fixtures/sample-cv.txt fixtures/sample-job-posting.txt   # full t
 
 | Folder | Role |
 |---|---|
-| `src/core` | Pure business logic: schemas, résumé and posting parsing, tailoring, export. |
+| `src/core` | Pure business logic: schemas, resume and posting parsing, tailoring, export. |
 | `src/main` | Main process: database, IPC, models, updates. |
 | `src/preload` | Typed bridge between the interface and the main process. |
 | `src/renderer` | React interface. Every displayed text lives in `src/renderer/src/i18n/fr.ts`. |

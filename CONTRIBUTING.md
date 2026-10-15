@@ -41,7 +41,7 @@ To try the whole pipeline on text files without Electron, see `npm run try` in t
 
 ### No personal data, ever
 
-Never commit real personal data: no real résumé (yours or anyone's), phone number, e-mail, address, employer, school
+Never commit real personal data: no real resume (yours or anyone's), phone number, e-mail, address, employer, school
 or personal website, not even in tests or fixtures. Use fictitious data (`claire@exemple.fr`, `06 12 34 56 78`,
 invented names and companies). `npm run check:personal-data` runs in the CI; enable it before every commit with:
 
@@ -57,17 +57,17 @@ per line.
 - **Code is in English**: identifiers, file names, comments, test names, commit messages.
 - **Displayed texts are in French** and address the user formally (« vous »). They all live in
   `src/renderer/src/i18n/fr.ts` and are read through `texts.…`: never write a visible text directly in a component.
-- **Prompts stay in French** (`src/core/llm/`, `src/core/tailoring/`): the produced résumés are in French, and small
+- **Prompts stay in French** (`src/core/llm/`, `src/core/tailoring/`): the produced resumes are in French, and small
   local models write better French when the prompt is in French. Test data is French too.
-- Labels written on the produced résumé live in `CV_LABELS` (`src/core/export/cvDocument.ts`).
+- Labels written on the produced resume live in `CV_LABELS` (`src/core/export/cvDocument.ts`).
 
 ### The model never invents
 
-Re:CV only selects, reorders and rephrases what is already in the user's résumé. Any change to the prompts or to the
+Re:CV only selects, reorders and rephrases what is already in the user's resume. Any change to the prompts or to the
 tailoring pipeline must keep that promise:
 
 - every model output goes through a Zod schema;
-- a skill the résumé does not show is only ever offered as an unchecked box;
+- a skill the resume does not show is only ever offered as an unchecked box;
 - tests use `MockProvider` / `MockEngine`: **no real model call in Vitest**.
 
 ### Accessibility
