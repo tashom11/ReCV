@@ -9,6 +9,7 @@ follow [Semantic Versioning](https://semver.org/).
 - A custom model file is chosen with the file picker only; the app refuses any other path.
 
 ### Added
+- Third-party notices (THIRD_PARTY_NOTICES.md) shipped with the app, next to the Re:CV license.
 - Uninstalling asks whether to also delete your data (CV, settings, downloaded models); "No" by default.
 
 ### Changed

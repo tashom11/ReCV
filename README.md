@@ -98,7 +98,8 @@ Code, names and comments are in English; the interface texts and the prompts are
 ## Release
 
 Add the version's section to [CHANGELOG.md](CHANGELOG.md) first: it becomes the release notes, and the release fails
-without it.
+without it. After a dependency change, also run `node scripts/third-party-notices.mjs` and commit
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ```bash
 npm version 0.3.0 --no-git-tag-version

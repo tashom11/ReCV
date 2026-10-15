@@ -14,6 +14,11 @@ files:
   # The installer targets x64 only: the ARM binaries of the local engine are never loaded.
   - "!node_modules/@node-llama-cpp/win-arm64/**"
 
+# Licenses shipped next to the app (resources folder).
+extraResources:
+  - LICENSE
+  - THIRD_PARTY_NOTICES.md
+
 # Native modules and binaries: they must stay outside the asar archive to be loaded.
 asarUnpack:
   - node_modules/better-sqlite3/**
