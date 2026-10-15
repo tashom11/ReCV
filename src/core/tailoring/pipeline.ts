@@ -85,7 +85,9 @@ export function boundSummary(summary: string): string {
 // A skill is a short term: sentences describing tasks (often coming from a poorly structured CV) do not belong in the
 // Skills section and are never treated as skills.
 export function prepareProfile(profile: Profile): Profile {
-  return { ...profile, skills: splitSkills(profile.skills).filter(isShortSkill) }
+  // A value without any letter or digit (a « { » kept from an old import) is not a skill.
+  const hasContent = (skill: string) => /[p{L}p{N}]/u.test(skill)
+  return { ...profile, skills: splitSkills(profile.skills).filter((c) => isShortSkill(c) && hasContent(c)) }
 }
 
 // Cancellation: each model call checks the signal before starting and passes it to the engine.

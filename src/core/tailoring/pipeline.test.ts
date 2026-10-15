@@ -4,7 +4,7 @@ import { cannedProfile } from '../llm/mockProvider'
 import { NO_FABRICATION_RULES } from '../llm/prompts'
 import { type JobPosting, type Profile, tailoredCvSchema } from '../schemas'
 import { restrictAnalysis } from './jobAnalysis'
-import { prioritizeSkills, tailorCv } from './pipeline'
+import { prepareProfile, prioritizeSkills, tailorCv } from './pipeline'
 import { keptIndexes, normalizeLevels } from './relevance'
 import { isBulletFaithful } from './rewriting'
 
@@ -219,5 +219,12 @@ describe('tailorCv: cancellation', () => {
       tailorCv(engine, cannedProfile, { jobTitle: 'Dev', rawText: 'x' }, { signal: cancellation.signal }),
     ).rejects.toThrow()
     expect(engine.requests).toHaveLength(0)
+  })
+})
+
+describe('prepareProfile', () => {
+  it('drops skills made only of punctuation, left by an old import', () => {
+    const profile = { links: [], experiences: [], skills: ['HTML', '{', '],'], education: [], languages: [] }
+    expect(prepareProfile(profile).skills).toEqual(['HTML'])
   })
 })

@@ -35,7 +35,8 @@ function isDegree(position: string | undefined, education: Profile['education'])
   return key !== '' && education.some((f) => compact(f.degree ?? '') === key)
 }
 
-const empty = (value: string | undefined) => !value || value.trim() === ''
+// Empty, or only punctuation: a stray « { » or « ], » from a broken JSON answer is not a value.
+const empty = (value: string | undefined) => !value || !/[\p{L}\p{N}]/u.test(value)
 
 /**
  * Removes from the extracted profile what is not evidenced in `cvText`:
@@ -52,7 +53,7 @@ export function sanitizeProfile(profile: Profile, cvText: string): Profile {
   const seenKeys = new Set<string>()
   const skills = splitSkills(profile.skills.map((c) => c.trim()))
     // A skill is a short term: sentences describing tasks are not skills.
-    .filter((c) => c !== '' && isShortSkill(c) && isInSource(c, source))
+    .filter((c) => !empty(c) && isShortSkill(c) && isInSource(c, source))
     .filter((c) => {
       const key = simplify(c)
       if (seenKeys.has(key)) return false
