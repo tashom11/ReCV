@@ -86,7 +86,7 @@ export function boundSummary(summary: string): string {
 // Skills section and are never treated as skills.
 export function prepareProfile(profile: Profile): Profile {
   // A value without any letter or digit (a « { » kept from an old import) is not a skill.
-  const hasContent = (skill: string) => /[p{L}p{N}]/u.test(skill)
+  const hasContent = (skill: string) => /[\p{L}\p{N}]/u.test(skill)
   return { ...profile, skills: splitSkills(profile.skills).filter((c) => isShortSkill(c) && hasContent(c)) }
 }
 
