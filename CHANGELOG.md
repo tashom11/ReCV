@@ -13,6 +13,7 @@ follow [Semantic Versioning](https://semver.org/).
 - Uninstalling asks whether to also delete your data (CV, settings, downloaded models); "No" by default.
 
 ### Changed
+- More breathing room between the content and the window edges on every screen, growing with the window width.
 - The installer no longer ships NVIDIA CUDA binaries (about 520 MB, over half of its size): the engine uses the graphics
   card through Vulkan, NVIDIA cards included. It also drops llama.cpp sources, whose very long paths could make the
   installation fail on Windows without long path support.

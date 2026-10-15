@@ -42,7 +42,7 @@ export function GeneratingScreen({
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-12 lg:grid-cols-[360px_1fr]">
+    <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 sm:px-10 lg:px-16 py-12 sm:py-16 lg:grid-cols-[360px_1fr]">
       <div className="hidden lg:block">
         <CvIllustration animated />
       </div>

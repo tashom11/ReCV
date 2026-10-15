@@ -19,7 +19,9 @@ export function ActionBar({
         tone === 'dark' ? 'sur-sombre bg-encre text-white' : 'border-t border-trait bg-surface text-encre-douce'
       }`}
     >
-      <div className={`mx-auto flex min-h-20 flex-wrap items-center justify-between gap-4 px-6 py-3 ${maxWidth}`}>
+      <div
+        className={`mx-auto flex min-h-20 flex-wrap items-center justify-between gap-4 px-6 sm:px-10 lg:px-16 py-3 ${maxWidth}`}
+      >
         <div className="text-corps">{left}</div>
         <div className="flex flex-wrap items-center gap-3">{children}</div>
       </div>

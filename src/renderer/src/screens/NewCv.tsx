@@ -68,7 +68,7 @@ export function NewCvScreen({
 
   return (
     <>
-      <div className="mx-auto grid w-full max-w-7xl flex-1 items-start gap-8 px-6 py-8 lg:grid-cols-[minmax(320px,380px)_1fr]">
+      <div className="mx-auto grid w-full max-w-7xl flex-1 items-start gap-8 px-6 sm:px-10 lg:px-16 py-8 sm:py-12 lg:grid-cols-[minmax(320px,380px)_1fr]">
         <div className="space-y-4">
           <header className="space-y-2">
             <p className="flex items-center gap-2 font-bold text-marque">

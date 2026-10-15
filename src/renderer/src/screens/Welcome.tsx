@@ -19,7 +19,7 @@ export function WelcomeScreen({
     { icon: 'download', text: texts.welcome.promises.formats },
   ]
   return (
-    <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 py-12 lg:grid-cols-[1fr_420px]">
+    <div className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-12 px-6 sm:px-10 lg:px-16 py-12 sm:py-16 lg:grid-cols-[1fr_420px]">
       <div className="space-y-8">
         <p className="inline-flex rounded-full border border-accent bg-accent-pale px-4 py-1.5 font-bold text-encre">
           {online ? texts.welcome.badge : texts.welcome.badgeLocal}

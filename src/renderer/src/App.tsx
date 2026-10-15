@@ -136,7 +136,7 @@ export default function App() {
 
       <main className="ecrans flex flex-1 flex-col">
         {engineMissing && (
-          <div className="mx-auto w-full max-w-4xl px-6 pt-8">
+          <div className="mx-auto w-full max-w-4xl px-6 sm:px-10 lg:px-16 pt-8">
             <Alert
               type="warning"
               title={texts.emptyStates.notReady.title}
@@ -186,7 +186,7 @@ export default function App() {
               onSetup={goToSetup}
             />
           ) : (
-            <div className="mx-auto w-full max-w-3xl px-6 py-12">
+            <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
               <EmptyState
                 title={texts.emptyStates.noCv.title}
                 text={texts.emptyStates.noCv.text}
@@ -219,7 +219,7 @@ export default function App() {
           </div>
         )}
         {view === 'result' && !result && (
-          <div className="mx-auto w-full max-w-3xl px-6 py-12">
+          <div className="mx-auto w-full max-w-3xl px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
             <EmptyState
               title={texts.emptyStates.noTailoredCv.title}
               text={texts.emptyStates.noTailoredCv.text}

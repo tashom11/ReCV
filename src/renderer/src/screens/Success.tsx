@@ -25,7 +25,7 @@ export function SuccessScreen({
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8 px-6 py-14 text-center">
+    <div className="mx-auto w-full max-w-3xl space-y-8 px-6 sm:px-10 lg:px-16 py-14 sm:py-20 text-center">
       <span
         className="coche-succes mx-auto flex size-[120px] items-center justify-center rounded-full bg-accent text-encre ring-[14px] ring-accent-pale"
         aria-hidden="true"
