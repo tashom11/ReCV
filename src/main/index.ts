@@ -3,7 +3,7 @@ import { release } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { CHANNELS } from '@core/channels'
-import { errorEntry } from '@core/diagnostics'
+import { errorEntry, extractionEntry } from '@core/diagnostics'
 import { app, BrowserWindow, clipboard, dialog, ipcMain, net, protocol, safeStorage, session, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { APP_ENTRY_URL, APP_SCHEME, isAppUrl, resolveAppFile } from './appProtocol'
@@ -166,6 +166,7 @@ app.whenReady().then(async () => {
     chooseDestination,
     generatePdf,
     pickModelFile,
+    onExtraction: (counts) => log.append(extractionEntry(counts)),
     diagnostics: {
       version: app.getVersion(),
       os: `Windows ${release()}`,

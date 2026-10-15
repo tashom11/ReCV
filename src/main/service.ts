@@ -11,7 +11,7 @@ import type {
   SettingsState,
   TaskProgress,
 } from '@core/api'
-import { buildReport } from '@core/diagnostics'
+import { buildReport, type ExtractionCounts } from '@core/diagnostics'
 import { CodedError } from '@core/errors'
 import {
   buildCvDocument,
@@ -68,6 +68,8 @@ export interface ServiceDeps {
   createProvider?: (settings: Settings, apiKey: string | null) => Promise<LlmProvider>
   /** Native picker for a local model file (.gguf): chosen path, or `null` if cancelled. */
   pickModelFile?: () => Promise<string | null>
+  /** Receives the counts of every CV import (numbers only), for the diagnostic log. */
+  onExtraction?: (counts: ExtractionCounts) => void
   /** Diagnostic report: environment, recent lines of the local log, and the clipboard. */
   diagnostics?: {
     version: string
@@ -170,7 +172,7 @@ export function createService(deps: ServiceDeps): ApiService & { release(): Prom
     }, 1000)
     let extracted: Profile
     try {
-      extracted = await llm.extractProfile(text)
+      extracted = await llm.extractProfile(text, deps.onExtraction)
       if (isEmptyExtraction(extracted, text)) {
         throw new CodedError('extraction-empty', 'Le modèle n’a extrait aucune expérience, compétence ni formation.')
       }

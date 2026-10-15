@@ -30,3 +30,25 @@ describe('extraction', () => {
     await expect(extractJobPosting(engine, 'x')).rejects.toThrow()
   })
 })
+
+describe('extractProfile counts', () => {
+  it('reports the text length and the item counts before and after the filter, without any content', async () => {
+    const cvText = `Jeanne Martin\n${'x'.repeat(300)}`
+    const engine = new MockEngine({
+      extractProfile: {
+        fullName: 'Jeanne Martin',
+        experiences: [{ position: 'Poste inventé', company: 'Société fantôme', achievements: [] }],
+        skills: ['Rigueur'],
+      },
+    })
+    let seen: unknown
+    await extractProfile(engine, cvText, (counts) => {
+      seen = counts
+    })
+    expect(seen).toEqual({
+      textLength: cvText.length,
+      raw: { experiences: 1, skills: 1, education: 0, languages: 0 },
+      kept: { experiences: 0, skills: 0, education: 0, languages: 0 },
+    })
+  })
+})

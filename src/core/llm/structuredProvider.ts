@@ -1,3 +1,4 @@
+import type { ExtractionCounts } from '../diagnostics'
 import type { JobPosting, Profile, TailoredCv } from '../schemas'
 import { analyzeJobPosting, type JobAnalysis } from '../tailoring/jobAnalysis'
 import { tailorCv } from '../tailoring/pipeline'
@@ -10,8 +11,8 @@ import type { LlmProvider, TailoringOptions } from './provider'
 export class StructuredProvider implements LlmProvider {
   constructor(private readonly engine: LlmEngine) {}
 
-  extractProfile(cvText: string): Promise<Profile> {
-    return extractProfile(this.engine, cvText)
+  extractProfile(cvText: string, onCounts?: (counts: ExtractionCounts) => void): Promise<Profile> {
+    return extractProfile(this.engine, cvText, onCounts)
   }
 
   extractJobPosting(jobPostingText: string): Promise<JobPosting> {
