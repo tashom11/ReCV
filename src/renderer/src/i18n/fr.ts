@@ -543,7 +543,8 @@ export const fr = {
       ollama: 'Ollama (installé séparément)',
       ollamaDescription: 'Utilise un modèle servi par Ollama sur cet ordinateur. Les données restent chez vous.',
       online: 'Service en ligne avec ma clé personnelle',
-      onlineDescription: 'OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service.',
+      onlineDescription:
+        'OpenAI, Mistral, OpenRouter… Rapide, mais payant selon le service. Votre CV et les annonces sont envoyés à ce service : ils ne restent pas sur votre ordinateur.',
       rewrite: 'Réécrire les phrases de mes expériences',
       rewriteHint:
         'Désactivé : Re:CV choisit vos phrases les plus proches de l’annonce, sans les modifier. Activé : il les reformule, ce qui ajoute plusieurs minutes.',

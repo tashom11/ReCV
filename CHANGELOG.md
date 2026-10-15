@@ -12,6 +12,7 @@ follow [Semantic Versioning](https://semver.org/).
   card, which speeds up the computation on cards with little memory.
 
 ### Changed
+- Settings: the online service option states that your CV and job postings are sent to that service.
 - When only part of the built-in model fits on the graphics card, the CV import and the tailoring screens say how many
   layers it holds (e.g. 24 out of 36) and that the rest runs on the processor, which explains a slow computation.
 
