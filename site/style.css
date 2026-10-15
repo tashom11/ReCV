@@ -176,7 +176,10 @@ p {
 .button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.6rem;
+  line-height: 1.25;
+  text-align: center;
   padding: 0.7rem 1.3rem;
   border-radius: 12px;
   background: var(--marque);
@@ -640,6 +643,77 @@ p {
 
 /* Animations légères : seulement transform et opacité (rendues par la carte graphique), jamais de mise en page.
    Désactivées pour les personnes qui ont demandé moins de mouvement. */
+@media (max-width: 480px) {
+  .wrap {
+    width: min(1120px, 100% - 2rem);
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+  }
+
+  .actions .note {
+    text-align: center;
+  }
+
+  .button-large {
+    width: 100%;
+    padding: 0.9rem 1rem;
+    font-size: 1.05rem;
+  }
+
+  .topbar-inner {
+    gap: 0.6rem;
+  }
+
+  .brand {
+    font-size: 1.15rem;
+  }
+
+  .brand img {
+    width: 34px;
+    height: 34px;
+  }
+
+  .button-small {
+    padding: 0.45rem 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  .promises li {
+    align-items: flex-start;
+  }
+
+  /* The back sheet sticks out on the left: leave it room inside the page margins. */
+  .illustration {
+    width: 80%;
+    margin-inline: auto 0;
+  }
+}
+
+@media (max-width: 360px) {
+  h1 {
+    font-size: 1.9rem;
+  }
+
+  .button-large {
+    font-size: 1rem;
+    gap: 0.45rem;
+  }
+
+  .button-large svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .badge {
+    border-radius: 16px;
+    font-size: 0.82rem;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   @keyframes rise {
     from {
