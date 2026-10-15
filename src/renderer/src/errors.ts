@@ -105,6 +105,15 @@ export function describeError(context: ErrorContext, error: unknown): ErrorDescr
   }
 
   if (context === 'cv') {
+    if (code === 'extraction-empty') {
+      return {
+        ...base,
+        type: 'warning',
+        icon: 'warning',
+        ...texts.errors.cv.emptyExtraction,
+        actions: ['retry'],
+      }
+    }
     if (code === 'unreadable-file') {
       return {
         ...base,

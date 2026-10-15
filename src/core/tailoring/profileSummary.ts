@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { CodedError } from '../errors'
 import type { LlmEngine } from '../llm/engine'
 import { NO_FABRICATION_RULES, wrapInTag } from '../llm/prompts'
 import type { Profile } from '../schemas'
@@ -69,7 +70,7 @@ export async function generateProfileSummary(engine: LlmEngine, profile: Profile
   const selected = [...new Set(response.transferableSkills.map((c) => c.trim()).filter(Boolean))].filter((c) =>
     containsWord(normalizedSource, normalize(c)),
   )
-  if (selected.length === 0) throw new Error(NO_SKILL_MESSAGE)
+  if (selected.length === 0) throw new CodedError('no-quality', NO_SKILL_MESSAGE)
 
   const normalizedSelected = new Set(selected.map(normalize))
   const forbidden = [

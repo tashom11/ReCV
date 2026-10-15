@@ -54,8 +54,9 @@ export const LOCAL_MODELS: readonly LocalModel[] = [
     url: repoUrl('9B', 'Qwen3.5-9B-Q4_K_M.gguf'),
     sizeBytes: 5_680_522_464,
     sha256: '03b74727a860a56338e042c4420bb3f04b2fec5734175f4cb9fa853daf52b7e8',
+    // 8 GB of VRAM: the smaller models return empty lists when reading a CV, so this one is the first that does the job.
     minRamGb: 64,
-    minVramGb: 10,
+    minVramGb: 8,
   },
 ]
 

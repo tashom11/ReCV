@@ -14,9 +14,10 @@ describe('proposerModele', () => {
   it('picks the largest model supported by the RAM or the VRAM', () => {
     expect(recommendModel({ ramGb: 4, vramGb: 0 }).id).toBe('qwen3.5-2b')
     expect(recommendModel({ ramGb: 8, vramGb: 0 }).id).toBe('qwen3.5-4b')
-    // The 9B is only recommended with a real graphics card (≥ 10 GB): on CPU it is too slow.
+    // The 9B is only recommended with a real graphics card (≥ 8 GB): on CPU it is too slow.
     expect(recommendModel({ ramGb: 32, vramGb: 0 }).id).toBe('qwen3.5-4b')
-    expect(recommendModel({ ramGb: 32, vramGb: 8 }).id).toBe('qwen3.5-4b')
+    expect(recommendModel({ ramGb: 32, vramGb: 6 }).id).toBe('qwen3.5-4b')
+    expect(recommendModel({ ramGb: 32, vramGb: 8 }).id).toBe('qwen3.5-9b')
     expect(recommendModel({ ramGb: 32, vramGb: 12 }).id).toBe('qwen3.5-9b')
   })
 
