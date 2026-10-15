@@ -48,7 +48,7 @@ describe.each(TEMPLATE_IDS)('modèle %s', (id) => {
       expect(html).toContain('<h3>Compétences clés</h3><ul><li>LinkedIn Recruiter</li>')
       expect(html.indexOf('<h2>Expérience professionnelle</h2>')).toBeLessThan(html.indexOf('<h2>Compétences</h2>'))
     } else {
-      expect(html).toContain('Compétences clés : LinkedIn Recruiter')
+      expect(html).toContain('<h3>Compétences clés</h3><ul class="competences"><li>LinkedIn Recruiter</li>')
     }
     expect(html).toContain('<h2>Compétences</h2>')
     expect(html).toContain(`data-template="${id}"`)

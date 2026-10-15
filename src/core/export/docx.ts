@@ -11,7 +11,7 @@ import {
   TextRun,
   VerticalPositionRelativeFrom,
 } from 'docx'
-import { type Block, type CvDocument, type CvLanguage, labelledLine } from './cvDocument'
+import type { Block, CvDocument } from './cvDocument'
 import { findTemplate, type TemplateId } from './templates'
 
 // Sizes in half-points (docx).
@@ -37,12 +37,20 @@ function text(style: Style, content: string, options: { bold?: boolean; size?: n
   })
 }
 
-function blockParagraphs(style: Style, block: Block, language: CvLanguage): Paragraph[] {
+function blockParagraphs(style: Style, block: Block): Paragraph[] {
   switch (block.type) {
     case 'paragraph':
       return [new Paragraph({ children: [text(style, block.text)] })]
     case 'labelled-list':
-      return [new Paragraph({ children: [text(style, labelledLine(block, language))] })]
+      // A label then a bulleted list: easier to scan for a recruiter than a long line of comma-separated terms.
+      return [
+        new Paragraph({
+          keepNext: true,
+          spacing: { before: 100 },
+          children: [text(style, block.label, { bold: true })],
+        }),
+        ...block.elements.map((e) => new Paragraph({ children: [text(style, e)], bullet: { level: 0 } })),
+      ]
     case 'list':
       return block.elements.map((e) => new Paragraph({ children: [text(style, e)], bullet: { level: 0 } }))
     case 'entry': {
@@ -151,7 +159,7 @@ export async function generateDocxCv(model: CvDocument, templateId?: TemplateId)
         }),
       ],
     }),
-    ...section.blocks.flatMap((block) => blockParagraphs(style, block, model.language)),
+    ...section.blocks.flatMap((block) => blockParagraphs(style, block)),
   ])
 
   const document = new Document({

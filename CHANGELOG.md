@@ -11,6 +11,8 @@ follow [Semantic Versioning](https://semver.org/).
   "Chronologie" (soft greys, timeline for experiences and education).
 
 ### Changed
+- Skills are listed (label, then bullets in three columns) instead of one long comma-separated line, in the PDF and in
+  the Word file: easier to scan for a recruiter.
 - Application icon: a simplified drawing ("CV" large, lime accent, light rim) for the small sizes (16 to 32 px) used by
   the title bar and the taskbar, which were unreadable; larger sizes keep the full logo.
 - Installer: the welcome and finish pages show the Re:CV illustration instead of the default blue image.
