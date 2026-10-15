@@ -79,6 +79,9 @@ The interface targets WCAG 2.2 AA. For any interface change, check at least:
 - after a screen change or a removal, the focus lands somewhere sensible;
 - no horizontal scrolling at 320 px wide (400 % zoom).
 
+Interface tests render components with Testing Library in `happy-dom` (`// @vitest-environment happy-dom` at the top of
+a `.test.tsx` file) and check them with axe: `expectNoA11yViolations` in `src/renderer/src/test/a11y.ts`.
+
 ### Dependencies
 
 Do not add a dependency without discussing it in an issue first: Re:CV ships as a desktop installer and every package

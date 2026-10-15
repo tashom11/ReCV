@@ -90,7 +90,7 @@ Reste dans ces étapes :
 | # | Question | Recommandation | Bloque |
 |---|---|---|---|
 | D1 | Valider le glossaire (`GLOSSAIRE.md`) | relire surtout §1 et §2 (champs persistés) | étapes 5 à 7 |
-| D2 | Dépendances de test : `@testing-library/react`, `happy-dom`, `vitest-axe` (dev uniquement) | oui | étape 7 (tests de composants) |
+| D2 | Dépendances de test : `@testing-library/react`, `happy-dom`, `vitest-axe` (dev uniquement) | oui : @testing-library/react, @testing-library/dom, happy-dom, axe-core | tests de composants (fait) |
 | D3 | Données conservées : historique « Mes CV » ou purge [SEC-05, AMEL-04] | purge maintenant (dernier profil, 20 dernières créations), historique plus tard | étape 1.4 |
 | D4 | Langue des prompts [I18N-02] | français, sortis dans `prompts/fr.ts` | étape 5 |
 | D5 | Binaires CUDA dans l'installeur [PERF-07] | gardés (396 Mo) | — |
