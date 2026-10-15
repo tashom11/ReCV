@@ -14,7 +14,7 @@ Free and open source Windows app. Your résumé stays on your computer.
 
 [**Download for Windows**](https://github.com/tashom11/ReCV/releases/latest) · 🇫🇷 [Français](README.fr.md)
 
-<img src="docs/captures/accueil.png" alt="Re:CV welcome screen: “Un CV adapté à chaque annonce, en quelques minutes.”" width="820">
+<img src="docs/captures/accueil.png" alt="Re:CV welcome screen: the promise, a start button and what stays on your computer" width="820">
 
 </div>
 
@@ -22,7 +22,7 @@ Free and open source Windows app. Your résumé stays on your computer.
 
 Re:CV reads your résumé, reads the job posting you are interested in, then brings forward what matters for that job. You review, adjust, and leave with a PDF or a Word file.
 
-> The interface and the produced résumés are in French for now: Re:CV is made for French-speaking job seekers.
+> The interface and the produced résumés are in French for now: Re:CV is made for French-speaking job seekers. A French version of this page is available: [README.fr.md](README.fr.md).
 
 ## Three steps
 
@@ -63,11 +63,11 @@ Besides the chosen engine, Re:CV only goes online to download the model, read a 
 
 ## Updates
 
-Re:CV checks for new versions at startup, then every six hours. An update downloads in the background and installs when the app closes. In Settings, the “Mises à jour” card shows the installed version and lets you check on demand.
+Re:CV checks for new versions at startup, then every six hours. An update downloads in the background and installs when the app closes. In Settings, the updates card shows the installed version and lets you check on demand. A red badge on the Settings button tells you when an update is ready to install.
 
 ## Bugs and ideas
 
-Open an [issue](https://github.com/tashom11/ReCV/issues/new/choose) and paste the diagnostic report into it (Settings → “Signaler un problème”): there is a form to report a problem and another to suggest an idea. English and French are both welcome. For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead.
+Open an [issue](https://github.com/tashom11/ReCV/issues/new/choose) and paste the diagnostic report into it (Settings → report a problem → copy the report): there is a form to report a problem and another to suggest an idea. English and French are both welcome. For a security vulnerability, follow [SECURITY.md](SECURITY.md) instead.
 
 ## Develop
 

@@ -13,6 +13,11 @@ files:
   - package.json
   # The installer targets x64 only: the ARM binaries of the local engine are never loaded.
   - "!node_modules/@node-llama-cpp/win-arm64/**"
+  # No CUDA binaries (~520 MB): the engine uses the graphics card through Vulkan, NVIDIA cards included.
+  - "!node_modules/@node-llama-cpp/win-x64-cuda/**"
+  - "!node_modules/@node-llama-cpp/win-x64-cuda-ext/**"
+  # llama.cpp sources (and their long paths, beyond Windows' 260 characters): only the prebuilt binaries are used.
+  - "!node_modules/node-llama-cpp/llama/llama.cpp/**"
 
 # Licenses shipped next to the app (resources folder).
 extraResources:

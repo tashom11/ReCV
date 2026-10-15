@@ -6,10 +6,16 @@ import { join } from 'node:path'
 
 // Production dependency tree, as installed (what electron-builder packs into the app).
 const tree = JSON.parse(execSync('npm ls --omit=dev --all --json', { encoding: 'utf8', maxBuffer: 64e6 }))
+// Left out of the installer by electron-builder.yml: not shipped, so not listed.
+const NOT_SHIPPED = new Set([
+  '@node-llama-cpp/win-arm64',
+  '@node-llama-cpp/win-x64-cuda',
+  '@node-llama-cpp/win-x64-cuda-ext',
+])
 const packages = new Map()
 const visit = (deps) => {
   for (const [name, info] of Object.entries(deps ?? {})) {
-    if (!info.version || info.missing) continue
+    if (!info.version || info.missing || NOT_SHIPPED.has(name)) continue
     const key = `${name}@${info.version}`
     if (!packages.has(key)) {
       let license = 'see package'
@@ -51,13 +57,6 @@ dependencies. Their notices ship with the application in \`LICENSE.electron.txt\
 
 The built-in AI engine is [llama.cpp](https://github.com/ggml-org/llama.cpp) (MIT License, Copyright (c) 2023-2024 The
 ggml authors), packaged by [node-llama-cpp](https://github.com/withcatai/node-llama-cpp) (MIT License).
-
-## NVIDIA CUDA
-
-The CUDA build of the engine (\`@node-llama-cpp/win-x64-cuda\` and \`@node-llama-cpp/win-x64-cuda-ext\`) contains NVIDIA
-CUDA runtime and cuBLAS components, distributed under the
-[NVIDIA CUDA Toolkit End User License Agreement](https://docs.nvidia.com/cuda/eula/index.html). They are only used by
-Re:CV's engine; reverse engineering, decompiling or disassembling them is not permitted, except as allowed by law.
 
 ## AI models
 
