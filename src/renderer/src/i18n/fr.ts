@@ -262,8 +262,8 @@ export const fr = {
     backToCv: 'Revenir à mon CV',
     loading: {
       openingPage: 'Nous ouvrons la page de l’annonce…',
-      reading: 'Nous lisons l’annonce…',
-      analysing: 'Nous repérons le poste et ce que l’employeur recherche',
+      reading: 'L’IA analyse l’annonce…',
+      analysing: 'Elle repère le poste et ce que l’employeur recherche',
       note: 'Cela prend généralement moins d’une minute.',
     },
     input: {
@@ -396,9 +396,9 @@ export const fr = {
     import: {
       title: 'Commençons par votre CV',
       subtitle: 'Nous allons le lire pour comprendre votre parcours. Vous pourrez tout vérifier juste après.',
-      reading: 'Nous lisons votre CV…',
-      readingNew: 'Nous lisons votre nouveau CV…',
-      readingStep: 'Nous repérons vos expériences, vos compétences et vos formations',
+      reading: 'L’IA analyse votre CV…',
+      readingNew: 'L’IA analyse votre nouveau CV…',
+      readingStep: 'Elle repère vos expériences, vos compétences et vos formations',
       readingNote: 'Cela prend une à deux minutes. Vous pouvez réduire la fenêtre en attendant.',
       partialGpu: (layers: number, total: number) =>
         `Seule une partie du modèle tient sur votre carte graphique (${layers} couches sur ${total}) : le reste est calculé par le processeur, c’est plus lent. Fermer les autres applications qui utilisent la carte graphique aide.`,
