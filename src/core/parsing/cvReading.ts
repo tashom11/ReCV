@@ -1,7 +1,7 @@
-import type { Language, Profile } from '../schemas'
+import type { Education, Language, Profile } from '../schemas'
 import { isShortSkill } from '../tailoring/skills'
 import { normalize } from '../tailoring/text'
-import { isSectionHeading, type SectionLines, splitSections } from './cvSections'
+import { detectCvSections, isSectionHeading, type SectionLines, splitSections } from './cvSections'
 
 // What can be read in the CV without a model: skills, languages and the bullets of the experiences. A small model
 // reads these badly (one string for the whole skills list, an empty or partial list of languages, bullets merged into
@@ -274,7 +274,37 @@ export function completeProfile(profile: Profile, cvText: string): Profile {
       phone: profile.phone ?? contact.phone,
       skills,
       languages,
+      // Without a training heading the model often finds nothing: the lines naming a degree and a school are read.
+      education:
+        profile.education.length === 0 && !detectCvSections(cvText).education
+          ? readEducation(cvText)
+          : profile.education,
     },
     cvText,
   )
+}
+
+// A line starting with a degree (« bac pro commerce, lycée Omicron, Lille, 2019 », « 2015 – BTS Comptabilité … »).
+const DEGREE =
+  /^(?:(?:19|20)\d{2}\s*[-–—:]?\s*)?(?:bac(?:calaur[eé]at)?(?:\s+(?:pro|g[eé]n[eé]ral|techno\w*))?|bts|dut|but|licence|master|cap|bep|doctorat|dipl[oô]me|ing[eé]nieur|mba)\b/iu
+const SCHOOL =
+  /\b(?:lyc[eé]e|universit[eé]|[eé]cole|iut|institut|facult[eé]|cfa|greta|afpa|campus|centre de formation)\b/iu
+const YEARS = /^(?:19|20)\d{2}(?:\s*[-–—]\s*(?:19|20)\d{2})?$/
+
+/**
+ * Education of a CV without a training heading, from the lines that start with a degree and name a school. Both are
+ * required: a sentence of an experience quoting « licence » or « master » is not an education.
+ */
+export function readEducation(cvText: string): Education[] {
+  const found: Education[] = []
+  for (const line of cvText.split('\n')) {
+    const text = line.trim()
+    if (!DEGREE.test(text) || !SCHOOL.test(text)) continue
+    const parts = splitOutsideParentheses(text, /[,|]/).flatMap((part) => part.split(/\s[–—-]\s/))
+    const degree = parts.find((part) => DEGREE.test(part))?.replace(/^(?:19|20)\d{2}\s*[-–—:]?\s*/, '')
+    const school = parts.find((part) => SCHOOL.test(part) && part !== degree)
+    const dateRange = parts.find((part) => YEARS.test(part))
+    if (degree && school) found.push({ degree, school, ...(dateRange ? { dateRange } : {}) })
+  }
+  return found
 }

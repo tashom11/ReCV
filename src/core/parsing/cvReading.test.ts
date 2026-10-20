@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { type Profile, profileSchema } from '../schemas'
-import { completeProfile, readContact, readLanguages, readSkills, recoverBullets } from './cvReading'
+import { completeProfile, readContact, readEducation, readLanguages, readSkills, recoverBullets } from './cvReading'
 
 const fixture = (name: string) => readFileSync(`fixtures/benchmark/${name}.txt`, 'utf8')
 
@@ -196,5 +196,30 @@ describe('completeProfile', () => {
     expect(completed.languages.map((l) => l.name)).toEqual(['Anglais', 'Français'])
     // What the model gave keeps its form.
     expect(completed.languages[0]).toEqual({ name: 'Anglais' })
+  })
+})
+
+describe('readEducation', () => {
+  it('reads a degree and its school on one line, without any heading', () => {
+    expect(readEducation(fixture('05-minimal'))).toEqual([
+      { degree: 'bac pro commerce', school: 'lycée Omicron', dateRange: '2019' },
+    ])
+    expect(readEducation('2015 – BTS Comptabilité et gestion, Lycée Lambda, Bordeaux')).toEqual([
+      { degree: 'BTS Comptabilité et gestion', school: 'Lycée Lambda', dateRange: '2015' },
+    ])
+  })
+
+  it('needs both a degree at the start of the line and a school', () => {
+    expect(readEducation('Master en gestion de projet, 5 ans de pratique')).toEqual([])
+    expect(readEducation('Préparation de la licence logicielle à l’université de Lille')).toEqual([])
+  })
+
+  it('is only used by completeProfile for a CV without a training heading and an education the model missed', () => {
+    const bare = profileSchema.parse({})
+    expect(completeProfile(bare, fixture('05-minimal')).education).toHaveLength(1)
+    // With a heading, the model is trusted: the reading is not used.
+    expect(completeProfile(bare, fixture('01-classic')).education).toEqual([])
+    const known = profileSchema.parse({ education: [{ degree: 'BTS', school: 'Lycée' }] })
+    expect(completeProfile(known, fixture('05-minimal')).education).toEqual(known.education)
   })
 })
