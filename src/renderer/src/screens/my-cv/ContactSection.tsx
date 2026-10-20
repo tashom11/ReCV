@@ -1,6 +1,7 @@
+import { suggestPlaces } from '@core/places'
 import type { Profile } from '@core/schemas'
 import { texts } from '../../i18n'
-import { Alert, Button, Collapsible, Loading, TextField } from '../../ui'
+import { Alert, Button, Collapsible, ComboField, Loading, TextField } from '../../ui'
 
 /** Contact details and the profile summary sentence (which the model can suggest). */
 export function ContactSection({
@@ -55,11 +56,18 @@ export function ContactSection({
           value={draft.phone ?? ''}
           onChange={(v) => update({ phone: v })}
         />
-        <TextField
+        <ComboField
           label={words.location}
           autoComplete="address-level2"
+          placeholder={words.locationPlaceholder}
           value={draft.location ?? ''}
           onChange={(v) => update({ location: v })}
+          getSuggestions={async (typed) =>
+            (await suggestPlaces(typed)).map((place) => ({
+              value: place.value,
+              detail: place.kind === 'department' ? words.department : place.code,
+            }))
+          }
         />
         <TextField
           label={words.links}

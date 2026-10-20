@@ -13,6 +13,7 @@
     "src/core/serviceUrl.ts",
     "src/core/llm/localModels.ts",
     "src/core/errors.ts",
+    "src/core/places/*.ts",
     "src/core/steps.ts"
   ],
   "exclude": ["src/**/*.test.ts"],

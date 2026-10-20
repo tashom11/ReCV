@@ -61,6 +61,10 @@ export const fr = {
     },
   },
 
+  comboField: {
+    available: (count: number) => (count === 1 ? '1 suggestion disponible' : `${count} suggestions disponibles`),
+  },
+
   dropZone: {
     drop: 'Lâchez le fichier ici',
     drag: 'Glissez votre CV ici',
@@ -447,12 +451,14 @@ export const fr = {
       title: 'Vos coordonnées',
       summary: 'Nom, métier, e-mail, téléphone, ville',
       singleWordName:
-        'Un seul mot dans « Prénom et nom » : il manque peut-être votre prénom (il apparaît en tête du CV).',
-      fullName: 'Prénom et nom',
+        'Un seul mot dans « Nom et prénom » : il manque peut-être votre prénom (il apparaît en tête du CV).',
+      fullName: 'Nom et prénom',
       headline: 'Votre métier actuel',
       email: 'E-mail',
       phone: 'Téléphone',
       location: 'Ville ou département',
+      locationPlaceholder: 'Ex. : Lyon, ou 69',
+      department: 'département',
       links: 'Liens (facultatif)',
       linksPlaceholder: 'Ex. : votre page LinkedIn',
       summaryLabel: 'Votre phrase de présentation',
