@@ -1,9 +1,11 @@
-import type { Profile } from '@core/schemas'
+import { type Profile, profileSchema } from '@core/schemas'
 import { describe, expect, it } from 'vitest'
 import {
   cleanProfile,
   educationSummary,
+  emptyProfile,
   experiencesSummary,
+  hasContent,
   insertAt,
   languagesSummary,
   levelOptions,
@@ -50,5 +52,32 @@ describe('profile draft', () => {
   it('puts a removed item back at its place (undo)', () => {
     expect(insertAt(['a', 'c'], 1, 'b')).toEqual(['a', 'b', 'c'])
     expect(insertAt(['a'], 5, 'b')).toEqual(['a', 'b'])
+  })
+})
+
+describe('emptyProfile', () => {
+  it('is a valid profile, with nothing in it', () => {
+    expect(profileSchema.parse(emptyProfile())).toEqual(emptyProfile())
+    expect(hasContent(emptyProfile())).toBe(false)
+  })
+
+  it('gives lists of its own at each call (editing one CV never changes the next)', () => {
+    const first = emptyProfile()
+    first.skills.push('SQL')
+    expect(emptyProfile().skills).toEqual([])
+  })
+})
+
+describe('hasContent', () => {
+  it('is true as soon as there is an experience, an education or a skill', () => {
+    expect(hasContent({ ...emptyProfile(), skills: ['SQL'] })).toBe(true)
+    expect(hasContent({ ...emptyProfile(), education: [{ degree: 'BTS', school: 'Lycée' }] })).toBe(true)
+    expect(hasContent({ ...emptyProfile(), experiences: [{ position: 'P', company: 'C', achievements: [] }] })).toBe(
+      true,
+    )
+  })
+
+  it('ignores the empty lines kept while typing, and the contact details alone', () => {
+    expect(hasContent({ ...emptyProfile(), skills: ['', '  '], fullName: 'Claire Dubois' })).toBe(false)
   })
 })

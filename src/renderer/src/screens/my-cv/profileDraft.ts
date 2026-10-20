@@ -6,6 +6,16 @@ import { texts } from '../../i18n'
 export const toLines = (text: string) => text.split('\n')
 const clean = (values: string[]) => values.map((v) => v.trim()).filter(Boolean)
 
+/** A CV started from scratch (« Créer mon CV »): the form opens on empty sections. */
+export function emptyProfile(): Profile {
+  return { links: [], experiences: [], skills: [], education: [], languages: [] }
+}
+
+/** Something the CV can be built from: without any of these, a job posting has nothing to be matched with. */
+export function hasContent(profile: Profile): boolean {
+  return profile.experiences.length > 0 || profile.education.length > 0 || skillCount(profile.skills) > 0
+}
+
 /** Edited lists keep their empty lines while typing; they are removed when saving. */
 export function cleanProfile(profile: Profile): Profile {
   return {

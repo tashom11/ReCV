@@ -1,8 +1,12 @@
 import type { ErrorAction, ErrorDescription } from '../../errors'
 import { texts } from '../../i18n'
 import { DropZone, ErrorAlert, Icon, Loading, PageTitle } from '../../ui'
+import { CreateCvCard } from './CreateCvCard'
 
-/** Step ① before any CV: drop zone (or file picker), import progress and the privacy promise. */
+/**
+ * Step ① before any CV: drop zone (or file picker) next to the way to create one, import progress and the privacy
+ * promise.
+ */
 export function CvImportStep({
   error,
   onErrorAction,
@@ -12,6 +16,7 @@ export function CvImportStep({
   online,
   onFile,
   onChoose,
+  onCreate,
 }: {
   error: ErrorDescription | null
   onErrorAction: (action: ErrorAction) => void
@@ -24,9 +29,11 @@ export function CvImportStep({
   online: boolean
   onFile: (file: File) => void
   onChoose: () => void
+  /** Starts a CV from scratch (nothing to import). */
+  onCreate: () => void
 }) {
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-8 px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
+    <div className="mx-auto w-full max-w-5xl space-y-8 px-6 sm:px-10 lg:px-16 py-12 sm:py-16">
       <PageTitle subtitle={texts.myCv.import.subtitle}>{texts.myCv.import.title}</PageTitle>
       {error && <ErrorAlert description={error} onAction={onErrorAction} />}
       {importing ? (
@@ -40,7 +47,10 @@ export function CvImportStep({
           }
         />
       ) : (
-        <DropZone onFile={onFile} onChoose={onChoose} />
+        <div className="grid gap-6 md:grid-cols-2">
+          <DropZone onFile={onFile} onChoose={onChoose} />
+          <CreateCvCard onCreate={onCreate} />
+        </div>
       )}
       <p className="flex items-center gap-3 text-intro text-encre">
         <Icon name="lock" className="text-marque" />

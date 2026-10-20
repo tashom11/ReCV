@@ -395,7 +395,13 @@ export const fr = {
   myCv: {
     import: {
       title: 'Commençons par votre CV',
-      subtitle: 'L’IA va l’analyser pour comprendre votre parcours. Vous pourrez tout vérifier juste après.',
+      subtitle:
+        'Importez-le pour que l’IA comprenne votre parcours, ou créez-le ici. Vous pourrez tout vérifier juste après.',
+      create: {
+        title: 'Pas de CV ? Créez-en un !',
+        text: 'Remplissez quelques rubriques : expériences, formations, compétences. Votre CV sera prêt à être adapté à chaque offre.',
+        button: 'Créer mon CV',
+      },
       reading: 'L’IA analyse votre CV…',
       readingNew: 'L’IA analyse votre nouveau CV…',
       readingStep: 'Elle repère vos expériences, vos compétences et vos formations',
@@ -408,6 +414,9 @@ export const fr = {
     },
     summaryCard: {
       read: 'Votre CV est lu',
+      created: 'Votre CV est en cours de création',
+      importInstead: 'Importer un CV à la place',
+      createdNote: 'Enregistré sur cet ordinateur au fur et à mesure',
       untitled: 'Votre CV',
       savedCv: 'Votre CV enregistré',
       otherCv: 'Utiliser un autre CV',
@@ -421,7 +430,11 @@ export const fr = {
     check: {
       title: 'Vérifiez ce que nous avons compris',
       text: 'Ouvrez une partie pour la corriger. Si tout vous semble juste, vous pouvez continuer directement.',
+      createTitle: 'Remplissez votre CV',
+      createText:
+        'Ouvrez chaque partie pour la remplir. Tout reste modifiable plus tard, et vos réponses sont enregistrées automatiquement.',
     },
+    needContent: 'Ajoutez au moins une expérience, une formation ou une compétence pour continuer.',
     saveFailed: {
       title: 'Vos corrections n’ont pas pu être enregistrées',
       text: 'Rien n’est perdu : elles sont toujours affichées. Réessayez dans un instant.',

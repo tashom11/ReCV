@@ -9,12 +9,15 @@ export function ProfileSummaryCard({
   draft,
   fileName,
   importing,
+  created = false,
   onImport,
 }: {
   draft: Profile
   /** Name of the imported file, if known. */
   fileName: string | null
   importing: boolean
+  /** The CV was started from scratch, not read from a file. */
+  created?: boolean
   onImport: () => void
 }) {
   const words = texts.myCv.summaryCard
@@ -30,7 +33,7 @@ export function ProfileSummaryCard({
     <section className="sur-sombre space-y-5 rounded-panneau bg-encre p-7 text-white shadow-panneau">
       <p className="flex items-center gap-2 font-bold text-accent">
         <Icon name="check-circle" />
-        {words.read}
+        {created ? words.created : words.read}
       </p>
       <div className="flex items-center gap-5">
         {draft.photo ? (
@@ -60,10 +63,10 @@ export function ProfileSummaryCard({
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/20 pt-5">
         <p className="flex min-w-0 items-center gap-2.5 text-white/90">
           <Icon name="file" size={18} />
-          <span className="break-all">{fileName ?? words.savedCv}</span>
+          <span className="break-all">{created ? words.createdNote : (fileName ?? words.savedCv)}</span>
         </p>
         <Button variant="on-dark" onClick={onImport} busy={importing}>
-          {words.otherCv}
+          {created ? words.importInstead : words.otherCv}
         </Button>
       </div>
     </section>

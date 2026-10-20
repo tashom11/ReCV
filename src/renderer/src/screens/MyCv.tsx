@@ -11,7 +11,7 @@ import { ExperienceList } from './my-cv/ExperienceList'
 import { LanguageList } from './my-cv/LanguageList'
 import { PhotoSection } from './my-cv/PhotoSection'
 import { ProfileSummaryCard } from './my-cv/ProfileSummaryCard'
-import { cleanProfile, skillCount, skillsSummary, toLines } from './my-cv/profileDraft'
+import { cleanProfile, emptyProfile, hasContent, skillCount, skillsSummary, toLines } from './my-cv/profileDraft'
 import { useProfileDraft } from './my-cv/useProfileDraft'
 
 /** Step ①: CV drop, then a check of what was understood, in collapsible sections. */
@@ -40,6 +40,8 @@ export function MyCvScreen({
   const [error, setError] = useState<ErrorDescription | null>(null)
   const [summaryFeedback, setSummaryFeedback] = useState<{ type: 'error' | 'success'; text: string } | null>(null)
   const lastImport = useRef<(() => void) | null>(null)
+  // The CV was started from scratch in this session (otherwise it was read from a file, or saved earlier).
+  const [created, setCreated] = useState(false)
   const importProgress = useTaskProgress('import', busyWith === 'import')
   const summaryProgress = useTaskProgress('summary', busyWith === 'summary')
 
@@ -49,12 +51,21 @@ export function MyCvScreen({
     setError(null)
     try {
       const result = file ? await window.api.importDroppedCv(file) : await window.api.importCv()
-      if (result) onProfile(result.profile, result.fileName)
+      if (result) {
+        setCreated(false)
+        onProfile(result.profile, result.fileName)
+      }
     } catch (e) {
       setError(describeError('cv', e))
     } finally {
       setBusyWith(null)
     }
+  }
+
+  const createCv = () => {
+    setError(null)
+    setCreated(true)
+    onProfile(emptyProfile())
   }
 
   const onErrorAction = (action: ErrorAction) => {
@@ -127,6 +138,7 @@ export function MyCvScreen({
         online={online}
         onFile={(file) => void importCv(file)}
         onChoose={() => void importCv()}
+        onCreate={createCv}
       />
     )
   }
@@ -138,6 +150,7 @@ export function MyCvScreen({
           draft={draft}
           fileName={fileName}
           importing={busyWith === 'import'}
+          created={created}
           onImport={() => void importCv()}
         />
 
@@ -151,8 +164,10 @@ export function MyCvScreen({
         {error && <ErrorAlert description={error} onAction={onErrorAction} />}
 
         <header className="space-y-1 pt-2">
-          <h2 className="font-titre text-titre-section font-bold">{texts.myCv.check.title}</h2>
-          <p className="text-corps text-encre-douce">{texts.myCv.check.text}</p>
+          <h2 className="font-titre text-titre-section font-bold">
+            {created ? texts.myCv.check.createTitle : texts.myCv.check.title}
+          </h2>
+          <p className="text-corps text-encre-douce">{created ? texts.myCv.check.createText : texts.myCv.check.text}</p>
         </header>
 
         <div className="space-y-3">
@@ -194,8 +209,10 @@ export function MyCvScreen({
             <span role="alert" className="font-bold text-erreur">
               {texts.myCv.autosaveFailed}
             </span>
-          ) : (
+          ) : hasContent(draft) ? (
             texts.myCv.autosaved
+          ) : (
+            texts.myCv.needContent
           )
         }
       >
@@ -204,7 +221,7 @@ export function MyCvScreen({
           endIcon="arrow-right"
           onClick={() => void proceed()}
           busy={busyWith === 'saving'}
-          disabled={busyWith !== null}
+          disabled={busyWith !== null || !hasContent(draft)}
         >
           {texts.myCv.next}
         </Button>

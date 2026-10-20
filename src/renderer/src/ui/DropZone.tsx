@@ -31,7 +31,7 @@ export function DropZone({
         const file = e.dataTransfer.files[0]
         if (file && !busyWith) onFile(file)
       }}
-      className={`flex flex-col items-center gap-4 rounded-panneau px-6 py-11 text-center transition duration-(--duree-rapide) ${
+      className={`flex flex-col items-center justify-center gap-4 rounded-panneau px-6 py-11 text-center transition duration-(--duree-rapide) ${
         hovering ? 'border-2 border-marque bg-marque-pale' : 'border-2 border-dashed border-trait-fort bg-surface'
       }`}
     >
