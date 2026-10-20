@@ -29,10 +29,22 @@ function isInSource(value: string | undefined, compactSource: string): boolean {
   return words.filter((word) => compactSource.includes(word)).length / words.length >= 0.75
 }
 
-/** A « position » identical to an education title is a degree wrongly filed among the experiences. */
-function isDegree(position: string | undefined, education: Profile['education']): boolean {
-  const key = compact(position ?? '')
-  return key !== '' && education.some((f) => compact(f.degree ?? '') === key)
+/**
+ * A course wrongly filed among the experiences: its position is an education title, or its "company" is the school of
+ * an education entry (a training followed under « Mon parcours »).
+ */
+// Same school written with or without its town (« Lycée Jean Moulin » / « Lycée Jean Moulin, Douai »).
+function sameSchool(a: string, b: string): boolean {
+  const MIN = 8
+  return a.length >= MIN && b.length >= MIN && (a.includes(b) || b.includes(a))
+}
+
+function isDegree(experience: Profile['experiences'][number], education: Profile['education']): boolean {
+  const position = compact(experience.position ?? '')
+  const company = compact(experience.company ?? '')
+  return education.some(
+    (f) => (position !== '' && compact(f.degree ?? '') === position) || sameSchool(company, compact(f.school ?? '')),
+  )
 }
 
 // Empty, or only punctuation: a stray « { » or « ], » from a broken JSON answer is not a value.
@@ -74,7 +86,7 @@ export function sanitizeProfile(profile: Profile, cvText: string): Profile {
     experiences: profile.experiences.filter(
       (e) =>
         !empty(e.position) &&
-        !isDegree(e.position, profile.education) &&
+        !isDegree(e, profile.education) &&
         (!empty(e.company) || !empty(e.dateRange)) &&
         isInSource(e.position, source) &&
         isInSource(e.company, source),

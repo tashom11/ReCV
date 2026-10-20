@@ -80,6 +80,17 @@ describe('sanitizeProfile', () => {
     expect(sanitizeProfile(profile, CV).experiences).toEqual(base.experiences)
   })
 
+  it('removes a course filed among the experiences under the school of an education entry', () => {
+    const profile: Profile = {
+      ...base,
+      experiences: [
+        ...base.experiences,
+        { position: 'Formation Bac pro', company: 'Lycée Jean Moulin', dateRange: '2015', achievements: [] },
+      ],
+    }
+    expect(sanitizeProfile(profile, CV).experiences).toEqual(base.experiences)
+  })
+
   it('removes an « experience » made of a miscellaneous line (licence, availability, website)', () => {
     const profile: Profile = {
       ...base,

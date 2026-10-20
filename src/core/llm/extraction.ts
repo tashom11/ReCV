@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { ExtractionCounts, ProfileCounts } from '../diagnostics'
 import { prepareJobPostingText } from '../job-posting/text'
+import { completeProfile } from '../parsing/cvReading'
 import { type CvSections, detectCvSections } from '../parsing/cvSections'
 import {
   educationSchema,
@@ -103,7 +104,8 @@ export async function extractProfile(
     extracted = await engine.generateObject({ ...request, schema: unconstrained })
   }
   // The model may make up entries: only what is evidenced in the CV text is kept.
-  const kept = sanitizeProfile(extracted, cvText)
+  // What the model read badly or left out (skills, languages, bullets) is completed from the CV text.
+  const kept = completeProfile(sanitizeProfile(extracted, cvText), cvText)
   // Numbers only: tells a model that read little from a filter that removed too much, without any CV content.
   onCounts?.({ textLength: cvText.length, raw: countsOf(extracted), kept: countsOf(kept) })
   return kept
