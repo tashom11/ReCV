@@ -1,0 +1,58 @@
+John Doe
+Chef de projet informatique
+john.doe@exemple.fr | 06 12 34 56 78 | Toulouse
+
+RÉSUMÉ
+Chef de projet avec quinze ans d'expérience, d'abord développeur puis responsable d'équipes.
+
+EXPÉRIENCES PROFESSIONNELLES
+
+Chef de projet informatique — Pi Assurances, Toulouse
+Avril 2020 – aujourd'hui
+- Pilotage de la refonte de l'espace client (budget de 800 000 euros)
+- Animation d'une équipe de huit personnes en méthode Scrum
+- Rédaction des cahiers des charges avec les métiers
+- Suivi des prestataires et des recettes
+
+Responsable d'équipe développement — Rho Logiciels, Toulouse
+Janvier 2016 – Mars 2020
+- Encadrement de cinq développeurs Java
+- Mise en place de l'intégration continue avec Jenkins
+- Entretiens de recrutement
+
+Développeur Java — Sigma Conseil, Blagnac
+Juin 2011 – Décembre 2015
+- Développement d'applications de gestion pour des clients bancaires
+- Maintenance d'applications Spring
+
+Développeur PHP — Tau Web, Toulouse
+Septembre 2009 – Mai 2011
+- Création de sites e-commerce sous Magento
+
+Stagiaire développeur — Upsilon Informatique, Albi
+Mars 2009 – Août 2009
+- Développement d'un outil interne de suivi des tickets
+
+FORMATION
+
+Diplôme d'ingénieur en informatique — École d'ingénieurs Phi, Toulouse
+2006 – 2009
+
+Classe préparatoire MPSI / MP — Lycée Chi, Toulouse
+2004 – 2006
+
+CERTIFICATIONS
+Professional Scrum Master I (PSM I) — 2019
+PRINCE2 Foundation — 2017
+
+COMPÉTENCES
+Gestion de projet : Scrum, PRINCE2, Jira, Confluence
+Technique : Java, Spring, PHP, SQL, Jenkins
+Management : encadrement d'équipe, recrutement, conduite du changement
+
+LANGUES
+Anglais : courant (TOEIC 905)
+Espagnol : scolaire
+
+CENTRES D'INTÉRÊT
+Trail, photographie

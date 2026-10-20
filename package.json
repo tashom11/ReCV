@@ -18,6 +18,7 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "try": "tsx scripts/try-pipeline.ts",
+    "bench": "tsx scripts/benchmark/run.ts",
     "check:personal-data": "node scripts/check-personal-data.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json"
   },

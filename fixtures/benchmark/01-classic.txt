@@ -1,0 +1,40 @@
+Claire Dubois
+claire.dubois@exemple.fr | 06 12 34 56 78 | Lyon, France
+linkedin.com/in/clairedubois
+
+Développeuse web
+
+Développeuse passionnée avec 5 ans d'expérience en applications web, cherchant à mettre
+son expertise front-end au service de produits à fort impact utilisateur.
+
+EXPÉRIENCE PROFESSIONNELLE
+
+Développeuse front-end — Société Alpha
+Lyon | Mars 2021 – présent
+Intégration et maintenance d'une application React utilisée par 50 000 clients.
+- Migration de l'application de JavaScript vers TypeScript
+- Mise en place de tests automatisés avec Vitest, réduisant les régressions de 30 %
+- Encadrement de deux stagiaires sur les bonnes pratiques front-end
+
+Développeuse web junior — Agence Beta
+Lyon | Septembre 2019 – Février 2021
+Développement de sites vitrines et e-commerce pour des clients variés.
+- Création de dix sites WordPress sur mesure
+- Optimisation du temps de chargement des pages de 40 %
+
+FORMATION
+
+Master Informatique — Université Claude Bernard Lyon 1
+Lyon | 2017 – 2019
+
+Licence Informatique — Université Claude Bernard Lyon 1
+Lyon | 2014 – 2017
+
+COMPÉTENCES
+
+TypeScript, React, Node.js, SQL, Git, Tests automatisés
+
+LANGUES
+
+Français — Langue maternelle
+Anglais — Courant

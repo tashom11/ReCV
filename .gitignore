@@ -9,3 +9,6 @@ release/
 
 # Personal strings of the maintainers, checked by scripts/check-personal-data.mjs: never committed.
 .private-patterns
+
+# Benchmark results (npm run bench): local, compared before/after a change.
+bench-results/

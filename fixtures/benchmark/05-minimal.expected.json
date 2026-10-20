@@ -1,0 +1,12 @@
+{
+  "fullName": "Léa Fontaine",
+  "email": "lea.fontaine@exemple.fr",
+  "experiences": [
+    { "position": "Vendeuse", "company": "Boulangerie Mu", "dateRange": "2021-2024", "bullets": 1 },
+    { "position": "Caissière", "company": "Supermarché Nu", "dateRange": "2019-2021", "bullets": 0 },
+    { "position": "Serveuse", "company": "Café Xi", "dateRange": "été 2018", "bullets": 0 }
+  ],
+  "education": [{ "degree": "Bac pro commerce", "school": "Lycée Omicron" }],
+  "skills": ["Ponctuelle", "Souriante", "Contact"],
+  "languages": []
+}

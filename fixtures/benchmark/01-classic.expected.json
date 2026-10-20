@@ -1,0 +1,25 @@
+{
+  "fullName": "Claire Dubois",
+  "email": "claire.dubois@exemple.fr",
+  "phone": "06 12 34 56 78",
+  "experiences": [
+    {
+      "position": "Développeuse front-end",
+      "company": "Société Alpha",
+      "dateRange": "Mars 2021 – présent",
+      "bullets": 4
+    },
+    {
+      "position": "Développeuse web junior",
+      "company": "Agence Beta",
+      "dateRange": "Septembre 2019 – Février 2021",
+      "bullets": 3
+    }
+  ],
+  "education": [
+    { "degree": "Master Informatique", "school": "Université Claude Bernard Lyon 1" },
+    { "degree": "Licence Informatique", "school": "Université Claude Bernard Lyon 1" }
+  ],
+  "skills": ["TypeScript", "React", "Node.js", "SQL", "Git", "Tests automatisés"],
+  "languages": ["Français", "Anglais"]
+}

@@ -1,0 +1,32 @@
+{
+  "fullName": "Karim Benali",
+  "email": "karim.benali@exemple.fr",
+  "phone": "07 11 22 33 44",
+  "experiences": [
+    {
+      "position": "Mécanicien automobile",
+      "company": "Garage Zêta",
+      "dateRange": "Depuis 2014",
+      "bullets": 3
+    },
+    {
+      "position": "Apprenti mécanicien",
+      "company": "Garage Êta",
+      "dateRange": "2012 – 2014",
+      "bullets": 1
+    }
+  ],
+  "education": [
+    { "degree": "Technicien d'assistance informatique", "school": "Centre de formation Epsilon" },
+    { "degree": "CAP Maintenance des véhicules", "school": "Lycée professionnel Thêta" }
+  ],
+  "skills": [
+    "Diagnostic de pannes",
+    "Installation de postes Windows",
+    "Active Directory",
+    "Relation client",
+    "Patience",
+    "Travail en équipe"
+  ],
+  "languages": ["Anglais"]
+}

@@ -1,0 +1,30 @@
+{
+  "fullName": "Julien Morel",
+  "email": "julien.morel@exemple.fr",
+  "phone": "06 00 00 00 01",
+  "experiences": [
+    {
+      "position": "Chargé de communication",
+      "company": "Mairie de Saint-Fictif",
+      "dateRange": "2020 – 2024",
+      "bullets": 3
+    },
+    {
+      "position": "Assistant marketing",
+      "company": "Librairie Delta",
+      "dateRange": "2018 – 2020",
+      "bullets": 2
+    }
+  ],
+  "education": [{ "degree": "Licence Information-Communication", "school": "Université de Nantes" }],
+  "skills": [
+    "Canva",
+    "Suite Adobe",
+    "Community management",
+    "Rédaction web",
+    "Google Analytics",
+    "Créativité",
+    "Organisation"
+  ],
+  "languages": ["Anglais", "Espagnol"]
+}

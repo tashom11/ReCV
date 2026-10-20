@@ -6,7 +6,7 @@ export default defineConfig({
   // Interface tests render React components (automatic JSX runtime, as in the app).
   esbuild: { jsx: 'automatic' },
   test: {
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.mjs'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.mjs', 'scripts/**/*.test.ts'],
     environment: 'node',
     passWithNoTests: true,
   },

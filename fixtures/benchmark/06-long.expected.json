@@ -1,0 +1,56 @@
+{
+  "fullName": "John Doe",
+  "email": "john.doe@exemple.fr",
+  "phone": "06 12 34 56 78",
+  "experiences": [
+    {
+      "position": "Chef de projet informatique",
+      "company": "Pi Assurances",
+      "dateRange": "Avril 2020 – aujourd'hui",
+      "bullets": 4
+    },
+    {
+      "position": "Responsable d'équipe développement",
+      "company": "Rho Logiciels",
+      "dateRange": "Janvier 2016 – Mars 2020",
+      "bullets": 3
+    },
+    {
+      "position": "Développeur Java",
+      "company": "Sigma Conseil",
+      "dateRange": "Juin 2011 – Décembre 2015",
+      "bullets": 2
+    },
+    {
+      "position": "Développeur PHP",
+      "company": "Tau Web",
+      "dateRange": "Septembre 2009 – Mai 2011",
+      "bullets": 1
+    },
+    {
+      "position": "Stagiaire développeur",
+      "company": "Upsilon Informatique",
+      "dateRange": "Mars 2009 – Août 2009",
+      "bullets": 1
+    }
+  ],
+  "education": [
+    { "degree": "Diplôme d'ingénieur en informatique", "school": "École d'ingénieurs Phi" },
+    { "degree": "Classe préparatoire MPSI / MP", "school": "Lycée Chi" }
+  ],
+  "skills": [
+    "Scrum",
+    "PRINCE2",
+    "Jira",
+    "Confluence",
+    "Java",
+    "Spring",
+    "PHP",
+    "SQL",
+    "Jenkins",
+    "Encadrement d'équipe",
+    "Recrutement",
+    "Conduite du changement"
+  ],
+  "languages": ["Anglais", "Espagnol"]
+}

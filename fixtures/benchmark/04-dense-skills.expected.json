@@ -1,0 +1,37 @@
+{
+  "fullName": "Sophie Lambert",
+  "email": "sophie.lambert@exemple.fr",
+  "phone": "06 12 34 56 78",
+  "experiences": [
+    {
+      "position": "Comptable",
+      "company": "Cabinet Iota Expertise",
+      "dateRange": "janv. 2019 à aujourd'hui",
+      "bullets": 4
+    },
+    {
+      "position": "Assistante comptable",
+      "company": "Kappa Distribution",
+      "dateRange": "sept. 2015 à déc. 2018",
+      "bullets": 3
+    }
+  ],
+  "education": [
+    { "degree": "DCG", "school": "Lycée Lambda" },
+    { "degree": "BTS Comptabilité et gestion", "school": "Lycée Lambda" }
+  ],
+  "skills": [
+    "Sage 100",
+    "Cegid",
+    "Excel",
+    "Power BI",
+    "Rapprochements bancaires",
+    "Déclarations de TVA",
+    "Clôtures mensuelles",
+    "Liasses fiscales",
+    "Rigueur",
+    "Discrétion",
+    "Sens de l'organisation"
+  ],
+  "languages": ["Anglais", "Allemand"]
+}
