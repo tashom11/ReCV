@@ -114,7 +114,7 @@ export const fr = {
       },
       emptyExtraction: {
         title: 'Le modèle n’a rien repéré dans votre CV',
-        text: 'Votre fichier est lisible, mais le modèle choisi est trop petit pour en tirer vos expériences et compétences. Choisissez le niveau « Soigné » dans les Réglages (plus lent, mais plus fiable), puis relancez.',
+        text: 'Votre fichier est lisible, mais le modèle choisi est trop petit pour en tirer vos expériences et compétences. Choisissez le niveau « Soigné » dans les Réglages (plus lent, mais plus fiable), puis relancez. Vous pouvez aussi créer votre CV vous-même, juste en dessous.',
       },
       interrupted: {
         title: 'La lecture de votre CV s’est arrêtée en route',

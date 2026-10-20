@@ -1,6 +1,9 @@
 // @vitest-environment happy-dom
+
+import { encodeError } from '@core/channels'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describeError } from '../../errors'
 import { expectNoA11yViolations } from '../../test/a11y'
 import { CvImportStep } from './CvImportStep'
 
@@ -31,6 +34,13 @@ describe('CvImportStep', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Créer mon CV' }))
     expect(onCreate).toHaveBeenCalledTimes(1)
     expect(onChoose).not.toHaveBeenCalled()
+  })
+
+  it('keeps the way to create a CV under the error of a failed import', () => {
+    const error = describeError('cv', new Error(encodeError('vide', 'extraction-empty')))
+    render(<CvImportStep {...props} error={error} />)
+    expect(screen.getByText(/Le modèle n’a rien repéré/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Créer mon CV' })).toBeTruthy()
   })
 
   it('shows only the progress while a CV is being read', () => {
