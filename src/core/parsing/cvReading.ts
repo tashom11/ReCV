@@ -220,8 +220,45 @@ export function recoverBullets(profile: Profile, cvText: string): Profile {
   }
 }
 
-/** The profile completed with what the CV text says: skills, languages and bullets the model left out or merged. */
+const LOCAL_PART = /[A-Za-z0-9._%+-]/
+const DOMAIN = /^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/
+
+// First e-mail address of the text. Starts from each « @ » and reads around it, within bounds: a regular expression
+// over the whole text is quadratic on a long run of letters without any « @ » (some PDFs are extracted without spaces).
+function findEmail(text: string): string | undefined {
+  for (let at = text.indexOf('@'); at > 0; at = text.indexOf('@', at + 1)) {
+    let start = at
+    while (start > 0 && at - start < 64 && LOCAL_PART.test(text.charAt(start - 1))) start--
+    let end = at + 1
+    while (end < text.length && end - at < 255 && /[A-Za-z0-9.-]/.test(text.charAt(end))) end++
+    const domain = text.slice(at + 1, end).replace(/[.-]+$/, '')
+    if (start < at && DOMAIN.test(domain)) return text.slice(start, at + 1 + domain.length)
+  }
+  return undefined
+}
+
+const PHONE = /(?:\+33[\s.]?|0)[1-9](?:[\s.-]?\d{2}){4}(?!\d)/
+// A name: two to four words made of letters, hyphens and apostrophes (« Claire Dubois », « MOREAU Julien »).
+const NAME = /^\p{L}[\p{L}'’-]*(?: \p{L}[\p{L}'’-]*){1,3}$/u
+
+/** Name, e-mail and phone found in the first lines of the CV (the name: its first line, when it looks like one). */
+export function readContact(cvText: string): { fullName?: string; email?: string; phone?: string } {
+  const first = cvText
+    .split('\n')
+    .map((line) => line.trim())
+    .find((line) => line !== '')
+  const fullName = first && first.length <= 40 && NAME.test(first) && !isSectionHeading(first) ? first : undefined
+  const email = findEmail(cvText)
+  const phone = PHONE.exec(cvText)?.[0]
+  return { ...(fullName ? { fullName } : {}), ...(email ? { email } : {}), ...(phone ? { phone } : {}) }
+}
+
+/**
+ * The profile completed with what the CV text says: skills, languages and bullets the model left out or merged, and the
+ * contact details it did not return.
+ */
 export function completeProfile(profile: Profile, cvText: string): Profile {
+  const contact = readContact(cvText)
   const known = new Set(profile.skills.map(simplify))
   const skills = [...profile.skills, ...readSkills(cvText).filter((s) => !known.has(simplify(s)))]
   const knownLanguages = new Set(profile.languages.map((l) => normalize(l.name)))
@@ -229,5 +266,15 @@ export function completeProfile(profile: Profile, cvText: string): Profile {
     ...profile.languages,
     ...readLanguages(cvText).filter((l) => !knownLanguages.has(normalize(l.name))),
   ]
-  return recoverBullets({ ...profile, skills, languages }, cvText)
+  return recoverBullets(
+    {
+      ...profile,
+      fullName: profile.fullName ?? contact.fullName,
+      email: profile.email ?? contact.email,
+      phone: profile.phone ?? contact.phone,
+      skills,
+      languages,
+    },
+    cvText,
+  )
 }

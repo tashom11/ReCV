@@ -52,6 +52,27 @@ describe('extraction', () => {
     expect(engine.requests).toHaveLength(2)
   })
 
+  it('falls back on what the CV text says when the model fails twice', async () => {
+    const failing = new MockEngine({})
+    const profile = await extractProfile(
+      failing,
+      `Claire Dubois
+claire.dubois@exemple.fr | 06 12 34 56 78
+${cvWithSections}`,
+    )
+    expect(profile).toMatchObject({
+      fullName: 'Claire Dubois',
+      email: 'claire.dubois@exemple.fr',
+      phone: '06 12 34 56 78',
+      skills: ['React', 'SQL'],
+      experiences: [],
+    })
+  })
+
+  it('still fails when the model fails and the CV text yields nothing readable', async () => {
+    await expect(extractProfile(new MockEngine({}), 'Claire Dubois, développeuse à Lyon.')).rejects.toThrow()
+  })
+
   it('calls the model once, without constraint, when no section is found', async () => {
     const engine = new MockEngine({ extractProfile: {} })
     await extractProfile(engine, 'Claire Dubois, développeuse à Lyon.')

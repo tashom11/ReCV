@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { type Profile, profileSchema } from '../schemas'
-import { completeProfile, readLanguages, readSkills, recoverBullets } from './cvReading'
+import { completeProfile, readContact, readLanguages, readSkills, recoverBullets } from './cvReading'
 
 const fixture = (name: string) => readFileSync(`fixtures/benchmark/${name}.txt`, 'utf8')
 
@@ -152,6 +152,38 @@ describe('recoverBullets', () => {
       { position: 'Mécanicien automobile', company: 'Garage Zêta' },
     ])
     expect(recoverBullets(profile, fixture('03-career-change'))).toEqual(profile)
+  })
+})
+
+describe('readContact', () => {
+  it('reads the name on the first line, the e-mail and the phone', () => {
+    expect(readContact(fixture('01-classic'))).toEqual({
+      fullName: 'Claire Dubois',
+      email: 'claire.dubois@exemple.fr',
+      phone: '06 12 34 56 78',
+    })
+    expect(readContact(fixture('04-dense-skills')).fullName).toBe('SOPHIE LAMBERT')
+    expect(readContact(fixture('03-career-change')).phone).toBe('07 11 22 33 44')
+  })
+
+  it('finds an e-mail address in the middle of a line, and none in a text without any', () => {
+    expect(readContact('Tél. 06 12 34 56 78 · claire.dubois+cv@exemple.fr, Lyon').email).toBe(
+      'claire.dubois+cv@exemple.fr',
+    )
+    expect(readContact('adresse@ puis un arobase @ seul').email).toBeUndefined()
+  })
+
+  it('stays fast on a very long text without spaces or without any « @ »', () => {
+    const start = performance.now()
+    readContact('x'.repeat(200_000))
+    readContact(`${'a@'.repeat(50_000)}b`)
+    expect(performance.now() - start).toBeLessThan(1000)
+  })
+
+  it('does not take a heading or a sentence for a name', () => {
+    expect(readContact('EXPÉRIENCE PROFESSIONNELLE\nVendeuse').fullName).toBeUndefined()
+    expect(readContact('Chef de projet informatique depuis dix ans, à Toulouse.').fullName).toBeUndefined()
+    expect(readContact('Contact : julien.morel@exemple.fr').fullName).toBeUndefined()
   })
 })
 

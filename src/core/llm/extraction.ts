@@ -95,13 +95,21 @@ export async function extractProfile(
   const constrained = profileSchemaFor(detectCvSections(cvText))
   let extracted: Profile
   try {
-    extracted = await engine.generateObject({ ...request, schema: constrained })
+    try {
+      extracted = await engine.generateObject({ ...request, schema: constrained })
+    } catch (error) {
+      // A model that still answers an empty list (API without a grammar) must not make the import fail: the step is
+      // run again without the constraint.
+      const unconstrained = profileSchemaFor(NO_SECTION)
+      if (constrained === unconstrained) throw error
+      extracted = await engine.generateObject({ ...request, schema: unconstrained })
+    }
   } catch (error) {
-    // A model that still answers an empty list (API without a grammar) must not make the import fail: the step is
-    // run again without the constraint.
-    const unconstrained = profileSchemaFor(NO_SECTION)
-    if (constrained === unconstrained) throw error
-    extracted = await engine.generateObject({ ...request, schema: unconstrained })
+    // The model failed twice (answer cut, invalid JSON). What the CV text says on its own (contact details, skills,
+    // languages) is a better start than an error: the user completes the rest in the form.
+    extracted = profileExtractionSchema.parse({})
+    const readInCode = completeProfile(extracted, cvText)
+    if (readInCode.skills.length === 0 && readInCode.languages.length === 0) throw error
   }
   // The model may make up entries: only what is evidenced in the CV text is kept.
   // What the model read badly or left out (skills, languages, bullets) is completed from the CV text.
