@@ -10,6 +10,7 @@ import { EducationList } from './my-cv/EducationList'
 import { ExperienceList } from './my-cv/ExperienceList'
 import { LanguageList } from './my-cv/LanguageList'
 import { PhotoSection } from './my-cv/PhotoSection'
+import { PresentationSection } from './my-cv/PresentationSection'
 import { ProfileSummaryCard } from './my-cv/ProfileSummaryCard'
 import { cleanProfile, emptyProfile, hasContent, skillCount, skillsSummary, toLines } from './my-cv/profileDraft'
 import { useProfileDraft } from './my-cv/useProfileDraft'
@@ -106,7 +107,7 @@ export function MyCvScreen({
     try {
       const summary = await window.api.generateSummary(cleanProfile(draft))
       update({ summary })
-      setSummaryFeedback({ type: 'success', text: texts.myCv.contact.suggested })
+      setSummaryFeedback({ type: 'success', text: texts.myCv.presentation.suggested })
     } catch (e) {
       const description = describeError('generating', e)
       setSummaryFeedback({
@@ -116,7 +117,7 @@ export function MyCvScreen({
             ? description.title
             : description.code === 'no-quality'
               ? description.details
-              : texts.myCv.contact.suggestFailed,
+              : texts.myCv.presentation.suggestFailed,
       })
     } finally {
       setBusyWith(null)
@@ -171,15 +172,8 @@ export function MyCvScreen({
         </header>
 
         <div className="space-y-3">
-          <ContactSection
-            draft={draft}
-            update={update}
-            onSuggest={() => void suggestSentence()}
-            suggesting={busyWith === 'summary'}
-            suggestDisabled={busyWith !== null}
-            showSuggestStep={summaryProgress !== null}
-            feedback={summaryFeedback}
-          />
+          <PhotoSection photo={draft.photo} onChange={(photo) => update({ photo })} />
+          <ContactSection draft={draft} update={update} />
           <ExperienceList experiences={draft.experiences} onChange={(experiences) => update({ experiences })} />
           <Collapsible
             title={texts.myCv.skills.title}
@@ -197,7 +191,15 @@ export function MyCvScreen({
           </Collapsible>
           <EducationList education={draft.education} onChange={(education) => update({ education })} />
           <LanguageList languages={draft.languages} onChange={(languages) => update({ languages })} />
-          <PhotoSection photo={draft.photo} onChange={(photo) => update({ photo })} />
+          <PresentationSection
+            draft={draft}
+            update={update}
+            onSuggest={() => void suggestSentence()}
+            suggesting={busyWith === 'summary'}
+            suggestDisabled={busyWith !== null}
+            showSuggestStep={summaryProgress !== null}
+            feedback={summaryFeedback}
+          />
         </div>
       </div>
 

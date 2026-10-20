@@ -1,29 +1,10 @@
 import { suggestPlaces } from '@core/places'
 import type { Profile } from '@core/schemas'
 import { texts } from '../../i18n'
-import { Alert, Button, Collapsible, ComboField, Loading, TextField } from '../../ui'
+import { Alert, Collapsible, ComboField, TextField } from '../../ui'
 
-/** Contact details and the profile summary sentence (which the model can suggest). */
-export function ContactSection({
-  draft,
-  update,
-  onSuggest,
-  suggesting,
-  suggestDisabled,
-  showSuggestStep,
-  feedback,
-}: {
-  draft: Profile
-  update: (partial: Partial<Profile>) => void
-  /** Asks the model for a generic summary sentence, based on qualities. */
-  onSuggest: () => void
-  suggesting: boolean
-  suggestDisabled: boolean
-  /** The main process has reported the suggestion step: it can be named. */
-  showSuggestStep: boolean
-  /** Shown under the field: the top of the page is out of view in the middle of the form. */
-  feedback: { type: 'error' | 'success'; text: string } | null
-}) {
+/** Contact details. */
+export function ContactSection({ draft, update }: { draft: Profile; update: (partial: Partial<Profile>) => void }) {
   const words = texts.myCv.contact
   const name = (draft.fullName ?? '').trim()
   return (
@@ -76,21 +57,6 @@ export function ContactSection({
           onChange={(v) => update({ links: v.split(/,\s*/) })}
         />
       </div>
-      <TextField
-        label={words.summaryLabel}
-        multiline
-        rows={3}
-        value={draft.summary ?? ''}
-        onChange={(v) => update({ summary: v })}
-        hint={words.summaryHint}
-        action={
-          <Button variant="outline" size="small" onClick={onSuggest} busy={suggesting} disabled={suggestDisabled}>
-            {words.suggest}
-          </Button>
-        }
-      />
-      {suggesting && <Loading title={words.suggesting} step={showSuggestStep ? words.suggestingStep : undefined} />}
-      {feedback && <Alert type={feedback.type}>{feedback.text}</Alert>}
     </Collapsible>
   )
 }
