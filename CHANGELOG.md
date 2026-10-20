@@ -5,8 +5,25 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-10-20
+
+### Added
+- "No CV? Create one!": a new card next to the import area opens the form, so you can fill in your CV by hand.
+- City and department suggestions as you type ("Lyon", "69"…). The list is built into the app: nothing is sent online.
+
 ### Changed
+- Your CV is read much more reliably, especially with the Balanced model and two-column PDFs (Canva-style): skills,
+  languages, contact details and bullet points are also read straight from the text.
+- The form now starts with your photo, then your contact details. The presentation sentence comes last, once your
+  qualities are filled in.
+- "Suggest a sentence" stays greyed out until you list at least one quality (rigour, autonomy…), with a short hint.
+- The message shown when an import finds nothing now points to the "Create one" card.
+- The name field is now "Last name and first name".
 - "Capsule" layout: more room at the bottom of the rounded column, so long lists no longer touch its border.
+
+### Fixed
+- A two-column CV could freeze the import for a long time. It now stops on its own and keeps what could be read
+  (contact details, skills, languages).
 
 ## [0.6.0] - 2026-10-15
 
@@ -115,6 +132,7 @@ First public release.
 - Before/after comparison of every change.
 - Automatic updates, checked at startup and every six hours.
 
+[0.7.0]: https://github.com/tashom11/ReCV/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/tashom11/ReCV/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/tashom11/ReCV/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/tashom11/ReCV/compare/v0.3.0...v0.4.0
