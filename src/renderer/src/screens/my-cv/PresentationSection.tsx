@@ -1,4 +1,5 @@
 import type { Profile } from '@core/schemas'
+import { isSoftSkill } from '@core/tailoring/skills'
 import { texts } from '../../i18n'
 import { Alert, Button, Collapsible, Loading, TextField } from '../../ui'
 
@@ -27,6 +28,8 @@ export function PresentationSection({
   feedback: { type: 'error' | 'success'; text: string } | null
 }) {
   const words = texts.myCv.presentation
+  // The suggestion is built from the qualities of the profile: without any, it can only fail.
+  const hasQuality = draft.skills.some(isSoftSkill)
   return (
     <Collapsible title={words.title} count={words.optional} summaryLine={words.summary}>
       <TextField
@@ -35,9 +38,15 @@ export function PresentationSection({
         rows={3}
         value={draft.summary ?? ''}
         onChange={(v) => update({ summary: v })}
-        hint={words.hint}
+        hint={hasQuality ? words.hint : `${words.hint} ${words.needQuality}`}
         action={
-          <Button variant="outline" size="small" onClick={onSuggest} busy={suggesting} disabled={suggestDisabled}>
+          <Button
+            variant="outline"
+            size="small"
+            onClick={onSuggest}
+            busy={suggesting}
+            disabled={suggestDisabled || !hasQuality}
+          >
             {words.suggest}
           </Button>
         }

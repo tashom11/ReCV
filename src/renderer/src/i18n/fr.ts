@@ -468,6 +468,8 @@ export const fr = {
       summary: 'Une ou deux phrases en haut du CV, proposées à partir de vos qualités',
       label: 'Votre phrase de présentation',
       hint: 'Elle parle de vos qualités, pas d’un métier : elle reste valable pour toutes les annonces.',
+      needQuality:
+        'Pour qu’une phrase vous soit proposée, ajoutez d’abord au moins une qualité (rigueur, autonomie, organisation, communication…) dans « Compétences et qualités ». Vous pouvez aussi l’écrire vous-même.',
       suggest: 'Proposer une phrase',
       suggesting: 'L’IA cherche une phrase qui vous ressemble…',
       suggestingStep: 'À partir de vos qualités',
