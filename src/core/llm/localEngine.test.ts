@@ -39,13 +39,17 @@ const native = vi.hoisted(() => {
       dispose: async () => undefined,
     }),
   }
+  // Stop reasons of the next answers (« maxTokens »: answer cut); then a normal end.
+  const stopReasons: string[] = []
+  const promptOptions: unknown[] = []
   class LlamaChatSession {
-    async promptWithMeta() {
+    async promptWithMeta(_text: string, options: unknown) {
+      promptOptions.push(options)
       counts.prompting++
       counts.maxPrompting = Math.max(counts.maxPrompting, counts.prompting)
       await new Promise((r) => setTimeout(r, 5))
       counts.prompting--
-      return { response: ['{"name":"x"}'] }
+      return { response: ['{"name":"x"}'], stopReason: stopReasons.shift() ?? 'eogToken' }
     }
     dispose() {}
   }
@@ -54,7 +58,7 @@ const native = vi.hoisted(() => {
     options.push(o)
     return llama
   }
-  return { counts, options, loadOptions, getLlama, LlamaChatSession }
+  return { counts, options, loadOptions, stopReasons, promptOptions, getLlama, LlamaChatSession }
 })
 vi.mock('node-llama-cpp', () => ({ getLlama: native.getLlama, LlamaChatSession: native.LlamaChatSession }))
 
@@ -103,6 +107,23 @@ describe('LocalEngine', () => {
     await Promise.all([engine.generateObject(request), engine.generateObject(request)])
     expect(native.counts.maxPrompting).toBe(1)
     expect(native.counts.contexts).toBe(1)
+  })
+
+  it('bounds the answer and retries once when it reaches the bound (repetition loop)', async () => {
+    native.promptOptions.length = 0
+    native.stopReasons.push('maxTokens')
+    const engine = new LocalEngine('m.gguf')
+    expect(await engine.generateObject({ ...request, maxTokens: 500 })).toEqual({ name: 'x' })
+    expect(native.promptOptions).toHaveLength(2)
+    expect(native.promptOptions[0]).toMatchObject({ maxTokens: 500 })
+  })
+
+  it('fails with a clear message when the answer reaches the bound twice', async () => {
+    native.stopReasons.push('maxTokens', 'maxTokens')
+    const engine = new LocalEngine('m.gguf')
+    await expect(engine.generateObject({ ...request, maxTokens: 500 })).rejects.toThrow(/répéter sa réponse/)
+    // The engine stays usable for the next call.
+    expect(await engine.generateObject(request)).toEqual({ name: 'x' })
   })
 
   it('frees the context after a while without calls', async () => {

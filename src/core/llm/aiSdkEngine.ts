@@ -26,7 +26,15 @@ export class AiSdkEngine implements LlmEngine {
     private readonly options: AiSdkEngineOptions = {},
   ) {}
 
-  async generateObject<T>({ name, schema, system, user, temperature, signal }: ObjectRequest<T>): Promise<T> {
+  async generateObject<T>({
+    name,
+    schema,
+    system,
+    user,
+    temperature,
+    maxTokens,
+    signal,
+  }: ObjectRequest<T>): Promise<T> {
     const attempts = this.options.attempts ?? 2
     let lastError: unknown
     for (let attempt = 0; attempt < attempts; attempt++) {
@@ -38,6 +46,8 @@ export class AiSdkEngine implements LlmEngine {
           output: Output.object({ schema: schemaForModel(schema) }),
           temperature: temperature ?? 0.2,
           ...(temperature === 0 ? { seed: 42 } : {}),
+          // A cut answer is invalid JSON: it is retried like any invalid output.
+          maxOutputTokens: maxTokens,
           providerOptions: this.options.providerOptions,
           abortSignal: signal,
         })

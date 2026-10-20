@@ -19,6 +19,45 @@ describe('extraction', () => {
     expect(engine.requests[0]?.user).toBe('<cv>\nCV de Claire — Compétences : React\n</cv>')
   })
 
+  it('bounds the answer to the CV length, so that a repetition loop cannot fill the whole context', async () => {
+    const engine = new MockEngine({ extractProfile: {} })
+    await extractProfile(engine, 'x'.repeat(1000))
+    await extractProfile(engine, 'x'.repeat(4000))
+    await extractProfile(engine, 'x'.repeat(100_000))
+    const [short, long, huge] = engine.requests.map((r) => r.maxTokens ?? 0)
+    expect(short).toBeGreaterThanOrEqual(1000)
+    expect(long).toBeGreaterThan(short ?? 0)
+    expect(huge).toBe(6000)
+  })
+
+  const cvWithSections = 'Claire Dubois\nEXPÉRIENCE\nDéveloppeuse — Société Alpha\nCOMPÉTENCES\nReact, SQL'
+
+  it('forbids an empty list for a section found in the CV (shortest answer of small models)', async () => {
+    const engine = new MockEngine({
+      extractProfile: { experiences: [{ position: 'Développeuse', company: 'Société Alpha' }], skills: ['React'] },
+    })
+    await extractProfile(engine, cvWithSections)
+    expect(engine.requests).toHaveLength(1)
+    const schema = engine.requests[0]?.schema
+    expect(schema?.safeParse({ experiences: [], skills: ['React'] }).success).toBe(false)
+    expect(schema?.safeParse({ experiences: [{ position: 'P', company: 'C' }], skills: [] }).success).toBe(false)
+    // Sections absent from the CV stay optional.
+    expect(schema?.safeParse({ experiences: [{ position: 'P', company: 'C' }], skills: ['React'] }).success).toBe(true)
+  })
+
+  it('runs the step again without the constraint rather than failing the import', async () => {
+    const engine = new MockEngine({ extractProfile: { fullName: 'Claire Dubois', experiences: [], skills: [] } })
+    const profile = await extractProfile(engine, cvWithSections)
+    expect(profile.fullName).toBe('Claire Dubois')
+    expect(engine.requests).toHaveLength(2)
+  })
+
+  it('calls the model once, without constraint, when no section is found', async () => {
+    const engine = new MockEngine({ extractProfile: {} })
+    await extractProfile(engine, 'Claire Dubois, développeuse à Lyon.')
+    expect(engine.requests).toHaveLength(1)
+  })
+
   it('copies the raw text of the job posting in code, without having it regenerated', async () => {
     const engine = new MockEngine({ extractJobPosting: { jobTitle: 'Dev', rawText: 'texte altéré' } })
     const jobPosting = await extractJobPosting(engine, "Texte d'origine")

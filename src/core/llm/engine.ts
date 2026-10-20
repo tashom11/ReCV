@@ -8,6 +8,11 @@ export interface ObjectRequest<T> {
   user: string
   /** Sampling temperature (default 0.2). 0 for judgement steps, which must be reproducible. */
   temperature?: number
+  /**
+   * Upper bound of the answer, in tokens. A model sometimes repeats the same items until its context is full (tens of
+   * minutes on a modest computer): past this bound, the answer is cut and the step fails or is retried.
+   */
+  maxTokens?: number
   /** Stops the generation (cancelled by the user). */
   signal?: AbortSignal
 }

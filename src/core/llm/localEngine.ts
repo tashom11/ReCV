@@ -75,6 +75,16 @@ const OUT_OF_MEMORY_MESSAGE =
   'Mémoire insuffisante pour le modèle embarqué. Fermez les applications qui utilisent la carte graphique ' +
   '(Ollama, jeux, autre fenêtre de Re:CV…) ou choisissez « Rapide » dans les réglages.'
 
+// The answer reached `maxTokens`: the model was repeating itself (the bound leaves room for any normal answer).
+class TruncatedAnswerError extends Error {
+  constructor() {
+    super(
+      'Le modèle s’est mis à répéter sa réponse sans s’arrêter. Réessayez, ou choisissez un autre modèle dans les ' +
+        'réglages.',
+    )
+  }
+}
+
 // Local model (.gguf): the output is constrained by a grammar derived from the Zod schema.
 // File deliberately not exported by `llm/index.ts`: node-llama-cpp is native, for the Node process only.
 export class LocalEngine implements LlmEngine {
@@ -187,12 +197,22 @@ export class LocalEngine implements LlmEngine {
   }
 
   generateObject<T>(request: ObjectRequest<T>): Promise<T> {
-    const run = this.queue.then(() => this.generate(request))
+    const run = this.queue.then(() => this.generateWithRetry(request))
     this.queue = run.catch(() => undefined)
     return run
   }
 
-  private async generate<T>({ schema, system, user, temperature, signal }: ObjectRequest<T>): Promise<T> {
+  // A repetition loop depends on sampling: a second attempt usually ends normally.
+  private async generateWithRetry<T>(request: ObjectRequest<T>): Promise<T> {
+    try {
+      return await this.generate(request)
+    } catch (error) {
+      if (!(error instanceof TruncatedAnswerError)) throw error
+      return this.generate(request)
+    }
+  }
+
+  private async generate<T>({ schema, system, user, temperature, maxTokens, signal }: ObjectRequest<T>): Promise<T> {
     signal?.throwIfAborted()
     const sequence = await this.sharedSequence()
     const { llama } = await this.load()
@@ -209,10 +229,12 @@ export class LocalEngine implements LlmEngine {
       const meta = await session.promptWithMeta(user, {
         grammar: grammar,
         temperature: temperature ?? 0.2,
+        maxTokens,
         signal,
       })
       // An interrupted generation returns partial text: it is not an answer.
       signal?.throwIfAborted()
+      if (meta.stopReason === 'maxTokens') throw new TruncatedAnswerError()
       const response = responseText(meta.response)
       let parsed: unknown
       try {
