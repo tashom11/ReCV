@@ -5,7 +5,13 @@ release/
 *.gguf
 *.log
 .DS_Store
-.claude/settings.local.json
+
+# Files for AI assistants: kept on the maintainers' computers, not in the repository.
+.claude/
+CLAUDE.md
+PLAN.md
+docs/prompt-*.md
+docs/superpowers/
 
 # Personal strings of the maintainers, checked by scripts/check-personal-data.mjs: never committed.
 .private-patterns
