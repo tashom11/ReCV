@@ -45,6 +45,15 @@ describe('readSkills', () => {
     expect(readSkills('COMPÉTENCES\nCanva EXPÉRIENCES\nSQL')).toEqual(['SQL'])
   })
 
+  it('joins a skill wrapped on two lines in a narrow column, but not a list of lower-case lines', () => {
+    expect(readSkills('COMPÉTENCES\nCanva\nCommunity\nmanagement\nRédaction web')).toEqual([
+      'Canva',
+      'Community management',
+      'Rédaction web',
+    ])
+    expect(readSkills('COMPÉTENCES\nrigueur\nautonomie')).toEqual(['rigueur', 'autonomie'])
+  })
+
   it('drops a skill glued to the dates of the neighbouring column', () => {
     expect(readSkills('COMPÉTENCES\nCommunity management 2020 – 2024\nSQL\nSage 100')).toEqual(['SQL', 'Sage 100'])
   })

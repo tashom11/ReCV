@@ -42,8 +42,16 @@ function joinWrappedLines(lines: string[]): string[] {
   const result: string[] = []
   for (const line of lines) {
     const previous = result.at(-1)
-    if (previous !== undefined && /[,;]$/.test(previous)) result[result.length - 1] = `${previous} ${line}`
-    else result.push(line)
+    // A skill wrapped in a narrow column (« Community\nmanagement »): a lower-case line after a capital one.
+    const continuesSkill =
+      previous !== undefined &&
+      !BULLET.test(line) &&
+      /^\p{Lu}/u.test(previous.replace(BULLET, '')) &&
+      /^\p{Ll}/u.test(line) &&
+      !/[.:]$/.test(previous)
+    if (previous !== undefined && (/[,;]$/.test(previous) || continuesSkill)) {
+      result[result.length - 1] = `${previous} ${line}`
+    } else result.push(line)
   }
   return result
 }
@@ -68,7 +76,7 @@ function withoutGluedColumn(line: string): string[] {
 
 /** Skills listed in the skills section(s), one per item (« Logiciels : Sage 100, Cegid » → two skills). */
 export function readSkills(cvText: string): string[] {
-  const lines = joinWrappedLines(linesOf(splitSections(cvText), ['skills']).map((l) => l.replace(BULLET, '')))
+  const lines = joinWrappedLines(linesOf(splitSections(cvText), ['skills'])).map((l) => l.replace(BULLET, ''))
   const items = lines.flatMap((line) => {
     // « Catégorie : a, b, c »: the category is not a skill.
     const category = /^([^:,]{1,30}):\s*(.+)$/.exec(line)
