@@ -32,6 +32,15 @@ describe('findPersonalData', () => {
     expect(found.map((f) => f.pattern)).toEqual([2, 3])
   })
 
+  it('does not look for the private patterns in the public list of communes, but still checks the rest there', () => {
+    const list = (text) => [{ path: 'src/core/places/places.json', text }]
+    expect(findPersonalData(list('Lyon	69'), ['lyon'])).toEqual([])
+    // Same text anywhere else is flagged, and the list is still checked for phone numbers and e-mail addresses.
+    expect(findPersonalData([{ path: 'docs/a.md', text: 'Lyon	69' }], ['lyon'])).toHaveLength(1)
+    expect(findPersonalData(list(`Lyon ${PHONE}`), ['lyon']).map((f) => f.kind)).toEqual(['phone'])
+    expect(findPersonalData(list(`Lyon ${EMAIL}`), ['lyon']).map((f) => f.kind)).toEqual(['email'])
+  })
+
   it('accepts a contact address only in the code of conduct, where it is published on purpose', () => {
     const coc = `contact at ${EMAIL}`
     expect(findPersonalData([{ path: 'CODE_OF_CONDUCT.md', text: coc }], [])).toEqual([])

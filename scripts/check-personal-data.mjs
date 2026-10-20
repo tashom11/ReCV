@@ -15,6 +15,10 @@ const ALLOWED_EMAIL_DOMAIN = /@(exemple\.(fr|com|org)|example\.(com|org|net)|use
 // Files where a real contact address is published on purpose.
 const CONTACT_FILES = new Set(['CODE_OF_CONDUCT.md'])
 const SKIPPED_FILES = new Set(['package-lock.json'])
+// Public reference data, generated from an open source: the private patterns are not looked for there (the list of
+// every French commune holds the maintainers' own town among 35,000 others and reveals nothing about them). Phone
+// numbers and e-mail addresses are still checked.
+const PUBLIC_DATA_FILES = new Set(['src/core/places/places.json'])
 
 const PHONE = /(?<![\d.])0[1-9](?:[ .-]?\d{2}){4}(?![\d])/g
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g
@@ -32,6 +36,7 @@ export function findPersonalData(files, privatePatterns) {
   for (const { path, text } of files) {
     if (SKIPPED_FILES.has(path)) continue
     const published = CONTACT_FILES.has(path)
+    const patternsHere = PUBLIC_DATA_FILES.has(path) ? [] : patterns
     text.split('\n').forEach((line, index) => {
       // Where a contact address is published on purpose, the address itself is not scanned, the rest of the file is.
       const content = published ? line.replace(EMAIL, '') : line
@@ -45,7 +50,7 @@ export function findPersonalData(files, privatePatterns) {
         }
       }
       const folded = fold(content)
-      for (const pattern of patterns) {
+      for (const pattern of patternsHere) {
         const start = folded.indexOf(pattern.text)
         if (start !== -1) {
           at({ kind: 'private', match: content.slice(start, start + pattern.text.length), pattern: pattern.number })
