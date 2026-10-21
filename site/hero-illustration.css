@@ -1,0 +1,310 @@
+/* Re:CV — illustration animée. Cycle de 7,5 s joué 2 fois, puis arrêt sur l'état final.
+   Les valeurs de base sont l'état final (CV adapté + coche) : c'est ce qui s'affiche sans animation.
+   Classes préfixées `rv-`, aucun style en ligne (la page interdit `style-src 'unsafe-inline'`). */
+.rv {
+  --n: 2;
+  --a: 7.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--n) both;
+  display: block;
+  width: 100%;
+}
+.rv-wait {
+  --n: infinite;
+  --a: 7.5s cubic-bezier(0.2, 0.7, 0.2, 1) infinite both;
+}
+
+/* Couleurs */
+.rv-sf {
+  fill: var(--surface, #fff);
+}
+.rv-ik {
+  fill: var(--encre, #1e2622);
+}
+.rv-tr {
+  fill: var(--trait, #ded8ca);
+}
+.rv-tf {
+  fill: var(--trait-fort, #8c8778);
+}
+.rv-mq {
+  fill: var(--marque, #23624a);
+}
+.rv-mp {
+  fill: var(--marque-pale, #e6f0ea);
+}
+.rv-ac {
+  fill: var(--accent, #c9e265);
+}
+.rv-ap {
+  fill: var(--accent-pale, #f1f8d6);
+}
+.rv-iks,
+.rv-mqs,
+.rv-trs {
+  vector-effect: non-scaling-stroke;
+}
+.rv-iks,
+.rv-mqs {
+  stroke-width: 2;
+}
+.rv-iks {
+  stroke: var(--encre, #1e2622);
+}
+.rv-trs {
+  stroke: var(--trait, #ded8ca);
+}
+.rv-mqs {
+  stroke: var(--marque, #23624a);
+}
+
+/* Éléments animés */
+.rv-st {
+  animation: rv-st 15s both;
+}
+.rv-fr {
+  transform: rotate(2deg);
+  transform-origin: 205px 207px;
+  animation: rv-fr 7.5s ease-in-out var(--n) both;
+}
+.rv-bk {
+  transform: rotate(-4deg);
+  transform-origin: 164px 214px;
+  animation: rv-bk 7.5s ease-in-out var(--n) both;
+}
+.rv-jb {
+  opacity: 0;
+  animation: rv-jb var(--a);
+}
+.rv-hl,
+.rv-mv,
+.rv-ok,
+.rv-rg {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.rv-hl,
+.rv-mv {
+  transform-origin: left;
+}
+.rv-hl {
+  animation: rv-hl var(--a);
+}
+.rv-cn {
+  stroke: var(--trait-fort, #8c8778);
+  stroke-width: 1.5;
+  opacity: 0;
+  animation: rv-cn var(--a);
+}
+.rv-mv {
+  --y: 0;
+  --s: scale(1);
+  --o: 1;
+  transform: translateY(var(--y)) var(--s);
+  opacity: var(--o);
+  animation: rv-mv var(--a);
+}
+.rv-x {
+  --s: scaleX(0.85);
+  --o: 0.5;
+}
+.rv-y1 {
+  --y: 60px;
+}
+.rv-y2 {
+  --y: 40px;
+}
+.rv-y3 {
+  --y: 20px;
+}
+.rv-u1 {
+  --y: -40px;
+}
+.rv-u2 {
+  --y: -60px;
+}
+.rv-u3 {
+  --y: -80px;
+}
+.rv-ok {
+  animation: rv-ok var(--a);
+}
+.rv-cn,
+.rv-tk {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+}
+.rv-tk {
+  stroke: var(--surface, #fff);
+  stroke-width: 4.5;
+  stroke-linejoin: round;
+  animation: rv-tk var(--a);
+}
+.rv-rg {
+  opacity: 0;
+  animation: rv-rg var(--a);
+}
+.rv-d1 {
+  animation-delay: 0.12s;
+}
+.rv-d2 {
+  animation-delay: 0.24s;
+}
+
+/* Variante « attente » : boucle infinie, sans coche */
+.rv-wait .rv-st {
+  animation: rv-sw 7.5s infinite both;
+}
+.rv-wait .rv-ok {
+  display: none;
+}
+
+/* Pause, mouvement réduit */
+.rv-paused * {
+  /* biome-ignore lint/complexity/noImportantStyles: pausing must win over every animation rule */
+  animation-play-state: paused !important;
+}
+.rv-still * {
+  /* biome-ignore lint/complexity/noImportantStyles: a still frame must win over every animation rule */
+  animation: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rv * {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must win over every animation rule */
+    animation: none !important;
+  }
+}
+
+/* % d'un cycle de 7,5 s : 13% = 1,0 s · 29% = 2,2 s · 48% = 3,6 s · 67% = 5,0 s · 77% = 5,8 s */
+@keyframes rv-st {
+  0%,
+  2% {
+    opacity: 0;
+  }
+  5%,
+  47% {
+    opacity: 1;
+  }
+  50%,
+  52% {
+    opacity: 0;
+  }
+  55%,
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rv-sw {
+  0%,
+  4% {
+    opacity: 0;
+  }
+  10%,
+  94% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+@keyframes rv-fr {
+  50% {
+    transform: rotate(2deg) translateY(-6px);
+  }
+}
+@keyframes rv-bk {
+  50% {
+    transform: rotate(-4deg) translateY(5px);
+  }
+}
+@keyframes rv-jb {
+  0%,
+  13% {
+    transform: translateX(120px);
+    opacity: 0;
+  }
+  29%,
+  67% {
+    transform: none;
+    opacity: 1;
+    animation-timing-function: ease-in;
+  }
+  75%,
+  to {
+    transform: translateX(40px);
+    opacity: 0;
+  }
+}
+@keyframes rv-hl {
+  0%,
+  29% {
+    transform: scaleX(0);
+  }
+  37%,
+  to {
+    transform: none;
+  }
+}
+@keyframes rv-cn {
+  0%,
+  29% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  37%,
+  45% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  51%,
+  to {
+    opacity: 0;
+  }
+}
+@keyframes rv-mv {
+  0%,
+  48% {
+    transform: none;
+    opacity: 1;
+  }
+  62%,
+  to {
+    transform: translateY(var(--y)) var(--s);
+    opacity: var(--o);
+  }
+}
+@keyframes rv-ok {
+  0%,
+  69% {
+    transform: scale(0.3);
+    opacity: 0;
+    animation-timing-function: cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  76%,
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes rv-tk {
+  0%,
+  73% {
+    stroke-dashoffset: 1;
+  }
+  79%,
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes rv-rg {
+  0%,
+  76% {
+    transform: none;
+    opacity: 0.5;
+    animation-timing-function: ease-out;
+  }
+  88%,
+  to {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
