@@ -2,16 +2,16 @@ import './heroIllustration.css'
 
 /**
  * Animated illustration of the welcome screen: a CV, a job posting arriving, the matching lines lighting up and moving
- * up, then the validation badge. Decorative, made of classes only (no inline style), 2 cycles then it stops on its
+ * up, then the validation badge. Decorative, made of classes only (no inline style), it plays once and stays on its
  * final state; with « reduce motion », the final state is shown at once. The same drawing is on the website
  * (site/index.html): keep both identical.
  */
 export function HeroIllustration() {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" className="rv" aria-hidden="true" focusable="false">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="26 14 350 434" className="rv" aria-hidden="true" focusable="false">
       <g className="rv-st" transform="translate(-20 1)">
         <g className="rv-bk">
-          <rect className="rv-sf rv-trs" x="64" y="74" width="200" height="280" rx="20" />
+          <rect className="rv-sf rv-trs" x="64" y="74" width="200" height="330" rx="20" />
           <rect className="rv-tf" opacity=".45" x="84" y="98" width="110" height="11" rx="5.5" />
           <g className="rv-tr">
             <rect x="84" y="118" width="74" height="9" rx="4.5" />
@@ -19,11 +19,13 @@ export function HeroIllustration() {
             <rect x="84" y="168" width="80" height="8" rx="4" />
             <rect x="84" y="186" width="96" height="8" rx="4" />
             <rect x="84" y="204" width="80" height="8" rx="4" />
+            <rect x="84" y="222" width="96" height="8" rx="4" />
+            <rect x="84" y="240" width="80" height="8" rx="4" />
           </g>
         </g>
         <g className="rv-fr">
-          <rect className="rv-ik" opacity=".07" x="100" y="70" width="210" height="294" rx="20" />
-          <rect className="rv-sf rv-iks" x="100" y="60" width="210" height="294" rx="20" />
+          <rect className="rv-ik" opacity=".07" x="100" y="70" width="210" height="344" rx="20" />
+          <rect className="rv-sf rv-iks" x="100" y="60" width="210" height="344" rx="20" />
           <circle className="rv-mp rv-mqs" cx="136" cy="100" r="17" />
           <rect className="rv-ik" x="164" y="89" width="94" height="11" rx="5.5" />
           <rect className="rv-mq" x="164" y="106" width="66" height="8" rx="4" />
@@ -47,6 +49,15 @@ export function HeroIllustration() {
             </g>
             <g className="rv-mv rv-x">
               <rect x="118" y="306" width="124" height="8" rx="4" />
+            </g>
+            <g className="rv-mv rv-x">
+              <rect x="118" y="326" width="160" height="8" rx="4" />
+            </g>
+            <g className="rv-mv rv-x">
+              <rect x="118" y="346" width="120" height="8" rx="4" />
+            </g>
+            <g className="rv-mv rv-x">
+              <rect x="118" y="366" width="140" height="8" rx="4" />
             </g>
             <g className="rv-mv rv-u1">
               <rect className="rv-hl rv-ap" x="110" y="201" width="190" height="18" rx="9" />
@@ -84,9 +95,9 @@ export function HeroIllustration() {
           </g>
         </g>
         <g className="rv-ok">
-          <circle className="rv-mq" cx="306" cy="344" r="26" />
-          <path className="rv-tk" pathLength={1} d="M295 344.5l7 7 14-14.5" />
-          <circle className="rv-rg rv-mqs" fill="none" cx="306" cy="344" r="26" />
+          <circle className="rv-mq" cx="306" cy="394" r="26" />
+          <path className="rv-tk" pathLength={1} d="M295 394.5l7 7 14-14.5" />
+          <circle className="rv-rg rv-mqs" fill="none" cx="306" cy="394" r="26" />
         </g>
       </g>
     </svg>

@@ -284,7 +284,7 @@ p {
 /* Illustration animée (voir hero-illustration.css) : suit la largeur de sa colonne, sans jamais déborder. */
 .hero-art {
   justify-self: center;
-  width: min(440px, 100%);
+  width: min(460px, 100%);
   margin: 1rem auto 1.5rem;
 }
 

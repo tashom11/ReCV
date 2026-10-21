@@ -1,8 +1,8 @@
 /* Re:CV — illustration animée de l'écran d'accueil (même dessin que la page d'accueil du site : site/hero-illustration.css,
-   à garder identique hors couleurs). Cycle de 7,5 s joué 2 fois, puis arrêt sur l'état final ; les valeurs de base sont
+   à garder identique hors couleurs). Cycle de 7,5 s joué une seule fois, puis arrêt sur l'état final ; les valeurs de base sont
    l'état final, affiché tel quel avec « réduire les animations ». Couleurs : les variables du thème de l'application. */
 .rv {
-  --n: 2;
+  --n: 1;
   --a: 7.5s cubic-bezier(0.2, 0.7, 0.2, 1) var(--n) both;
   display: block;
   width: 100%;
@@ -58,16 +58,16 @@
 
 /* Éléments animés */
 .rv-st {
-  animation: rv-st 15s both;
+  animation: rv-st 7.5s both;
 }
 .rv-fr {
   transform: rotate(2deg);
-  transform-origin: 205px 207px;
+  transform-origin: 205px 232px;
   animation: rv-fr 7.5s ease-in-out var(--n) both;
 }
 .rv-bk {
   transform: rotate(-4deg);
-  transform-origin: 164px 214px;
+  transform-origin: 164px 239px;
   animation: rv-bk 7.5s ease-in-out var(--n) both;
 }
 .rv-jb {
@@ -181,14 +181,6 @@
     opacity: 0;
   }
   5%,
-  47% {
-    opacity: 1;
-  }
-  50%,
-  52% {
-    opacity: 0;
-  }
-  55%,
   to {
     opacity: 1;
   }

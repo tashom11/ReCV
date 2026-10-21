@@ -9,8 +9,8 @@ describe('heroIllustration.css', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.rv \*\s*\{[^}]*animation: none !important/)
   })
 
-  it('plays two cycles, then stops on the final state', () => {
-    expect(css).toMatch(/--n: 2;/)
+  it('plays once, then stays on the final state', () => {
+    expect(css).toMatch(/--n: 1;/)
     expect(css).toMatch(/--a: [^;]*var\(--n\) both;/)
   })
 
