@@ -5,6 +5,15 @@ follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- New animated illustration on the welcome screen and on the website: your CV, a job posting arriving, the matching
+  lines lighting up and moving to the top, then the validation badge. It plays twice, then stops; with "reduce
+  motion", the final picture is shown without any movement.
+
+### Fixed
+- Website: the illustration was drawn wrong (missing pills, same-width lines) and the sections did not appear one after
+  the other, because the page's security policy blocks inline styles.
+
 ## [0.7.0] - 2026-10-20
 
 ### Added

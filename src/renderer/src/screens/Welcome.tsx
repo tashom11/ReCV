@@ -1,5 +1,5 @@
 import { texts } from '../i18n'
-import { Button, CvIllustration, Icon, type IconName } from '../ui'
+import { Button, HeroIllustration, Icon, type IconName } from '../ui'
 
 /** First screen, as long as no CV is saved: the promise in one sentence and a single button. */
 export function WelcomeScreen({
@@ -43,8 +43,8 @@ export function WelcomeScreen({
           ))}
         </ul>
       </div>
-      <div className="hidden pl-24 lg:block">
-        <CvIllustration withBackground check />
+      <div className="hidden lg:block">
+        <HeroIllustration />
       </div>
     </div>
   )
